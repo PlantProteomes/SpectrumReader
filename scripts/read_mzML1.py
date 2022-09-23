@@ -7,6 +7,9 @@ import os
 import argparse
 import os.path
 import timeit
+import matplotlib.pyplot as plt
+import spectrum_utils.spectrum as sus
+import spectrum_utils.plot as sup
 
 from pyteomics import mzml, auxiliary
 
@@ -39,8 +42,19 @@ def main():
             stats['counter'] += 1
 
             # check to see how i can access the ms level
-            # if stats['counter'] == 1:
-                # print(spectrum)
+            if stats['counter'] == 2:
+                print(spectrum)
+                print(len(spectrum['intensity array']))
+                fig, ax = plt.subplots(figsize=(12, 6))
+                # states that mz and charge are required arguments 
+                precursor_mz = (((((((spectrum['precursorList'])['precursor']))[0])['selectedIonList'])['selectedIon'])[0])['selected ion m/z']
+                precursor_charge = (((((((spectrum['precursorList'])['precursor']))[0])['selectedIonList'])['selectedIon'])[0])['charge state']
+                plotSpectrum = sus.MsmsSpectrum(precursor_mz, precursor_charge, spectrum['m/z array'], spectrum['intensity array'])
+                plotSpectrum = plotSpectrum.set_mz_range(min_mz=min(spectrum['m/z array']), max_mz=max(spectrum['m/z array']))
+                sup.spectrum(plotSpectrum)
+                plt.show()
+                plt.close()
+
 
             if spectrum['ms level'] == 1:
                 stats['ms1spectra'] += 1
