@@ -4,6 +4,13 @@
 # to run the program (use terminal): python read_mzML1.py --mzml_file ..\data\HFX_9850_GVA_DLD1_2_180719.mzML
 # can do python read_mzML1.py --help and look at the usage statements for what I can do
 
+# test case: 506.888
+# python findspectra.py --mzml_file ..\data\HFX_9850_GVA_DLD1_2_180719.mzML --precursor_mz 506.888 --tolerance_mz 0.1
+# test case: 506.888, required peaks 244.166 and 245.168, 2 valids
+# python findspectra.py --mzml_file ..\data\HFX_9850_GVA_DLD1_2_180719.mzML --precursor_mz 506.888 --tolerance_mz 0.1 --required_peaks "244.166, 245.168" --tolerance_peaks 0.1
+# test case: 395.1828, required peaks 217.08191, 217.54974, 217.5828, 7 valids
+# python findspectra.py --mzml_file ..\data\HFX_9850_GVA_DLD1_2_180719.mzML --precursor_mz 395.1828 --tolerance_mz 0.1 --required_peaks "217.08191, 217.54974, 217.5828" --tolerance_peaks 0.1
+
 import os
 import argparse
 import os.path
@@ -12,6 +19,7 @@ import matplotlib.pyplot as plt
 import spectrum_utils.spectrum as sus
 import spectrum_utils.plot as sup
 
+from tabulate import tabulate
 from pyteomics import mzml, auxiliary
 
 def main():
@@ -83,25 +91,25 @@ def main():
                     satisfyRequirements = False
                 if needToCheckPeaks and satisfyRequirements:
                     for peak in requiredPeaksList:
+                        lowerPeakBound = peak - params.tolerance_peaks
+                        upperPeakBound = peak + params.tolerance_peaks
                         if spectrum['m/z array'][len(spectrum['m/z array']) - 1] < lowerPeakBound:
                             satisfyRequirements = False
                         else:
-                            lowerPeakBound = peak - params.tolerance_peak
-                            upperPeakBound = peak + params.tolerance_peak
                             for mz in spectrum['m/z array']:
                                 if mz < lowerPeakBound:
                                     continue
-                                if mz > upperPeakBound:
+                                elif mz > upperPeakBound:
                                     satisfyRequirements = False
                                     break
-                                break
+                                else:
+                                    break
                         
                 if satisfyRequirements:
                     validSpectra.append(spectrum)
 
             if stats['counter']/1000 == int(stats['counter']/1000):
                 print(f"  {stats['counter']}")
-
 
     #### Print final timing information
     t1 = timeit.default_timer()
@@ -110,8 +118,24 @@ def main():
     print(f"The number of ms2spectra is {stats['ms2spectra']}")
     print(f"Number of valid spectra: {len(validSpectra)}")
     # write out mz and intensity array
-    # print(f"Valid Spectra: {validSpectra}")
+    printValidSpectra(validSpectra)
     print(f"INFO: Elapsed time: {t1-t0}")
     print(f"INFO: Processed {stats['counter']/(t1-t0)} spectra per second")
+
+def printValidSpectra(validSpectra):
+    spectraTable = [['MS run name', 'scan number', 'precursor m/z', 'matched peaks list m/zs', 'matched peaks list intensities']]
+    for spectra in validSpectra:
+        spectraData = ['HFX_9850_GVA_DLD1_2_180719']
+        spectraData.append(spectra['index'])
+        spectraData.append(spectra['precursorList']['precursor'][0]['selectedIonList']['selectedIon'][0]['selected ion m/z'])
+        spectraData.append(spectra['m/z array'][0])
+        spectraData.append(spectra['intensity array'][0])
+        # for mz in spectra['m/z array']:
+            # spectraData.append(mz)
+        # for intensity in spectra['intensity array']:
+            # spectraData.append(intensity)
+        spectraTable.append(spectraData)
+
+    print(tabulate(spectraTable, headers='firstrow', tablefmt='fancy_grid'))
 
 if __name__ == "__main__": main()
