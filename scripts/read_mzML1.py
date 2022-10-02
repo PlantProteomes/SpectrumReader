@@ -51,7 +51,7 @@ def main():
             # check to see how i can access the ms level
 
 
-            if stats['counter'] == 2:
+            if stats['counter'] == 4:
                 print(spectrum)
                 print(len(spectrum['intensity array']))
                 fig, ax = plt.subplots(figsize=(12, 6))
