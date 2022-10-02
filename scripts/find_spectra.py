@@ -142,7 +142,8 @@ def main():
 
 def print_valid_spectra_peaks(valid_spectra, largest_peaks):
     with open('valid_spectra.csv', 'w') as file:
-        writer = csv.writer(file)
+        writer = csv.writer(file, delimiter='\t', lineterminator='\n') # separated by tabs
+        # writer = csv.writer(file) # separated by commas
 
         # convert into a data frame, or print it by tabs in a new file
         # can also try csv module
@@ -198,7 +199,8 @@ def print_valid_spectra_peaks(valid_spectra, largest_peaks):
 
 def print_valid_spectra(valid_spectra):
     with open('valid_spectra.csv', 'w') as file:
-        writer = csv.writer(file)
+        writer = csv.writer(file, delimiter='\t', lineterminator='\n') # separated by tabs
+        # writer = csv.writer(file) # separated by commas
         spectra_table = []
         header = ['MS run name', 'scan number', 'precursor m/z']
         writer.writerow(header)
