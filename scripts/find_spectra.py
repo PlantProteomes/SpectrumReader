@@ -12,6 +12,8 @@
 # python find_spectra.py --mzml_file ..\data\HFX_9850_GVA_DLD1_2_180719.mzML --precursor_mz 395.1828 --tolerance_mz 0.1 --required_peaks "217.08191, 217.54974, 217.5828" --tolerance_peaks 0.1
 # test case: 387.1953, required peaks 129.10266, 402.17227, 7 valids
 # python find_spectra.py --mzml_file ..\data\HFX_9850_GVA_DLD1_2_180719.mzML --precursor_mz 387.1953 --tolerance_mz 0.1 --required_peaks "129.10266, 402.17227" --tolerance_peaks 0.1
+# test case: 387.1953, required peaks 129.10266, optional peak 402.17227, 29 valids
+# python find_spectra.py --mzml_file ..\data\HFX_9850_GVA_DLD1_2_180719.mzML --precursor_mz 387.1953 --tolerance_mz 0.1 --required_peaks "129.10266" --tolerance_peaks 0.1 --optional_peaks "402.17227"
 
 import os
 import argparse
@@ -32,8 +34,10 @@ def main():
     argparser.add_argument('--mzml_file', action='store', help='Name of the mzML file to read')
     argparser.add_argument('--precursor_mz', action='store', type=float, help='Precursor m/z to select')
     argparser.add_argument('--tolerance_mz', action='store', type=float, help='Tolerance of a m/z and the measured peak m/z')
-    argparser.add_argument('--required_peaks', action='store', help='Tolerance of a specified peak m/z and a measured peak m/z')
+    argparser.add_argument('--required_peaks', action='store', help='Required peaks that must show up')
     argparser.add_argument('--tolerance_peaks', action='store', type=float, help='Tolerance of a m/z and the measured peak m/z')
+    argparser.add_argument('--optional_peaks', action='store', help='Optional peaks that can show up')
+
     # runs the parse_args method to store all the results into the params variable
     params = argparser.parse_args()
 
@@ -67,9 +71,15 @@ def main():
     if params.required_peaks is not None and params.required_peaks != "":
         required_peaks_list = [float(i) for i in params.required_peaks.split(',')]
         need_to_check_peaks = True
+        required_peaks = len(required_peaks_list)
+
+    if params.optional_peaks is not None and params.optional_peaks != "":
+        optional_peaks_list = [float(i) for i in params.optional_peaks.split(',')]
+        optional_peaks = len(optional_peaks_list)
+    else:
+        optional_peaks = 0
 
     valid_spectra = []
-    largest_peaks = 0
 
     #### Read spectra from the file
     t0 = timeit.default_timer()
@@ -98,6 +108,7 @@ def main():
                         if spectrum['m/z array'][len(spectrum['m/z array']) - 1] < lower_peak_bound:
                             satisfy_requirements = False
                         else:
+                            current_peak = []
                             valid = False
                             for index in range(len(spectrum['m/z array'])):
                                 mz = spectrum['m/z array'][index]
@@ -109,9 +120,29 @@ def main():
                                     break
                                 else:
                                     intensity = spectrum['intensity array'][index]
-                                    matching_peaks.append([mz, intensity])
+                                    current_peak.append([mz, intensity])
                                     valid = True
                                     continue
+                            matching_peaks.append(current_peak)
+
+                    for peak in optional_peaks_list:
+                        lower_peak_bound = peak - params.tolerance_peaks
+                        upper_peak_bound = peak + params.tolerance_peaks
+                        if spectrum['m/z array'][len(spectrum['m/z array']) - 1] < lower_peak_bound:
+                            satisfy_requirements = False
+                        else:
+                            current_peak = []
+                            for index in range(len(spectrum['m/z array'])):
+                                mz = spectrum['m/z array'][index]
+                                if mz < lower_peak_bound:
+                                    continue
+                                elif mz > upper_peak_bound:
+                                    break
+                                else:
+                                    intensity = spectrum['intensity array'][index]
+                                    current_peak.append([mz, intensity])
+                                    continue
+                            matching_peaks.append(current_peak)
                         
                 # compute: how many peaks are in the bin? -> len(matchingPeaks)
                 # what is the average m/z? -> take the average of matchingPeaks
@@ -120,7 +151,6 @@ def main():
                     spectra_data = ['HFX_9850_GVA_DLD1_2_180719', spectrum['index'], spectrum['precursorList']['precursor'][0]['selectedIonList']['selectedIon'][0]['selected ion m/z']]
                     if need_to_check_peaks:
                         spectra_data.append(matching_peaks)
-                        largest_peaks = max(len(matching_peaks), largest_peaks)
                     valid_spectra.append(spectra_data)
 
             if stats['counter']/1000 == int(stats['counter']/1000):
@@ -134,39 +164,25 @@ def main():
     print(f"Number of valid spectra: {len(valid_spectra)}")
     # write out mz and intensity array
     if need_to_check_peaks:
-        print_valid_spectra_peaks(valid_spectra, largest_peaks)
+        print_valid_spectra_peaks(valid_spectra, required_peaks, optional_peaks)
     else: 
         print_valid_spectra(valid_spectra)
     print(f"INFO: Elapsed time: {t1-t0}")
     print(f"INFO: Processed {stats['counter']/(t1-t0)} spectra per second")
 
-def print_valid_spectra_peaks(valid_spectra, largest_peaks):
+def print_valid_spectra_peaks(valid_spectra, required_peaks, optional_peaks):
     with open('valid_spectra.csv', 'w') as file:
         writer = csv.writer(file, delimiter='\t', lineterminator='\n') # separated by tabs
         # writer = csv.writer(file) # separated by commas
 
-        # convert into a data frame, or print it by tabs in a new file
-        # can also try csv module
-        # if no matched peaks, last 2 columns would be blank
-        # also add the number of peaks in the bin, the average m/z, and the sum of the intensities
         spectra_table = []
         header = ['MS run name', 'scan number', 'precursor m/z']
-        if len(valid_spectra) != 0:
-            header.append('matched peaks list m/zs')
-            for index in range(largest_peaks - 1):
-                header.append('')
-            header.append('matched peaks list intensity')
-            for index in range(largest_peaks - 1):
-                header.append('')
-        elif len(valid_spectra) != 0 and largest_peaks == 1:
-            header.append('matched peaks list m/zs')
-            header.append('matched peaks list intensity')
-        header.append('number of peaks')
-        header.append('average m/z')
-        header.append('sum of intensities')
+        for index in range(required_peaks + optional_peaks):
+            header.append(f'peak {index + 1} n matches')
+            header.append(f'peak {index + 1} tallest m/z')
+            header.append(f'peak {index + 1} intensity')
         writer.writerow(header)
         # at the end, add the number of peaks in each bin, the average m/z, and the sum of the intensities
-        print(largest_peaks)
 
         spectra_table.append(header)
         for spectra in valid_spectra:
@@ -174,26 +190,22 @@ def print_valid_spectra_peaks(valid_spectra, largest_peaks):
             spectra_data = [spectra[0]]
             spectra_data.append(spectra[1])
             spectra_data.append(spectra[2])
-                # for each for loop, check how many are missing and add in blanks
-            total_mz = 0
-            total_intensity = 0
-            for matched_peak in spectra[3]:
-                spectra_data.append(matched_peak[0])
-                total_mz += matched_peak[0]
-            if len(spectra[3]) <= largest_peaks:
-                for index in range(largest_peaks - len(spectra[3])):
+
+            for current_peak in spectra[3]:
+                spectra_data.append(len(current_peak))
+                if len(current_peak) != 0:
+                    tallest_peak = current_peak[0]
+                    for matched_peak in current_peak:
+                        if tallest_peak[1] < matched_peak[1]: # change to [0] if comparing m/z instead
+                            tallest_peak = matched_peak
+                    spectra_data.append(tallest_peak[0])
+                    spectra_data.append(tallest_peak[1])
+                    writer.writerow(spectra_data)
+                else:
                     spectra_data.append('')
-            for matched_peak in spectra[3]:
-                spectra_data.append(matched_peak[1])
-                total_intensity += matched_peak[1]
-            if len(spectra[3]) <= largest_peaks:
-                for index in range(largest_peaks - len(spectra[3])):
                     spectra_data.append('')
-            spectra_data.append(len(spectra[3]))
-            spectra_data.append(total_mz / len(spectra[3]))
-            spectra_data.append(total_intensity)
-            writer.writerow(spectra_data)
-            spectra_table.append(spectra_data)
+                    writer.writerow(spectra_data)
+                spectra_table.append(spectra_data)
 
         print(tabulate(spectra_table, headers='firstrow', tablefmt='grid'))
 
