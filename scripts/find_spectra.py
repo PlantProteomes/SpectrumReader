@@ -7,13 +7,15 @@
 # test case: 506.888, 5 valids
 # python find_spectra.py --mzml_file ..\data\HFX_9850_GVA_DLD1_2_180719.mzML --precursor_mz 506.888 --tolerance_mz 0.1
 # test case: 506.888, required peaks 244.166 and 245.168, 2 valids
-# python find_spectra.py --mzml_file ..\data\HFX_9850_GVA_DLD1_2_180719.mzML --precursor_mz 506.888 --tolerance_mz 0.1 --required_peaks "244.166, 245.168" --tolerance_peaks 0.1
+# python find_spectra.py --mzml_file ..\data\HFX_9850_GVA_DLD1_2_180719.mzML --precursor_mz 506.888 --tolerance_mz 0.1 --required_windows "244.166, 245.168" --tolerance_peaks 0.1
 # test case: 395.1828, required peaks 217.08191, 217.54974, 217.5828, 7 valids
-# python find_spectra.py --mzml_file ..\data\HFX_9850_GVA_DLD1_2_180719.mzML --precursor_mz 395.1828 --tolerance_mz 0.1 --required_peaks "217.08191, 217.54974, 217.5828" --tolerance_peaks 0.1
+# python find_spectra.py --mzml_file ..\data\HFX_9850_GVA_DLD1_2_180719.mzML --precursor_mz 395.1828 --tolerance_mz 0.1 --required_windows "217.08191, 217.54974, 217.5828" --tolerance_peaks 0.1
 # test case: 387.1953, required peaks 129.10266, 402.17227, 7 valids
-# python find_spectra.py --mzml_file ..\data\HFX_9850_GVA_DLD1_2_180719.mzML --precursor_mz 387.1953 --tolerance_mz 0.1 --required_peaks "129.10266, 402.17227" --tolerance_peaks 0.1
-# test case: 387.1953, required peaks 129.10266, optional peak 402.17227, 29 valids
-# python find_spectra.py --mzml_file ..\data\HFX_9850_GVA_DLD1_2_180719.mzML --precursor_mz 387.1953 --tolerance_mz 0.1 --required_peaks "129.10266" --tolerance_peaks 0.1 --optional_peaks "402.17227"
+# python find_spectra.py --mzml_file ..\data\HFX_9850_GVA_DLD1_2_180719.mzML --precursor_mz 387.1953 --tolerance_mz 0.1 --required_windows "129.10266, 402.17227" --tolerance_peaks 0.1
+# test case: 387.1953, required peaks 129.10266, minimum optional peak 0, optional peak 402.17227, 29 valids
+# python find_spectra.py --mzml_file ..\data\HFX_9850_GVA_DLD1_2_180719.mzML --precursor_mz 387.1953 --tolerance_mz 0.1 --required_windows "129.10266" --tolerance_peaks 0.1 --minimum_optional_windows 0 --optional_windows "402.17227"
+# test case: 387.1953, required peaks 129.10266, minimum optional peak 1, optional peak 402.17227, 594.26514, 
+# python find_spectra.py --mzml_file ..\data\HFX_9850_GVA_DLD1_2_180719.mzML --precursor_mz 387.1953 --tolerance_mz 0.1 --required_windows "129.10266" --tolerance_peaks 0.1 --minimum_optional_windows 1 --optional_windows "402.17227, 594.26514"
 
 import os
 import argparse
@@ -34,9 +36,10 @@ def main():
     argparser.add_argument('--mzml_file', action='store', help='Name of the mzML file to read')
     argparser.add_argument('--precursor_mz', action='store', type=float, help='Precursor m/z to select')
     argparser.add_argument('--tolerance_mz', action='store', type=float, help='Tolerance of a m/z and the measured peak m/z')
-    argparser.add_argument('--required_peaks', action='store', help='Required peaks that must show up')
+    argparser.add_argument('--required_windows', action='store', help='Required windows that must show up')
     argparser.add_argument('--tolerance_peaks', action='store', type=float, help='Tolerance of a m/z and the measured peak m/z')
-    argparser.add_argument('--optional_peaks', action='store', help='Optional peaks that can show up')
+    argparser.add_argument('--minimum_optional_windows', action='store', type=int, help='Minimum number of optional peaks that show up')
+    argparser.add_argument('--optional_windows', action='store', help='Optional peaks that can show up')
 
     # runs the parse_args method to store all the results into the params variable
     params = argparser.parse_args()
@@ -66,18 +69,23 @@ def main():
         lower_bound = params.precursor_mz - params.tolerance_mz
         upper_bound = params.precursor_mz + params.tolerance_mz
 
-    need_to_check_peaks = False
-    # if not (params.required_peaks is None or params.required_peaks == ""):
-    if params.required_peaks is not None and params.required_peaks != "":
-        required_peaks_list = [float(i) for i in params.required_peaks.split(',')]
-        need_to_check_peaks = True
-        required_peaks = len(required_peaks_list)
+    need_to_check_windows = False
+    if params.required_windows is not None and params.required_windows != "":
+        required_windows_list = [float(i) for i in params.required_windows.split(',')]
+        need_to_check_windows = True
+        required_windows = len(required_windows_list)
 
-    if params.optional_peaks is not None and params.optional_peaks != "":
-        optional_peaks_list = [float(i) for i in params.optional_peaks.split(',')]
-        optional_peaks = len(optional_peaks_list)
+    if params.minimum_optional_windows is None or params.minimum_optional_windows == "":
+        params.minimum_optional_windows = 0
+
+    if params.optional_windows is not None and params.optional_windows != "":
+        optional_windows_list = [float(i) for i in params.optional_windows.split(',')]
+        optional_windows = len(optional_windows_list)
+        if optional_windows < params.minimum_optional_windows:
+            print(f"ERROR: Minimum optional windows is too small")
+            return
     else:
-        optional_peaks = 0
+        optional_windows = 0
 
     valid_spectra = []
 
@@ -86,8 +94,8 @@ def main():
     stats = { 'counter': 0, 'ms1spectra': 0, 'ms2spectra': 0 }
     with mzml.read(params.mzml_file) as reader:
         for spectrum in reader:
-            if stats['counter'] == 0:
-                auxiliary.print_tree(spectrum)
+            # if stats['counter'] == 0:
+                # auxiliary.print_tree(spectrum)
 
             #### Update counters and print progress
             stats['counter'] += 1
@@ -100,9 +108,9 @@ def main():
                 precursor_mz = spectrum['precursorList']['precursor'][0]['selectedIonList']['selectedIon'][0]['selected ion m/z']
                 if has_MZ_check and (precursor_mz < lower_bound or precursor_mz > upper_bound):
                     satisfy_requirements = False
-                if need_to_check_peaks and satisfy_requirements:
+                if need_to_check_windows and satisfy_requirements:
                     matching_peaks = []
-                    for peak in required_peaks_list:
+                    for peak in required_windows_list:
                         lower_peak_bound = peak - params.tolerance_peaks
                         upper_peak_bound = peak + params.tolerance_peaks
                         if spectrum['m/z array'][len(spectrum['m/z array']) - 1] < lower_peak_bound:
@@ -125,31 +133,44 @@ def main():
                                     continue
                             matching_peaks.append(current_peak)
 
-                    for peak in optional_peaks_list:
-                        lower_peak_bound = peak - params.tolerance_peaks
-                        upper_peak_bound = peak + params.tolerance_peaks
-                        if spectrum['m/z array'][len(spectrum['m/z array']) - 1] < lower_peak_bound:
-                            satisfy_requirements = False
-                        else:
+                    if optional_windows > 0:
+                        optional_windows_found = []
+                        optionals_found = 0
+                        for peak in optional_windows_list:
+                            optional_found = False
+                            lower_peak_bound = peak - params.tolerance_peaks
+                            upper_peak_bound = peak + params.tolerance_peaks
                             current_peak = []
-                            for index in range(len(spectrum['m/z array'])):
-                                mz = spectrum['m/z array'][index]
-                                if mz < lower_peak_bound:
-                                    continue
-                                elif mz > upper_peak_bound:
-                                    break
-                                else:
-                                    intensity = spectrum['intensity array'][index]
-                                    current_peak.append([mz, intensity])
-                                    continue
-                            matching_peaks.append(current_peak)
+                            if spectrum['m/z array'][len(spectrum['m/z array']) - 1] < lower_peak_bound:
+                                optional_windows_found.append(current_peak)
+                            else:
+                                for index in range(len(spectrum['m/z array'])):
+                                    mz = spectrum['m/z array'][index]
+                                    if mz < lower_peak_bound:
+                                        continue
+                                    elif mz > upper_peak_bound:
+                                        break
+                                    else:
+                                        intensity = spectrum['intensity array'][index]
+                                        if not optional_found:
+                                            optionals_found += 1
+                                            optional_found = True
+                                        current_peak.append([mz, intensity])
+                                        continue
+                                optional_windows_found.append(current_peak)
+
+                    if optionals_found < params.minimum_optional_windows:
+                        satisfy_requirements = False
+                    else:
+                        for peak in optional_windows_found:
+                            matching_peaks.append(peak)
                         
                 # compute: how many peaks are in the bin? -> len(matchingPeaks)
                 # what is the average m/z? -> take the average of matchingPeaks
                 # what is the sum of the intensities?
                 if satisfy_requirements:
                     spectra_data = ['HFX_9850_GVA_DLD1_2_180719', spectrum['index'], spectrum['precursorList']['precursor'][0]['selectedIonList']['selectedIon'][0]['selected ion m/z']]
-                    if need_to_check_peaks:
+                    if need_to_check_windows:
                         spectra_data.append(matching_peaks)
                     valid_spectra.append(spectra_data)
 
@@ -163,21 +184,21 @@ def main():
     print(f"The number of ms2spectra is {stats['ms2spectra']}")
     print(f"Number of valid spectra: {len(valid_spectra)}")
     # write out mz and intensity array
-    if need_to_check_peaks:
-        print_valid_spectra_peaks(valid_spectra, required_peaks, optional_peaks)
+    if need_to_check_windows:
+        print_valid_spectra_peaks(valid_spectra, required_windows, optional_windows)
     else: 
         print_valid_spectra(valid_spectra)
     print(f"INFO: Elapsed time: {t1-t0}")
     print(f"INFO: Processed {stats['counter']/(t1-t0)} spectra per second")
 
-def print_valid_spectra_peaks(valid_spectra, required_peaks, optional_peaks):
-    with open('valid_spectra.csv', 'w') as file:
+def print_valid_spectra_peaks(valid_spectra, required_windows, optional_windows):
+    with open('valid_spectra.tsv', 'a') as file:
         writer = csv.writer(file, delimiter='\t', lineterminator='\n') # separated by tabs
         # writer = csv.writer(file) # separated by commas
 
         spectra_table = []
         header = ['MS run name', 'scan number', 'precursor m/z']
-        for index in range(required_peaks + optional_peaks):
+        for index in range(required_windows + optional_windows):
             header.append(f'peak {index + 1} n matches')
             header.append(f'peak {index + 1} tallest m/z')
             header.append(f'peak {index + 1} intensity')
@@ -186,10 +207,10 @@ def print_valid_spectra_peaks(valid_spectra, required_peaks, optional_peaks):
 
         spectra_table.append(header)
         for spectra in valid_spectra:
-            print(spectra)
+            # print(spectra)
             spectra_data = [spectra[0]]
             spectra_data.append(spectra[1])
-            spectra_data.append(spectra[2])
+            spectra_data.append(round(spectra[2], 4))
 
             for current_peak in spectra[3]:
                 spectra_data.append(len(current_peak))
@@ -198,19 +219,18 @@ def print_valid_spectra_peaks(valid_spectra, required_peaks, optional_peaks):
                     for matched_peak in current_peak:
                         if tallest_peak[1] < matched_peak[1]: # change to [0] if comparing m/z instead
                             tallest_peak = matched_peak
-                    spectra_data.append(tallest_peak[0])
-                    spectra_data.append(tallest_peak[1])
-                    writer.writerow(spectra_data)
+                    spectra_data.append(round(tallest_peak[0], 4))
+                    spectra_data.append(int(tallest_peak[1]))
                 else:
                     spectra_data.append('')
                     spectra_data.append('')
-                    writer.writerow(spectra_data)
-                spectra_table.append(spectra_data)
-
-        print(tabulate(spectra_table, headers='firstrow', tablefmt='grid'))
+            
+            writer.writerow(spectra_data)
+            spectra_table.append(spectra_data)
+        # print(tabulate(spectra_table, headers='firstrow', tablefmt='grid'))
 
 def print_valid_spectra(valid_spectra):
-    with open('valid_spectra.csv', 'w') as file:
+    with open('valid_spectra.tsv', 'a') as file:
         writer = csv.writer(file, delimiter='\t', lineterminator='\n') # separated by tabs
         # writer = csv.writer(file) # separated by commas
         spectra_table = []
@@ -225,6 +245,6 @@ def print_valid_spectra(valid_spectra):
             writer.writerow(spectra_data)
             spectra_table.append(spectra_data)
 
-    print(tabulate(spectra_table, headers='firstrow', tablefmt='grid'))
+    # print(tabulate(spectra_table, headers='firstrow', tablefmt='grid'))
 
 if __name__ == "__main__": main()
