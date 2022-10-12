@@ -4,6 +4,9 @@
 # to run the program (use terminal): python read_mzML1.py --mzml_file ..\data\HFX_9850_GVA_DLD1_2_180719.mzML
 # can do python read_mzML1.py --help and look at the usage statements for what I can do
 
+# pxd is PXD019252
+# http://proteomecentral.proteomexchange.org/usi/
+
 # test case: 506.888, 5 valids
 # python find_spectra.py --mzml_file ..\data\HFX_9850_GVA_DLD1_2_180719.mzML --precursor_mz 506.888 --tolerance_mz 0.1
 # test case: 506.888, required peaks 244.166 and 245.168, 2 valids
@@ -33,6 +36,7 @@ def main():
 
     # sets up a module with a description
     argparser = argparse.ArgumentParser(description='An example program that reads an mzML file sequentially')
+    argparser.add_argument('--pxd', action='store', help='ProteomeXchange Dataset identifier')
     argparser.add_argument('--mzml_file', action='store', help='Name of the mzML file to read')
     argparser.add_argument('--precursor_mz', action='store', type=float, help='Precursor m/z to select')
     argparser.add_argument('--tolerance_mz', action='store', type=float, help='Tolerance of a m/z and the measured peak m/z')
@@ -44,7 +48,6 @@ def main():
     # runs the parse_args method to store all the results into the params variable
     params = argparser.parse_args()
 
-    #### Ensure that mzml_file was passed, look in the params variable for the specified mzml_file. if you want to open precursor, it would be params.precursor_mz
     if params.mzml_file is None or params.mzml_file == "":
         print('ERROR: Parameter --mzml_file must be provided. See --help for more information')
         return
@@ -53,6 +56,12 @@ def main():
     if not os.path.isfile(params.mzml_file):
         print(f"ERROR: File '{params.mzml_file}' not found or not a file")
         return
+
+    root_mzml = params.mzml_file[params.mzml_file.rfind("\\")+1: params.mzml_file.rfind(".")]
+
+    has_pxd = False
+    if params.pxd is not None and params.pxd != "":
+        has_pxd = True
 
     has_MZ_check = False
     if not (params.precursor_mz is None or params.precursor_mz == 0.0):
@@ -168,8 +177,14 @@ def main():
                 # compute: how many peaks are in the bin? -> len(matchingPeaks)
                 # what is the average m/z? -> take the average of matchingPeaks
                 # what is the sum of the intensities?
-                if satisfy_requirements:
-                    spectra_data = ['HFX_9850_GVA_DLD1_2_180719', spectrum['index'], spectrum['precursorList']['precursor'][0]['selectedIonList']['selectedIon'][0]['selected ion m/z']]
+                if satisfy_requirements and has_pxd:
+                    scan_number = spectrum['index']
+                    spectra_data = [f'mzspec:{params.pxd}:{root_mzml}:scan:{scan_number}', spectrum['precursorList']['precursor'][0]['selectedIonList']['selectedIon'][0]['selected ion m/z']]
+                    if need_to_check_windows:
+                        spectra_data.append(matching_peaks)
+                    valid_spectra.append(spectra_data)
+                elif satisfy_requirements:
+                    spectra_data = [root_mzml, spectrum['index'], spectrum['precursorList']['precursor'][0]['selectedIonList']['selectedIon'][0]['selected ion m/z']]
                     if need_to_check_windows:
                         spectra_data.append(matching_peaks)
                     valid_spectra.append(spectra_data)
@@ -184,24 +199,69 @@ def main():
     print(f"The number of ms2spectra is {stats['ms2spectra']}")
     print(f"Number of valid spectra: {len(valid_spectra)}")
     # write out mz and intensity array
-    if need_to_check_windows:
+    if need_to_check_windows and has_pxd:
+        print_valid_spectra_peaks_pxd(valid_spectra, required_windows, optional_windows)
+    elif need_to_check_windows and not has_pxd:
         print_valid_spectra_peaks(valid_spectra, required_windows, optional_windows)
-    else: 
+    elif has_pxd: 
+        print_valid_spectra_pxd(valid_spectra)
+    else:
         print_valid_spectra(valid_spectra)
     print(f"INFO: Elapsed time: {t1-t0}")
     print(f"INFO: Processed {stats['counter']/(t1-t0)} spectra per second")
+
+def print_valid_spectra_peaks_pxd(valid_spectra, required_windows, optional_windows):
+    with open('valid_spectra.tsv', 'a') as file:
+        writer = csv.writer(file, delimiter='\t', lineterminator='\n') # separated by tabs
+        # writer = csv.writer(file) # separated by commas
+        # usi - of the letters mzspec:PXD000561:Adult_Frontalcortex_bRP_Elite_85_f09:scan:17555
+        # if PXD is specified, then make column 1 in the format above ^
+
+        spectra_table = []
+        header = ['USI', 'precursor m/z']
+        for index in range(required_windows + optional_windows):
+            header.append(f'peak {index + 1} n matches')
+            header.append(f'peak {index + 1} tallest m/z')
+            header.append(f'peak {index + 1} tallest intensity')
+        writer.writerow(header)
+        # at the end, add the number of peaks in each bin, the average m/z, and the sum of the intensities
+
+        spectra_table.append(header)
+        for spectra in valid_spectra:
+            # print(spectra)
+            spectra_data = [spectra[0]]
+            spectra_data.append(round(spectra[1], 4))
+
+            for current_peak in spectra[2]:
+                spectra_data.append(len(current_peak))
+                if len(current_peak) != 0:
+                    tallest_peak = current_peak[0]
+                    for matched_peak in current_peak:
+                        if tallest_peak[1] < matched_peak[1]: # change to [0] if comparing m/z instead
+                            tallest_peak = matched_peak
+                    spectra_data.append(round(tallest_peak[0], 4))
+                    spectra_data.append(int(tallest_peak[1]))
+                else:
+                    spectra_data.append('')
+                    spectra_data.append('')
+            
+            writer.writerow(spectra_data)
+            spectra_table.append(spectra_data)
+        # print(tabulate(spectra_table, headers='firstrow', tablefmt='grid'))
 
 def print_valid_spectra_peaks(valid_spectra, required_windows, optional_windows):
     with open('valid_spectra.tsv', 'a') as file:
         writer = csv.writer(file, delimiter='\t', lineterminator='\n') # separated by tabs
         # writer = csv.writer(file) # separated by commas
+        # usi - of the letters mzspec:PXD000561:Adult_Frontalcortex_bRP_Elite_85_f09:scan:17555
+        # if PXD is specified, then make column 1 in the format above ^
 
         spectra_table = []
         header = ['MS run name', 'scan number', 'precursor m/z']
         for index in range(required_windows + optional_windows):
             header.append(f'peak {index + 1} n matches')
             header.append(f'peak {index + 1} tallest m/z')
-            header.append(f'peak {index + 1} intensity')
+            header.append(f'peak {index + 1} tallest intensity')
         writer.writerow(header)
         # at the end, add the number of peaks in each bin, the average m/z, and the sum of the intensities
 
@@ -229,6 +289,23 @@ def print_valid_spectra_peaks(valid_spectra, required_windows, optional_windows)
             spectra_table.append(spectra_data)
         # print(tabulate(spectra_table, headers='firstrow', tablefmt='grid'))
 
+def print_valid_spectra_pxd(valid_spectra):
+    with open('valid_spectra.tsv', 'a') as file:
+        writer = csv.writer(file, delimiter='\t', lineterminator='\n') # separated by tabs
+        # writer = csv.writer(file) # separated by commas
+        spectra_table = []
+        header = ['USI', 'precursor m/z']
+        writer.writerow(header)
+
+        spectra_table.append(header)
+        for spectra in valid_spectra:
+            spectra_data = [spectra[0]]
+            spectra_data.append(round(spectra[1], 4))
+            writer.writerow(spectra_data)
+            spectra_table.append(spectra_data)
+
+    # print(tabulate(spectra_table, headers='firstrow', tablefmt='grid'))
+
 def print_valid_spectra(valid_spectra):
     with open('valid_spectra.tsv', 'a') as file:
         writer = csv.writer(file, delimiter='\t', lineterminator='\n') # separated by tabs
@@ -241,7 +318,7 @@ def print_valid_spectra(valid_spectra):
         for spectra in valid_spectra:
             spectra_data = [spectra[0]]
             spectra_data.append(spectra[1])
-            spectra_data.append(spectra[2])
+            spectra_data.append(round(spectra[2], 4))
             writer.writerow(spectra_data)
             spectra_table.append(spectra_data)
 
