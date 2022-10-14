@@ -32,18 +32,19 @@ import csv
 from tabulate import tabulate
 from pyteomics import mzml, auxiliary
 
+# focus on the range between 0 and 400 (peak)
+# as you read the 10000 spectra, keep track of all the peaks between 0 and 400 - create an array of bins of 0.0001, when you find
+# a peak, put it in the closest bin. after cycling through all the spectra, bin counts all the peaks i see, then sort them by
+# intensity and find the most common bin
+# see what constitutes one specific peak
+# top 50 ions, how many there are, and what fraction of spectra contain them
+# peak at 129.1026, the average of the peaks, what the standard deviation is of the measurements
+
 def main():
 
     # sets up a module with a description
     argparser = argparse.ArgumentParser(description='An example program that reads an mzML file sequentially')
-    argparser.add_argument('--pxd', action='store', help='ProteomeXchange Dataset identifier')
     argparser.add_argument('--mzml_file', action='store', help='Name of the mzML file to read')
-    argparser.add_argument('--precursor_mz', action='store', type=float, help='Precursor m/z to select')
-    argparser.add_argument('--tolerance_mz', action='store', type=float, help='Tolerance of a m/z and the measured peak m/z')
-    argparser.add_argument('--required_windows', action='store', help='Required windows that must show up')
-    argparser.add_argument('--tolerance_peaks', action='store', type=float, help='Tolerance of a m/z and the measured peak m/z')
-    argparser.add_argument('--minimum_optional_windows', action='store', type=int, help='Minimum number of optional peaks that show up')
-    argparser.add_argument('--optional_windows', action='store', help='Optional peaks that can show up')
 
     # runs the parse_args method to store all the results into the params variable
     params = argparser.parse_args()
@@ -58,43 +59,6 @@ def main():
         return
 
     root_mzml = params.mzml_file[params.mzml_file.rfind("\\")+1: params.mzml_file.rfind(".")]
-
-    has_pxd = False
-    if params.pxd is not None and params.pxd != "":
-        has_pxd = True
-
-    has_MZ_check = False
-    if not (params.precursor_mz is None or params.precursor_mz == 0.0):
-        has_MZ_check = True
-
-    # ensures there is always a tolerance
-    if params.tolerance_mz is None or params.tolerance_mz == 0.0:
-        params.tolerance_mz = 0.01
-
-    if params.tolerance_peaks is None or params.tolerance_peaks == 0.0:
-        params.tolerance_peaks = 0.01
-
-    if has_MZ_check:
-        lower_bound = params.precursor_mz - params.tolerance_mz
-        upper_bound = params.precursor_mz + params.tolerance_mz
-
-    need_to_check_windows = False
-    if params.required_windows is not None and params.required_windows != "":
-        required_windows_list = [float(i) for i in params.required_windows.split(',')]
-        need_to_check_windows = True
-        required_windows = len(required_windows_list)
-
-    if params.minimum_optional_windows is None or params.minimum_optional_windows == "":
-        params.minimum_optional_windows = 0
-
-    if params.optional_windows is not None and params.optional_windows != "":
-        optional_windows_list = [float(i) for i in params.optional_windows.split(',')]
-        optional_windows = len(optional_windows_list)
-        if optional_windows < params.minimum_optional_windows:
-            print(f"ERROR: Minimum optional windows is too small")
-            return
-    else:
-        optional_windows = 0
 
     valid_spectra = []
 
@@ -168,11 +132,11 @@ def main():
                                         continue
                                 optional_windows_found.append(current_peak)
 
-                        if optionals_found < params.minimum_optional_windows:
-                            satisfy_requirements = False
-                        else:
-                            for peak in optional_windows_found:
-                                matching_peaks.append(peak)
+                    if optionals_found < params.minimum_optional_windows:
+                        satisfy_requirements = False
+                    else:
+                        for peak in optional_windows_found:
+                            matching_peaks.append(peak)
                         
                 # find a way to use metadata of the scan, pull out the true scan number and not by adding 10000
                 scan_number = 10000 + spectrum['index']
