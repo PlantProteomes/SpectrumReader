@@ -15,7 +15,8 @@ import numpy as np
 import sys
 import csv
 
-from pyteomics import mzml, auxiliary
+from pyteomics import mzml, auxiliary, mass
+from collections import OrderedDict
 
 # focus on the range between 0 and 400 (peak)
 # as you read the 10000 spectra, keep track of all the peaks between 0 and 400 - create an array of bins of 0.0001, when you find
@@ -51,20 +52,20 @@ def main():
     by_strength = np.zeros((4000000,), dtype=int)
 
     all_peaks = []
-    #### Read spectra from the file
+    #### Read spectra from the file and isolate specific spectra
     t0 = timeit.default_timer()
     stats = { 'counter': 0, 'ms1spectra': 0, 'ms2spectra': 0 }
     with mzml.read(params.mzml_file) as reader:
         for spectrum in reader:
-            # if stats['counter'] == 0:
-                # auxiliary.print_tree(spectrum)
 
             #### Update counters and print progress
             stats['counter'] += 1
 
+            # start with a smaller sample size
             # if stats['counter'] == 101:
                 # break
 
+            # add most popular mz values to be printed out
             satisfy_requirements = True
             if spectrum['ms level'] == 1:
                 stats['ms1spectra'] += 1
@@ -78,8 +79,8 @@ def main():
                     else:
                         intensity = spectrum['intensity array'][index]
                         all_peaks.append(intensity)
-                        by_count[int(10000 * peak)] += 1
-                        by_intensity[int(10000 * peak)] += intensity
+                        by_count[int(10000 * peak + 0.5)] += 1
+                        by_intensity[int(10000 * peak + 0.5)] += intensity
                         smallest_peak_intensity = min(smallest_peak_intensity, intensity)
 
                 for index in range(len(spectrum['m/z array'])):
@@ -88,11 +89,7 @@ def main():
                         break
                     else:
                         intensity = spectrum['intensity array'][index]
-                        by_strength[int(10000 * peak)] += get_strength(intensity, smallest_peak_intensity)
-
-    # sort them by size
-    # find the average
-    # find the standard deviation
+                        by_strength[int(10000 * peak + 0.5)] += get_strength(intensity, smallest_peak_intensity)
 
             if stats['counter']/1000 == int(stats['counter']/1000):
                 print(f"  {stats['counter']}")
@@ -102,23 +99,61 @@ def main():
     print(f"INFO: Read {stats['counter']} spectra from {params.mzml_file}")
     print(f"The number of ms1spectra is {stats['ms1spectra']}")
     print(f"The number of ms2spectra is {stats['ms2spectra']}")
-    # print out top spectra
-    # GET THE HISTOGRAM WORKING!!
-    plt.hist(all_peaks, bins=200, range=[0, 20000])
-    plt.show()
-    # populate tallest_bins with only the tallest ones
-    # ex: 101.0714 1577 99204530 2857 <- disregard
-    # 101.0715 1789 225788258 3557 <- keep
-    # 101.0716 1054 57483130 1875 <- disregard
-    with open('popular_spectra.tsv', 'a') as file:
+
+    # create a histogram of all the intensities between 0 and 20000
+    # plt.hist(all_peaks, bins=200, range=[0, 20000])
+    # plt.show()
+
+    # print out top mz values and number of appearances in a file
+    with open('popular_spectra.tsv', 'w') as file:
         writer = csv.writer(file, delimiter='\t', lineterminator='\n')
-        tallest_bins = []
+        tallest_peaks = []
+        previous_peak = [0, 0]
+        printed = False
         for i in range(len(by_count)):
-            if by_count[i] > 100:
-                print(i/10000, by_count[i], by_intensity[i], by_strength[i])
-                data = [i/10000, by_count[i]]
-                writer.writerow(data)
-    
+            if by_count[i] >= 100:
+                if by_count[i] < previous_peak[1] and not printed:
+                    writer.writerow(previous_peak)
+                    tallest_peaks.append(previous_peak)
+                    printed = True
+                previous_peak = [i/10000, by_count[i]]
+            else:
+                if not printed and previous_peak[0] != 0:
+                    writer.writerow(previous_peak)
+                printed = False
+                previous_peak = [0, 0]
+
+    # extra step plotting for all tallest peaks
+    want_plot = False
+    if want_plot:
+        for peak in tallest_peaks:
+            mz_values = []
+            intensity_values = []
+            for index in range(31):
+                add_index = int(peak[0] * 10000 + index - 16)
+                mz_values.append(add_index / 10000)
+                intensity_values.append(by_count[add_index])
+            plt.step(mz_values, intensity_values, where='mid')
+            plt.show()
+
+    # creates a dictionary of pyteomics mass for 60 amino acids, then sorts it
+    ion_types = ['a', 'b', 'y']
+    amino_acids = ['A', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'K', 'L', 'M', 'N', 'P', 'Q', 'R', 'S', 'T', 'V', 'W', 'Y']
+    amino_acid_mass = {}
+
+    for acid in amino_acids:
+        for ion in ion_types:
+            amino_acid_mass[mass.calculate_mass(sequence=acid, ion_type=ion, charge=1)] = [acid, ion]
+
+    amino_acid_mass = OrderedDict(sorted(amino_acid_mass.items()))
+
+    for key in amino_acid_mass:
+        if key < 100:
+            continue
+        for peak in tallest_peaks:
+            if peak[0] > key - 0.001 and peak[0] < key + 0.001:
+                print(str(peak[0]) + '\t' + str(peak[1]) + '\t' + str(peak[0] - key) + '\t' + str(amino_acid_mass[key]))
+
     print(f"INFO: Elapsed time: {t1-t0}")
     print(f"INFO: Processed {stats['counter']/(t1-t0)} spectra per second")
 
