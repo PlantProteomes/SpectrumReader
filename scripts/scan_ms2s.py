@@ -104,6 +104,25 @@ def main():
     # plt.hist(all_peaks, bins=200, range=[0, 20000])
     # plt.show()
 
+    # creates a dictionary of pyteomics mass for 60 amino acids, then sorts it
+    ion_types = ['a', 'b', 'y']
+    amino_acids = ['A', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'K', 'L', 'M', 'N', 'P', 'Q', 'R', 'S', 'T', 'V', 'W', 'Y']
+    amino_acid_mass = {}
+
+    for acid in amino_acids:
+        for ion in ion_types:
+            acid_mass = mass.calculate_mass(sequence=acid, ion_type=ion, charge=1)
+            acid_mass = int(acid_mass * 10000 + 0.5) / 10000.0
+            amino_acid_mass[acid_mass] = [acid, ion]
+
+    amino_acid_mass = OrderedDict(sorted(amino_acid_mass.items()))
+
+    # for key in amino_acid_mass:
+        # for peak in tallest_peaks:
+            # if peak[0] > key - 0.002 and peak[0] < key + 0.002:
+                # print(str(peak[0]) + '\t' + str(peak[1]) + '\t' + str(peak[0] - key) + '\t' + str(amino_acid_mass[key]))
+                # break
+
     # print out top mz values and number of appearances in a file
     with open('popular_spectra.tsv', 'w') as file:
         writer = csv.writer(file, delimiter='\t', lineterminator='\n')
@@ -111,11 +130,19 @@ def main():
         previous_peak = [0, 0]
         printed = False
         for i in range(len(by_count)):
-            if by_count[i] >= 100:
+            if by_count[i] >= 50:
                 if by_count[i] < previous_peak[1] and not printed:
-                    writer.writerow(previous_peak)
                     tallest_peaks.append(previous_peak)
-                    printed = True
+                    for key in amino_acid_mass:
+                        if i/10000 > key - 0.002 and i/10000 < key + 0.002:
+                            previous_peak.append(key)
+                            previous_peak.append(amino_acid_mass[key])
+                            if not printed:
+                                writer.writerow(previous_peak)
+                                printed = True
+                    if not printed:
+                        writer.writerow(previous_peak)
+                        printed = True
                 previous_peak = [i/10000, by_count[i]]
             else:
                 if not printed and previous_peak[0] != 0:
@@ -135,24 +162,6 @@ def main():
                 intensity_values.append(by_count[add_index])
             plt.step(mz_values, intensity_values, where='mid')
             plt.show()
-
-    # creates a dictionary of pyteomics mass for 60 amino acids, then sorts it
-    ion_types = ['a', 'b', 'y']
-    amino_acids = ['A', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'K', 'L', 'M', 'N', 'P', 'Q', 'R', 'S', 'T', 'V', 'W', 'Y']
-    amino_acid_mass = {}
-
-    for acid in amino_acids:
-        for ion in ion_types:
-            amino_acid_mass[mass.calculate_mass(sequence=acid, ion_type=ion, charge=1)] = [acid, ion]
-
-    amino_acid_mass = OrderedDict(sorted(amino_acid_mass.items()))
-
-    for key in amino_acid_mass:
-        if key < 100:
-            continue
-        for peak in tallest_peaks:
-            if peak[0] > key - 0.001 and peak[0] < key + 0.001:
-                print(str(peak[0]) + '\t' + str(peak[1]) + '\t' + str(peak[0] - key) + '\t' + str(amino_acid_mass[key]))
 
     print(f"INFO: Elapsed time: {t1-t0}")
     print(f"INFO: Processed {stats['counter']/(t1-t0)} spectra per second")
