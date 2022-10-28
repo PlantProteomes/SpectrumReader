@@ -136,6 +136,7 @@ def main():
                     for key in amino_acid_mass:
                         if i/10000 > key - 0.002 and i/10000 < key + 0.002:
                             previous_peak.append(key)
+                            previous_peak.append(int(10000 * (i/10000 - key)) / 10000)
                             previous_peak.append(amino_acid_mass[key])
                             if not printed:
                                 writer.writerow(previous_peak)
@@ -151,7 +152,7 @@ def main():
                 previous_peak = [0, 0]
 
     # extra step plotting for all tallest peaks
-    want_plot = False
+    want_plot = True
     if want_plot:
         for peak in tallest_peaks:
             mz_values = []
