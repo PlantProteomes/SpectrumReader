@@ -46,6 +46,8 @@ def main():
 
     root_mzml = params.mzml_file[params.mzml_file.rfind("\\")+1: params.mzml_file.rfind(".")]
 
+    peak_correction_factor = 0.0006
+
     # create three arrays of 4 million for bins
     by_count = np.zeros((4000000,), dtype=int)
     by_intensity = np.zeros((4000000,), dtype=int)
@@ -74,6 +76,7 @@ def main():
                 smallest_peak_intensity = sys.maxsize
                 for index in range(len(spectrum['m/z array'])):
                     peak = spectrum['m/z array'][index]
+                    peak -= peak_correction_factor
                     if peak > 400:
                         break
                     else:
@@ -152,7 +155,7 @@ def main():
                 previous_peak = [0, 0]
 
     # extra step plotting for all tallest peaks
-    want_plot = True
+    want_plot = False
     if want_plot:
         for peak in tallest_peaks:
             mz_values = []
@@ -163,6 +166,29 @@ def main():
                 intensity_values.append(by_count[add_index])
             plt.step(mz_values, intensity_values, where='mid')
             plt.show()
+
+        # show all the graphs above in one graph, add some more labels (.set_label)
+        # have a line at the predicted location
+        # lines:
+        # ax[1,1].plot([0, 0], [0, 1], color="black", lw=1, linestyle="--")
+        # while testing, try first 20-30
+        # on the figure, identify the centroid m/z, if there is an identification, print that out too
+        # example of text:
+        # ax[1,1].text(600,9.0, 'string', horizontalalignment='right', verticalalignment='top', fontsize=12)
+
+        # fig, ax = plt.subplots(2,3,figsize=(8.5,11)) # can try 3, 5 or something if 2 by 3 works
+        # fig.subplots_adjust(top=0.98, bottom=0.05, left=0.12, right=0.98, hspace=0.2, wspace=0.38)
+        # have a set of horizontal and vertical counter variables
+        # x axis will be [0, 1], second one will be [0, 1, 2], have counters going between them
+        # ax is x axis by y axis, when the x > 2, go back to 0 and increase y
+        # bars = ax[0,0].bar(x,fraction_histogram,width=0.8)
+        # ax[0,0].bar_label(bars, labels=histogram_values_str)
+        # ax[0,0].set_title(f"Multiplicity of evidence for non-MS PE1 proteins")
+        # ax[0,0].set_xlabel('Number of categories of evidence per protein')
+        # ax[0,0].set_ylabel('Fraction of proteins')
+        # ax[0,0].set_ylim(0,0.6)
+        # plt.show()
+        # fig.savefig('combined.pdf', format='pdf', dpi=1200)
 
     print(f"INFO: Elapsed time: {t1-t0}")
     print(f"INFO: Processed {stats['counter']/(t1-t0)} spectra per second")
