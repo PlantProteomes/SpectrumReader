@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
 # must first change to scripts folder through "cd .\scripts\"
-# to run the program (use terminal): python scan_ms2s.py --mzml_file ..\data\HFX_9850_GVA_DLD1_2_180719.mzML
+# to run the program (use terminal): python scan_ms2s.py --mzml_file ..\data\HFX_9850_GVA_DLD1_2_180719.mzML --rows 3 --columns 5
 
 
 import os
@@ -17,20 +17,15 @@ import csv
 
 from pyteomics import mzml, auxiliary, mass
 from collections import OrderedDict
-
-# focus on the range between 0 and 400 (peak)
-# as you read the 10000 spectra, keep track of all the peaks between 0 and 400 - create an array of bins of 0.0001, when you find
-# a peak, put it in the closest bin. after cycling through all the spectra, bin counts all the peaks i see, then sort them by
-# intensity and find the most common bin
-# see what constitutes one specific peak
-# top 50 ions, how many there are, and what fraction of spectra contain them
-# peak at 129.1026, the average of the peaks, what the standard deviation is of the measurements
+from matplotlib.backends.backend_pdf import PdfPages
 
 def main():
 
     # sets up a module with a description
     argparser = argparse.ArgumentParser(description='An example program that reads an mzML file sequentially')
     argparser.add_argument('--mzml_file', action='store', help='Name of the mzML file to read')
+    argparser.add_argument('--rows', action='store', type=int, help='Number of rows for graphs')
+    argparser.add_argument('--columns', action='store', type=int, help='Number of columns for output')
 
     # runs the parse_args method to store all the results into the params variable
     params = argparser.parse_args()
@@ -44,14 +39,18 @@ def main():
         print(f"ERROR: File '{params.mzml_file}' not found or not a file")
         return
 
-    root_mzml = params.mzml_file[params.mzml_file.rfind("\\")+1: params.mzml_file.rfind(".")]
+    if params.rows is None or params.rows == "":
+        params.rows = 5
+    
+    if params.columns is None or params.columns == "":
+        params.columns = 3
 
     peak_correction_factor = 0.0006
 
     # create three arrays of 4 million for bins
     by_count = np.zeros((4000000,), dtype=int)
-    by_intensity = np.zeros((4000000,), dtype=int)
-    by_strength = np.zeros((4000000,), dtype=int)
+    # by_intensity = np.zeros((4000000,), dtype=int)
+    # by_strength = np.zeros((4000000,), dtype=int)
 
     all_peaks = []
     #### Read spectra from the file and isolate specific spectra
@@ -83,16 +82,16 @@ def main():
                         intensity = spectrum['intensity array'][index]
                         all_peaks.append(intensity)
                         by_count[int(10000 * peak + 0.5)] += 1
-                        by_intensity[int(10000 * peak + 0.5)] += intensity
-                        smallest_peak_intensity = min(smallest_peak_intensity, intensity)
+                        # by_intensity[int(10000 * peak + 0.5)] += intensity
+                        # smallest_peak_intensity = min(smallest_peak_intensity, intensity)
 
-                for index in range(len(spectrum['m/z array'])):
-                    peak = spectrum['m/z array'][index]
-                    if peak > 400:
-                        break
-                    else:
-                        intensity = spectrum['intensity array'][index]
-                        by_strength[int(10000 * peak + 0.5)] += get_strength(intensity, smallest_peak_intensity)
+                # for index in range(len(spectrum['m/z array'])):
+                    # peak = spectrum['m/z array'][index]
+                    # if peak > 400:
+                        # break
+                    # else:
+                        # intensity = spectrum['intensity array'][index]
+                        # by_strength[int(10000 * peak + 0.5)] += get_strength(intensity, smallest_peak_intensity)
 
             if stats['counter']/1000 == int(stats['counter']/1000):
                 print(f"  {stats['counter']}")
@@ -108,8 +107,40 @@ def main():
     # plt.show()
 
     # creates a dictionary of pyteomics mass for 60 amino acids, then sorts it
+    # make this more complex to include the table in the second issue
+    # while I loop through the amino acids, if the ion type is a, loop over the mass modifications of the issue, try to compute
+    # the mass deltas based off the molecular compositions and add the new mass to the list
+    # syntax to use:
+    # for histodine: IH (instead of H type a)
+    # for histodine b ions: IH+CO (instead of H type b)
+    # for histodine y ions: IH+CO+H2O (instead of H type y)
+    # for first pass, ignore duplicates to see it works properly (gets it through b & y roots, but also the special table)
+    # in the future, can remove duplicates
     ion_types = ['a', 'b', 'y']
     amino_acids = ['A', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'K', 'L', 'M', 'N', 'P', 'Q', 'R', 'S', 'T', 'V', 'W', 'Y']
+    aa_immonium_losses = {
+            'G': [],
+            'A': [],
+            'S': [],
+            'P': [],
+            'V': [ '-CH2-NH3', '-NH3', '+CO-NH3-CH2' ],
+            'T': [ '+CO-NH3'],
+            'C': [],
+            'L': [ '-C3H6', '-CH2' ],
+            'I': [ '-C3H6', '-CH2' ],
+            'N': [ '-NH3' ],
+            'D': [ '-H2O' ],
+            'Q': [ '-CO-NH3', '-NH3', '+CO'],
+            'K': [ '+CO-NH3', '-NH3', '+CO', '-C2H4-NH3', '+CO+H2ON2', '-NH3', '-C4H7N', '+CO+CO-C2H3N3', '+CO+H2O'],
+            'E': [],
+            'M': [ '-C2H2-NH3'],
+            'H': [ '-CH2N', '+CO-NH2', '+CO-NH3', '+CO-NH', '+CO+H2O' ],
+            'F': [ '-CH3N'],
+            'R': [ '-C3H6N2', '-CH5N3', '-CH6N2', '-C2H4N2', '-CH2N2', '-CH3N', '-NH3', '-C4H7N', '+H2O+H2O-N3H7', '+CO+H2O' ],
+            'Y': [ '-CO-NH3', '-CH3N' ],
+            'W': [ '+CO', '-C4H6N2', '-C2H4N', '-CH3N', '-CHN', '+CO-NH3', '-NH3'],
+        }
+    isotopic_deltas = {}
     amino_acid_mass = {}
 
     for acid in amino_acids:
@@ -117,6 +148,7 @@ def main():
             acid_mass = mass.calculate_mass(sequence=acid, ion_type=ion, charge=1)
             acid_mass = int(acid_mass * 10000 + 0.5) / 10000.0
             amino_acid_mass[acid_mass] = [acid, ion]
+            
 
     amino_acid_mass = OrderedDict(sorted(amino_acid_mass.items()))
 
@@ -167,28 +199,55 @@ def main():
             plt.step(mz_values, intensity_values, where='mid')
             plt.show()
 
-        # show all the graphs above in one graph, add some more labels (.set_label)
-        # have a line at the predicted location
-        # lines:
-        # ax[1,1].plot([0, 0], [0, 1], color="black", lw=1, linestyle="--")
-        # while testing, try first 20-30
-        # on the figure, identify the centroid m/z, if there is an identification, print that out too
-        # example of text:
-        # ax[1,1].text(600,9.0, 'string', horizontalalignment='right', verticalalignment='top', fontsize=12)
+    save_plot = True
+    if save_plot:
+        x = 0
+        y = 0
+        pdf = PdfPages('common_peaks.pdf')
+        fig, ax = plt.subplots(params.rows,params.columns,figsize=(8.5,11))
+        for index in range(15):
+            peak = tallest_peaks[index]
+            fig.subplots_adjust(top=0.98, bottom=0.05, left=0.12, right=0.98, hspace=0.2, wspace=0.38)
+            mz_values = []
+            intensity_values = []
+            for index in range(31):
+                # change it to be 0
+                add_index = int(peak[0] * 10000 + index - 16)
+                mz_values.append(add_index / 10000 - peak[0])
+                intensity_values.append(by_count[add_index])
+            # change the axis labels to be a smaller text
+            ax[x,y].step(mz_values, intensity_values, where='mid')
+            if len(peak) == 5:
+                ax[x,y].axvline(x=peak[3], color='black', lw=1, linestyle='--')
+                # add text later
+                # ax[x,y].text(200, 200, f'{peak[4][0],peak[4][1]}', horizontalalignment='right', verticalalignment='top', fontsize="small")
+                    # on the figure, identify the centroid m/z, if there is an identification, print that out too
+                    # example of text:
+                    # ax[1,1].text(600,9.0, 'string', horizontalalignment='right', verticalalignment='top', fontsize=12)
+                # use the upper left corner box to replace the title so it doesn't run into the other axis
+                # might have to put the value on a new line and indent it
+                # peak center: (the value, like 129.0109)
+                # ion m/z: (if identified, the value, like 129.0108)
+                # ion id: H type a
+                ax[x,y].set_title(f"Peak {peak[0]}, Amino Acid {peak[4][0]} type {peak[4][1]}", fontsize="xx-small")
+            else:
+                # use the upper left corner box to replace the title so it doesn't run into the other axis
+                # peak center: (the value, like 129.0109)
+                # ion m/z: (if identified, the value, like 129.0108)
+                # ion id: H type a
+                ax[x,y].set_title(f"Peak {peak[0]}", fontsize="xx-small")
 
-        # fig, ax = plt.subplots(2,3,figsize=(8.5,11)) # can try 3, 5 or something if 2 by 3 works
-        # fig.subplots_adjust(top=0.98, bottom=0.05, left=0.12, right=0.98, hspace=0.2, wspace=0.38)
-        # have a set of horizontal and vertical counter variables
-        # x axis will be [0, 1], second one will be [0, 1, 2], have counters going between them
-        # ax is x axis by y axis, when the x > 2, go back to 0 and increase y
-        # bars = ax[0,0].bar(x,fraction_histogram,width=0.8)
-        # ax[0,0].bar_label(bars, labels=histogram_values_str)
-        # ax[0,0].set_title(f"Multiplicity of evidence for non-MS PE1 proteins")
-        # ax[0,0].set_xlabel('Number of categories of evidence per protein')
-        # ax[0,0].set_ylabel('Fraction of proteins')
-        # ax[0,0].set_ylim(0,0.6)
-        # plt.show()
-        # fig.savefig('combined.pdf', format='pdf', dpi=1200)
+            # creates a new figure if full
+            y += 1
+            y %= params.columns
+            if y == 0:
+                x += 1
+                x %= params.rows
+                if x == 0:
+                    pdf.savefig(fig)
+                    fig, ax = plt.subplots(params.rows,params.columns,figsize=(8.5,11))
+        
+        pdf.close()
 
     print(f"INFO: Elapsed time: {t1-t0}")
     print(f"INFO: Processed {stats['counter']/(t1-t0)} spectra per second")
