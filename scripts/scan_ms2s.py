@@ -3,6 +3,9 @@
 # must first change to scripts folder through "cd .\scripts\"
 # to run the program (use terminal): python scan_ms2s.py --mzml_file ..\data\HFX_9850_GVA_DLD1_2_180719.mzML --rows 3 --columns 5
 
+# close matches, but not close enough?
+# W-NH3 - 142.0651
+# line 59 in output - 142.1224, 67 appearances
 
 import os
 import argparse
@@ -52,55 +55,58 @@ def main():
     # by_intensity = np.zeros((4000000,), dtype=int)
     # by_strength = np.zeros((4000000,), dtype=int)
 
-    all_peaks = []
-    #### Read spectra from the file and isolate specific spectra
-    t0 = timeit.default_timer()
-    stats = { 'counter': 0, 'ms1spectra': 0, 'ms2spectra': 0 }
-    with mzml.read(params.mzml_file) as reader:
-        for spectrum in reader:
+    check_spectra = True
+    if check_spectra:
+        all_peaks = []
+        #### Read spectra from the file and isolate specific spectra
+        t0 = timeit.default_timer()
+        stats = { 'counter': 0, 'ms1spectra': 0, 'ms2spectra': 0 }
+        
+        with mzml.read(params.mzml_file) as reader:
+            for spectrum in reader:
 
-            #### Update counters and print progress
-            stats['counter'] += 1
+                #### Update counters and print progress
+                stats['counter'] += 1
 
-            # start with a smaller sample size
-            # if stats['counter'] == 101:
-                # break
+                # start with a smaller sample size
+                # if stats['counter'] == 101:
+                    # break
 
-            # add most popular mz values to be printed out
-            satisfy_requirements = True
-            if spectrum['ms level'] == 1:
-                stats['ms1spectra'] += 1
-            elif spectrum['ms level'] == 2:
-                stats['ms2spectra'] += 1
-                smallest_peak_intensity = sys.maxsize
-                for index in range(len(spectrum['m/z array'])):
-                    peak = spectrum['m/z array'][index]
-                    peak -= peak_correction_factor
-                    if peak > 400:
-                        break
-                    else:
-                        intensity = spectrum['intensity array'][index]
-                        all_peaks.append(intensity)
-                        by_count[int(10000 * peak + 0.5)] += 1
-                        # by_intensity[int(10000 * peak + 0.5)] += intensity
-                        # smallest_peak_intensity = min(smallest_peak_intensity, intensity)
+                # add most popular mz values to be printed out
+                satisfy_requirements = True
+                if spectrum['ms level'] == 1:
+                    stats['ms1spectra'] += 1
+                elif spectrum['ms level'] == 2:
+                    stats['ms2spectra'] += 1
+                    smallest_peak_intensity = sys.maxsize
+                    for index in range(len(spectrum['m/z array'])):
+                        peak = spectrum['m/z array'][index]
+                        peak -= peak_correction_factor
+                        if peak > 400:
+                            break
+                        else:
+                            intensity = spectrum['intensity array'][index]
+                            all_peaks.append(intensity)
+                            by_count[int(10000 * peak + 0.5)] += 1
+                            # by_intensity[int(10000 * peak + 0.5)] += intensity
+                            # smallest_peak_intensity = min(smallest_peak_intensity, intensity)
 
-                # for index in range(len(spectrum['m/z array'])):
-                    # peak = spectrum['m/z array'][index]
-                    # if peak > 400:
-                        # break
-                    # else:
-                        # intensity = spectrum['intensity array'][index]
-                        # by_strength[int(10000 * peak + 0.5)] += get_strength(intensity, smallest_peak_intensity)
+                    # for index in range(len(spectrum['m/z array'])):
+                        # peak = spectrum['m/z array'][index]
+                        # if peak > 400:
+                            # break
+                        # else:
+                            # intensity = spectrum['intensity array'][index]
+                            # by_strength[int(10000 * peak + 0.5)] += get_strength(intensity, smallest_peak_intensity)
 
-            if stats['counter']/1000 == int(stats['counter']/1000):
-                print(f"  {stats['counter']}")
+                if stats['counter']/1000 == int(stats['counter']/1000):
+                    print(f"  {stats['counter']}")
 
-    #### Print final timing information
-    t1 = timeit.default_timer()
-    print(f"INFO: Read {stats['counter']} spectra from {params.mzml_file}")
-    print(f"The number of ms1spectra is {stats['ms1spectra']}")
-    print(f"The number of ms2spectra is {stats['ms2spectra']}")
+        #### Print final timing information
+        t1 = timeit.default_timer()
+        print(f"INFO: Read {stats['counter']} spectra from {params.mzml_file}")
+        print(f"The number of ms1spectra is {stats['ms1spectra']}")
+        print(f"The number of ms2spectra is {stats['ms2spectra']}")
 
     # create a histogram of all the intensities between 0 and 20000
     # plt.hist(all_peaks, bins=200, range=[0, 20000])
@@ -141,16 +147,38 @@ def main():
             'W': [ '+CO', '-C4H6N2', '-C2H4N', '-CH3N', '-CHN', '+CO-NH3', '-NH3'],
         }
     isotopic_deltas = {}
-    amino_acid_mass = {}
+    amino_acid_mass = []
 
+    for isotope in aa_immonium_losses:
+        delta_masses = {}
+        for variant in aa_immonium_losses[isotope]:
+            delta_mass = 0
+            variant_add = variant.split('-')[0].split('+')[1:]
+            variant_subtract = variant.split('-')[1:]
+            for variant_formula in variant_add:
+                delta_mass += mass.calculate_mass(formula=variant_formula)
+            for variant_formula in variant_subtract:
+                delta_mass -= mass.calculate_mass(formula=variant_formula)
+            delta_masses[variant] = delta_mass
+        isotopic_deltas[isotope] = delta_masses
+    
     for acid in amino_acids:
         for ion in ion_types:
             acid_mass = mass.calculate_mass(sequence=acid, ion_type=ion, charge=1)
             acid_mass = int(acid_mass * 10000 + 0.5) / 10000.0
-            amino_acid_mass[acid_mass] = [acid, ion]
-            
+            amino_acid_mass.append([acid_mass, acid, ion])
 
-    amino_acid_mass = OrderedDict(sorted(amino_acid_mass.items()))
+            if ion == 'a':
+                for isotope in isotopic_deltas[acid]:
+                    print(acid + isotope)
+                    acid_mass = mass.calculate_mass(sequence=acid, ion_type=ion, charge=1)
+                    acid_mass += isotopic_deltas[acid][isotope]
+                    acid_mass = int(acid_mass * 10000 + 0.5) / 10000.0
+                    print(acid_mass)
+                    amino_acid_mass.append([acid_mass, acid, ion + isotope])
+
+    sorted(amino_acid_mass)
+    # print(amino_acid_mass)
 
     # for key in amino_acid_mass:
         # for peak in tallest_peaks:
@@ -159,98 +187,96 @@ def main():
                 # break
 
     # print out top mz values and number of appearances in a file
-    with open('popular_spectra.tsv', 'w') as file:
-        writer = csv.writer(file, delimiter='\t', lineterminator='\n')
-        tallest_peaks = []
-        previous_peak = [0, 0]
-        printed = False
-        for i in range(len(by_count)):
-            if by_count[i] >= 50:
-                if by_count[i] < previous_peak[1] and not printed:
-                    tallest_peaks.append(previous_peak)
-                    for key in amino_acid_mass:
-                        if i/10000 > key - 0.002 and i/10000 < key + 0.002:
-                            previous_peak.append(key)
-                            previous_peak.append(int(10000 * (i/10000 - key)) / 10000)
-                            previous_peak.append(amino_acid_mass[key])
-                            if not printed:
-                                writer.writerow(previous_peak)
-                                printed = True
-                    if not printed:
+    if check_spectra:
+        with open('popular_spectra.tsv', 'w') as file:
+            writer = csv.writer(file, delimiter='\t', lineterminator='\n')
+            tallest_peaks = []
+            previous_peak = [0, 0]
+            printed = False
+            for i in range(len(by_count)):
+                if by_count[i] >= 50:
+                    if by_count[i] < previous_peak[1] and not printed:
+                        for amino_acid in amino_acid_mass:
+                            if i/10000 > amino_acid[0] - 0.002 and i/10000 < amino_acid[0] + 0.002:
+                                if len(previous_peak) == 5 and previous_peak[4] != amino_acid[1:]:
+                                    printed = False
+                                    previous_peak = [i/10000, by_count[i]]
+                                previous_peak.append(amino_acid[0])
+                                previous_peak.append(int(10000 * (i/10000 - amino_acid[0])) / 10000)
+                                previous_peak.append(amino_acid[1:])
+                                if not printed:
+                                    tallest_peaks.append(previous_peak)
+                                    writer.writerow(previous_peak)
+                                    printed = True
+                        if not printed:
+                            tallest_peaks.append(previous_peak)
+                            writer.writerow(previous_peak)
+                            printed = True
+                    previous_peak = [i/10000, by_count[i]]
+                else:
+                    if not printed and previous_peak[0] != 0:
+                        tallest_peaks.append(previous_peak)
                         writer.writerow(previous_peak)
-                        printed = True
-                previous_peak = [i/10000, by_count[i]]
-            else:
-                if not printed and previous_peak[0] != 0:
-                    writer.writerow(previous_peak)
-                printed = False
-                previous_peak = [0, 0]
+                    printed = False
+                    previous_peak = [0, 0]
 
-    # extra step plotting for all tallest peaks
-    want_plot = False
-    if want_plot:
-        for peak in tallest_peaks:
-            mz_values = []
-            intensity_values = []
-            for index in range(31):
-                add_index = int(peak[0] * 10000 + index - 16)
-                mz_values.append(add_index / 10000)
-                intensity_values.append(by_count[add_index])
-            plt.step(mz_values, intensity_values, where='mid')
-            plt.show()
+        # extra step plotting for all tallest peaks
+        want_plot = False
+        if want_plot:
+            for peak in tallest_peaks:
+                mz_values = []
+                intensity_values = []
+                for index in range(31):
+                    add_index = int(peak[0] * 10000 + index - 16)
+                    mz_values.append(add_index / 10000)
+                    intensity_values.append(by_count[add_index])
+                plt.step(mz_values, intensity_values, where='mid')
+                plt.show()
 
-    save_plot = True
-    if save_plot:
-        x = 0
-        y = 0
-        pdf = PdfPages('common_peaks.pdf')
-        fig, ax = plt.subplots(params.rows,params.columns,figsize=(8.5,11))
-        for index in range(15):
-            peak = tallest_peaks[index]
-            fig.subplots_adjust(top=0.98, bottom=0.05, left=0.12, right=0.98, hspace=0.2, wspace=0.38)
-            mz_values = []
-            intensity_values = []
-            for index in range(31):
-                # change it to be 0
-                add_index = int(peak[0] * 10000 + index - 16)
-                mz_values.append(add_index / 10000 - peak[0])
-                intensity_values.append(by_count[add_index])
-            # change the axis labels to be a smaller text
-            ax[x,y].step(mz_values, intensity_values, where='mid')
-            if len(peak) == 5:
-                ax[x,y].axvline(x=peak[3], color='black', lw=1, linestyle='--')
-                # add text later
-                # ax[x,y].text(200, 200, f'{peak[4][0],peak[4][1]}', horizontalalignment='right', verticalalignment='top', fontsize="small")
-                    # on the figure, identify the centroid m/z, if there is an identification, print that out too
-                    # example of text:
-                    # ax[1,1].text(600,9.0, 'string', horizontalalignment='right', verticalalignment='top', fontsize=12)
-                # use the upper left corner box to replace the title so it doesn't run into the other axis
-                # might have to put the value on a new line and indent it
-                # peak center: (the value, like 129.0109)
-                # ion m/z: (if identified, the value, like 129.0108)
-                # ion id: H type a
-                ax[x,y].set_title(f"Peak {peak[0]}, Amino Acid {peak[4][0]} type {peak[4][1]}", fontsize="xx-small")
-            else:
-                # use the upper left corner box to replace the title so it doesn't run into the other axis
-                # peak center: (the value, like 129.0109)
-                # ion m/z: (if identified, the value, like 129.0108)
-                # ion id: H type a
-                ax[x,y].set_title(f"Peak {peak[0]}", fontsize="xx-small")
+        save_plot = True
+        if save_plot:
+            x = 0
+            y = 0
+            pdf = PdfPages('common_peaks.pdf')
+            fig, ax = plt.subplots(params.rows,params.columns,figsize=(8.5,11))
+            for peak in tallest_peaks:
+                fig.subplots_adjust(top=0.98, bottom=0.05, left=0.12, right=0.98, hspace=0.2, wspace=0.38)
+                mz_values = []
+                intensity_values = []
+                for index in range(31):
+                    # change it to be 0
+                    add_index = int(peak[0] * 10000 + index - 16)
+                    mz_values.append(add_index / 10000 - peak[0])
+                    intensity_values.append(by_count[add_index])
+                # change the axis labels to be a smaller text
+                ax[x,y].step(mz_values, intensity_values, where='mid')
+                ax[x,y].tick_params(axis='x', labelsize='xx-small')
+                ax[x,y].locator_params(axis='x', nbins=5)
+                # ax[x,y].set_xticks([-0.0015, -0.0007, 0, 0.0007, 0.0015])
+                ax[x,y].tick_params(axis='y', labelsize='xx-small')
+                if len(peak) == 5:
+                    ax[x,y].axvline(x=peak[3], color='black', lw=1, linestyle='--')
+                    ax[x,y].text(-0.0017, 45*max(intensity_values)/64, f'peak center: \n{peak[0]}\nion m/z: \n{peak[2]}\nion id: \n{peak[4][0]} type {peak[4][1]}', fontsize='xx-small')
+                    # ax[x,y].set_title(f"Peak {peak[0]}, Amino Acid {peak[4][0]} type {peak[4][1]}", fontsize="xx-small")
+                else:
+                    ax[x,y].text(-0.0017, 15*max(intensity_values)/16, f'peak center: \n{peak[0]}', fontsize='xx-small')
+                    # ax[x,y].set_title(f"Peak {peak[0]}", fontsize="xx-small")
 
-            # creates a new figure if full
-            y += 1
-            y %= params.columns
-            if y == 0:
-                x += 1
-                x %= params.rows
-                if x == 0:
-                    pdf.savefig(fig)
-                    fig, ax = plt.subplots(params.rows,params.columns,figsize=(8.5,11))
-        
-        pdf.close()
+                # creates a new figure if full
+                y += 1
+                y %= params.columns
+                if y == 0:
+                    x += 1
+                    x %= params.rows
+                    if x == 0:
+                        pdf.savefig(fig)
+                        fig, ax = plt.subplots(params.rows,params.columns,figsize=(8.5,11))
+            
+            pdf.savefig(fig)
+            pdf.close()
 
-    print(f"INFO: Elapsed time: {t1-t0}")
-    print(f"INFO: Processed {stats['counter']/(t1-t0)} spectra per second")
+        print(f"INFO: Elapsed time: {t1-t0}")
+        print(f"INFO: Processed {stats['counter']/(t1-t0)} spectra per second")
 
 def get_strength(intensity, smallest_peak_intensity):
     if intensity <= 3 * smallest_peak_intensity:
