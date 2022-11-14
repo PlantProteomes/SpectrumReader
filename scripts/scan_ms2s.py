@@ -20,7 +20,7 @@ from matplotlib.backends.backend_pdf import PdfPages
 
 class MSRunPeakFinder:
 
-    def __init__(self, file_name, rows, columns):
+    def __init__(self, file_name, rows, columns, tolerance):
 
         # variables declaration
         self.file_name = file_name
@@ -44,10 +44,10 @@ class MSRunPeakFinder:
             self.columns = 3
         else:
             self.columns = rows
-        # if tolerance is None or tolerance <= 0:
-            # self.tolerance = 0.002
-        # else:
-            # self.olerance = tolerance
+        if tolerance is None or tolerance <= 0:
+            self.tolerance = 0.002
+        else:
+            self.tolerance = tolerance
 
         # verify valid file to read
         if file_name is None or file_name == "":
@@ -114,8 +114,14 @@ class MSRunPeakFinder:
         amino_acid_modifications = {
             'C[Carbamidomethyl]': {'mz': 57.021464, 'amino acid': 'C'},
             'M[Oxidation]': {'mz': 15.994915, 'amino acid': 'M'}
-        } # append this to amino_acids using the key, treat it as another amino acid, everything I do
-        # downstream (such as pairs of amino acids), do it with Carbamidomethyl again
+        }
+
+        for key in amino_acid_modifications:
+            amino_acids.append(key)
+
+        amino_acids.sort()
+        print(amino_acids)
+
         aa_immonium_losses = {
                 'G': [],
                 'A': [],
@@ -156,37 +162,57 @@ class MSRunPeakFinder:
             modification_deltas[modification] = delta_masses
         
         # populate amino_acid_mass with theoretical ions and their mass
-        # when giving the sequence = acid, if possible on line 162, if you give it C[Carbamidomethyl], it will work but most likely it will give an error
-        # if it has a bracket, do something special, then add the m/z (57.x) to the end
         for acid in amino_acids:
             for ion in ion_types:
-                acid_mass = mass.calculate_mass(sequence=acid, ion_type=ion, charge=1)
-                acid_mass = int(acid_mass * 10000 + 0.5) / 10000.0
+                if len(acid) == 1:
+                    base_acid_mass = mass.calculate_mass(sequence=acid, ion_type=ion, charge=1)
+                else:
+                    base_acid_mass = amino_acid_modifications[acid]['mz'] + get_modification(ion)
+
+                base_acid_mass = int(base_acid_mass * 10000 + 0.5) / 10000.0
 
                 # add possible modifications, but only for a ions
                 if ion == 'a':
                     # add base a ion
-                    self.known_ions.append([acid_mass, 'I' + acid])
+                    self.known_ions.append([base_acid_mass, 'I' + acid])
                     # add base a ion's isotope
-                    self.known_ions.append([int(10000 * (acid_mass + 1.003355)) / 10000, 'I' + acid + '+i'])
+                    self.known_ions.append([int(10000 * (base_acid_mass + 1.003355)) / 10000, 'I' + acid + '+i'])
                     # check if there are any possible modifications, if there are, add them too
-                    for modification in modification_deltas[acid]:
-                        acid_mass = mass.calculate_mass(sequence=acid, ion_type=ion, charge=1)
-                        acid_mass += modification_deltas[acid][modification]
+                    for modification in modification_deltas[acid[0]]:
+                        acid_mass = base_acid_mass
+                        acid_mass += modification_deltas[acid[0]][modification]
                         acid_mass = int(acid_mass * 10000 + 0.5) / 10000.0
                         self.known_ions.append([acid_mass, 'I' + acid + modification])
                 # add b and y ions
                 else:
-                    self.known_ions.append([acid_mass, 'I' + acid + ion])
+                    self.known_ions.append([base_acid_mass, 'I' + acid + ion])
+        print(self.known_ions)
 
-        # another loop to do pairs - do it for a, b, and y for all combinations of 2 amino acids
-        # always sort them so the lower one is first (alphanumerically one is first)
-        # AS, don't bother with SA, but do include AA or CC
-        # have a list of amino_acid_modifications - goes into known_ions list and this pair list
-        # treat C[carbamidomethyl] as another amino acid
-        # http://www.unimod.org/modifications_list.php? - login as guest, use monoisotopic mass
+        # added more nested for loops to identify pairs of amino acids (i.e. A and A)
+        for index_1 in range(len(amino_acids)):
+            for ion_1 in ion_types:
+                pair_acid_1 = amino_acids[index_1]
+                if len(pair_acid_1) == 1:
+                    pair_mass_1 = mass.calculate_mass(sequence=pair_acid_1, ion_type=ion_1, charge=1)
+                else:
+                    pair_mass_1 = amino_acid_modifications[pair_acid_1]['mz'] + get_modification(ion_1)
+                if ion_1 != 'a':
+                    pair_acid_1 += ion_1
+                for index_2 in range(len(amino_acids) - index_1):
+                    index_2 += index_1
+                    for ion_2 in ion_types:
+                        pair_acid_2 = amino_acids[index_2]
+                        if len(pair_acid_2) == 1:
+                            pair_mass_2 = mass.calculate_mass(sequence=pair_acid_2, ion_type=ion_2, charge=1)
+                        else:
+                            pair_mass_2 = amino_acid_modifications[pair_acid_2]['mz'] + get_modification(ion_2)
+                        if ion_2 != 'a':
+                            pair_acid_2 += ion_2
+                        
+                        pair_mass = int(10000 * (pair_mass_1 + pair_mass_2)) / 10000
+                        self.known_ions.append([pair_mass, 'I' + pair_acid_1 + pair_acid_2])
 
-        sorted(self.known_ions)
+        self.known_ions.sort()
 
     def find_peaks(self):
         # scan through peaks to find all peaks with over 50
@@ -210,10 +236,9 @@ class MSRunPeakFinder:
         for index in range(len(self.observed_peaks)):
             peak = self.observed_peaks[index]
             for amino_acid in self.known_ions:
-                if peak[0] > amino_acid[0] - 0.002 and peak[0] < amino_acid[0] + 0.002:
-                    self.observed_peaks[index].append(amino_acid[0])
-                    self.observed_peaks[index].append(int(10000*(amino_acid[0] - peak[0]) + 0.5) / 10000)
-                    self.observed_peaks[index].append(amino_acid[1])
+                if peak[0] > amino_acid[0] - self.tolerance and peak[0] < amino_acid[0] + self.tolerance:
+                    identified_peak = [amino_acid[0], int(10000*(amino_acid[0] - peak[0]) + 0.5) / 10000, amino_acid[1]]
+                    self.observed_peaks[index].append(identified_peak)
 
     def write_output(self):
         with open('popular_spectra.tsv', 'w') as file:
@@ -252,13 +277,17 @@ class MSRunPeakFinder:
             ax[x,y].locator_params(axis='x', nbins=5)
             # ax[x,y].set_xticks([-0.0015, -0.0007, 0, 0.0007, 0.0015])
             ax[x,y].tick_params(axis='y', labelsize='xx-small')
-            if len(peak) == 5:
-                ax[x,y].axvline(x=peak[3], color='black', lw=1, linestyle='--')
-                # show all possible identifications in the text, change the way it is written "IQ"
-                ax[x,y].text(-0.0017, 45*max(intensity_values)/64, f'peak center: \n{peak[0]}\nion m/z: \n{peak[2]}\nion id: \n{peak[4][0]} type {peak[4][1]}', fontsize='xx-small')
-                # ax[x,y].set_title(f"Peak {peak[0]}, Amino Acid {peak[4][0]} type {peak[4][1]}", fontsize="xx-small")
+            if len(peak) >= 3:
+                ax[x,y].axvline(x=peak[2][0] - peak[0], color='black', lw=1, linestyle='--')
+                index = 2
+                identified_ion_name = ''
+                while index <= len(peak) - 1:
+                    identified_ion_name += peak[index][2] + '\n'
+                    index += 1
+                ax[x,y].text(-0.0017, max(intensity_values) * 1.03, f'peak center: \n{peak[0]}\nion m/z: \n{peak[2][0]}\nion id: \n{identified_ion_name}', fontsize='xx-small', ha='left', va='top')
+                # ax[x,y].set_title(f"Peak {peak[0]}, Amino Acid {peak[4]}", fontsize="xx-small")
             else:
-                ax[x,y].text(-0.0017, 15*max(intensity_values)/16, f'peak center: \n{peak[0]}', fontsize='xx-small')
+                ax[x,y].text(-0.0017, max(intensity_values) * 1.03, f'peak center: \n{peak[0]}', fontsize='xx-small', ha='left', va='top',)
                 # ax[x,y].set_title(f"Peak {peak[0]}", fontsize="xx-small")
 
             # creates a new figure if full
@@ -293,6 +322,14 @@ def get_strength(intensity, smallest_peak_intensity):
     else:
         return 4
 
+def get_modification(ion):
+    if ion == 'a':
+        return 0
+    elif ion == 'b':
+        return mass.calculate_mass(formula='CO')
+    elif ion == 'y':
+        return mass.calculate_mass(formula='CO') + mass.calculate_mass(formula='H2O')
+
 # put main at the end of the program, define identify peaks method first
 def main():
 
@@ -300,10 +337,11 @@ def main():
     argparser.add_argument('--mzml_file', action='store', help='Name of the mzML file to read')
     argparser.add_argument('--rows', action='store', type=int, help='Number of rows for graphs')
     argparser.add_argument('--columns', action='store', type=int, help='Number of columns for output')
+    argparser.add_argument('--tolerance', action='store', type=float, help='Tolerance for identifying peaks')
 
     params = argparser.parse_args()
 
-    peak_finder = MSRunPeakFinder(params.mzml_file, params.rows, params.columns)
+    peak_finder = MSRunPeakFinder(params.mzml_file, params.rows, params.columns, params.tolerance)
     # find the intensity of each m/z value
     peak_finder.aggregate_spectra()
     # create a histogram of all the intensities between 0 and 20000
