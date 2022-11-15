@@ -173,18 +173,18 @@ class MSRunPeakFinder:
                 # add possible modifications, but only for a ions
                 if ion == 'a':
                     # add base a ion
-                    self.known_ions.append([base_acid_mass, 'I' + acid])
+                    self.known_ions.append([base_acid_mass, ion + '-' + acid])
                     # add base a ion's isotope
-                    self.known_ions.append([int(10000 * (base_acid_mass + 1.003355)) / 10000, 'I' + acid + '+i'])
+                    self.known_ions.append([int(10000 * (base_acid_mass + 1.003355)) / 10000, ion + '-' + acid + '+i'])
                     # check if there are any possible modifications, if there are, add them too
                     for modification in modification_deltas[acid[0]]:
                         acid_mass = base_acid_mass
                         acid_mass += modification_deltas[acid[0]][modification]
                         acid_mass = int(acid_mass * 10000 + 0.5) / 10000.0
-                        self.known_ions.append([acid_mass, 'I' + acid + modification])
+                        self.known_ions.append([acid_mass, ion + '-' + acid + modification])
                 # add b and y ions
                 else:
-                    self.known_ions.append([base_acid_mass, 'I' + acid + ion])
+                    self.known_ions.append([base_acid_mass, ion + '-' + acid])
 
         # added double nested for loops to identify pairs of amino acids (i.e. A and A)
         for identifier_index_1 in range(len(amino_acids)):
