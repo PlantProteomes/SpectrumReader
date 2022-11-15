@@ -25,8 +25,8 @@ class MSRunPeakFinder:
         # variables declaration
         self.file_name = file_name
         self.by_count = np.zeros((4000000,), dtype=int)
-        # self.by_intensity = np.zeros((4000000,), dtype=int)
-        # self.by_strength = np.zeros((4000000,), dtype=int)
+        self.by_intensity = np.zeros((4000000,), dtype=int)
+        self.by_strength = np.zeros((4000000,), dtype=int)
         self.all_peaks_intensities = [] # keeps track of all intensities
         self.observed_peaks = [] # keeps track of all peaks over a certain intensities, identified and unidentified
         self.known_ions = []
@@ -40,10 +40,10 @@ class MSRunPeakFinder:
             self.rows = 5
         else:
             self.rows = rows
-        if columns is None or columns <= 0:
-            self.columns = 3
-        else:
-            self.columns = rows
+        # if columns is None or columns <= 0:
+        self.columns = 3
+        # else:
+            # self.columns = columns
         if tolerance is None or tolerance <= 0:
             self.tolerance = 0.002
         else:
@@ -76,7 +76,7 @@ class MSRunPeakFinder:
                     self.stats['ms1spectra'] += 1
                 elif spectrum['ms level'] == 2:
                     self.stats['ms2spectra'] += 1
-                    # smallest_peak_intensity = sys.maxsize
+                    smallest_peak_intensity = sys.maxsize
                     for index in range(len(spectrum['m/z array'])):
                         peak = spectrum['m/z array'][index]
                         peak -= self.peak_correction_factor
@@ -86,17 +86,17 @@ class MSRunPeakFinder:
                             intensity = spectrum['intensity array'][index]
                             self.all_peaks_intensities.append(intensity)
                             self.by_count[int(10000 * peak + 0.5)] += 1
-                            # self.by_intensity[int(10000 * peak + 0.5)] += intensity
-                            # self.smallest_peak_intensity = min(smallest_peak_intensity, intensity)
+                            self.by_intensity[int(10000 * peak + 0.5)] += intensity
+                            self.smallest_peak_intensity = min(smallest_peak_intensity, intensity)
 
                     # compare intensities to the smallest intensity
-                    # for index in range(len(spectrum['m/z array'])):
-                        # peak = spectrum['m/z array'][index]
-                        # if peak > 400:
-                            # break
-                        # else:
-                            # intensity = spectrum['intensity array'][index]
-                            # self.by_strength[int(10000 * peak + 0.5)] += get_strength(intensity, smallest_peak_intensity)
+                    for index in range(len(spectrum['m/z array'])):
+                        peak = spectrum['m/z array'][index]
+                        if peak > 400:
+                            break
+                        else:
+                            intensity = spectrum['intensity array'][index]
+                            self.by_strength[int(10000 * peak + 0.5)] += get_strength(intensity, self.smallest_peak_intensity)
 
                 # updates terminal with the progress of reading peaks
                 if self.stats['counter']/1000 == int(self.stats['counter']/1000):
@@ -120,7 +120,6 @@ class MSRunPeakFinder:
             amino_acids.append(key)
 
         amino_acids.sort()
-        print(amino_acids)
 
         aa_immonium_losses = {
                 'G': [],
@@ -135,7 +134,7 @@ class MSRunPeakFinder:
                 'N': [ '-NH3' ],
                 'D': [ '-H2O' ],
                 'Q': [ '-CO-NH3', '-NH3', '+CO'],
-                'K': [ '+CO-NH3', '-NH3', '+CO', '-C2H4-NH3', '+CO+H2ON2', '-NH3', '-C4H7N', '+CO+CO-C2H3N3', '+CO+H2O'],
+                'K': [ '+CO-NH3', '-NH3', '+CO', '-C2H4-NH3', '+CO+H2ON2', '-NH3', '-C4H7N', '+CO+CO-C2H3N3', '+CO+H2O', '+CO+H2O-NH3'],
                 'E': [],
                 'M': [ '-C2H2-NH3'],
                 'H': [ '-CH2N', '+CO-NH2', '+CO-NH3', '+CO-NH', '+CO+H2O' ],
@@ -167,7 +166,7 @@ class MSRunPeakFinder:
                 if len(acid) == 1:
                     base_acid_mass = mass.calculate_mass(sequence=acid, ion_type=ion, charge=1)
                 else:
-                    base_acid_mass = amino_acid_modifications[acid]['mz'] + get_modification(ion)
+                    base_acid_mass = mass.calculate_mass(sequence=acid[0], ion_type=ion, charge=1) + amino_acid_modifications[acid]['mz']
 
                 base_acid_mass = int(base_acid_mass * 10000 + 0.5) / 10000.0
 
@@ -186,32 +185,31 @@ class MSRunPeakFinder:
                 # add b and y ions
                 else:
                     self.known_ions.append([base_acid_mass, 'I' + acid + ion])
-        print(self.known_ions)
 
-        # added more nested for loops to identify pairs of amino acids (i.e. A and A)
-        for index_1 in range(len(amino_acids)):
-            for ion_1 in ion_types:
-                pair_acid_1 = amino_acids[index_1]
+        # added double nested for loops to identify pairs of amino acids (i.e. A and A)
+        for identifier_index_1 in range(len(amino_acids)):
+            for ion in ion_types:
+                pair_acid_1 = amino_acids[identifier_index_1]
+                # checks if it is Carbamidomethyl or Oxidation
                 if len(pair_acid_1) == 1:
-                    pair_mass_1 = mass.calculate_mass(sequence=pair_acid_1, ion_type=ion_1, charge=1)
+                    pair_mass_1 = mass.calculate_mass(sequence=pair_acid_1, ion_type=ion, charge=1)
                 else:
-                    pair_mass_1 = amino_acid_modifications[pair_acid_1]['mz'] + get_modification(ion_1)
-                if ion_1 != 'a':
-                    pair_acid_1 += ion_1
-                for index_2 in range(len(amino_acids) - index_1):
-                    index_2 += index_1
-                    for ion_2 in ion_types:
-                        pair_acid_2 = amino_acids[index_2]
-                        if len(pair_acid_2) == 1:
-                            pair_mass_2 = mass.calculate_mass(sequence=pair_acid_2, ion_type=ion_2, charge=1)
-                        else:
-                            pair_mass_2 = amino_acid_modifications[pair_acid_2]['mz'] + get_modification(ion_2)
-                        if ion_2 != 'a':
-                            pair_acid_2 += ion_2
-                        
-                        pair_mass = int(10000 * (pair_mass_1 + pair_mass_2)) / 10000
-                        self.known_ions.append([pair_mass, 'I' + pair_acid_1 + pair_acid_2])
+                    pair_mass_1 = amino_acid_modifications[pair_acid_1]['mz'] + mass.calculate_mass(sequence=pair_acid_1[0], ion_type=ion, charge=1)
+                for identifier_index_2 in range(len(amino_acids) - identifier_index_1):
+                    identifier_index_2 += identifier_index_1
+                    pair_acid_2 = amino_acids[identifier_index_2]
+                    if len(pair_acid_2) == 1:
+                        pair_mass_2 = mass.calculate_mass(sequence=pair_acid_2, ion_type='b', charge=0)
+                    else:
+                        pair_mass_2 = amino_acid_modifications[pair_acid_2]['mz'] + mass.calculate_mass(sequence=pair_acid_2[0], ion_type='b', charge=0)
+                    
+                    pair_mass = int(10000 * (pair_mass_1 + pair_mass_2) + 0.5) / 10000
+                    self.known_ions.append([pair_mass, ion + '-' + pair_acid_1 + pair_acid_2])
+                    # if pair_acid_1 + pair_acid_2 == 'RR':
+                        # print(f'1: {pair_mass_1}, 2: {pair_mass_2}, ion: {ion}')
 
+        # print(len(self.known_ions))
+        # print(self.known_ions[800 : 850])
         self.known_ions.sort()
 
     def find_peaks(self):
@@ -221,11 +219,12 @@ class MSRunPeakFinder:
         for i in range(len(self.by_count)):
             if self.by_count[i] >= 50:
                 if self.by_count[i] < previous_peak[1] and not counted:
-                    self.observed_peaks.append(previous_peak)
-                    counted = True
+                    if self.by_count[i + 1] < self.by_count[i]:
+                        self.observed_peaks.append(previous_peak)
+                        counted = True
                 previous_peak = [i/10000, self.by_count[i]]
             else:
-                if not counted and previous_peak[0] != 0:
+                if not counted and previous_peak[0] != 0 and self.by_count[i + 1] < self.by_count[i]:
                     self.observed_peaks.append(previous_peak)
                 counted = False
                 previous_peak = [0, 0]
@@ -321,14 +320,6 @@ def get_strength(intensity, smallest_peak_intensity):
         return 3
     else:
         return 4
-
-def get_modification(ion):
-    if ion == 'a':
-        return 0
-    elif ion == 'b':
-        return mass.calculate_mass(formula='CO')
-    elif ion == 'y':
-        return mass.calculate_mass(formula='CO') + mass.calculate_mass(formula='H2O')
 
 # put main at the end of the program, define identify peaks method first
 def main():
