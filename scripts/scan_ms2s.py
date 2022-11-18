@@ -3,6 +3,8 @@
 # must first change to scripts folder through "cd .\scripts\"
 # to run the program (use terminal): python scan_ms2s.py --mzml_file ..\data\HFX_9850_GVA_DLD1_2_180719.mzML --rows 3 --columns 5
 
+# bad outputs for some of these, ex: peak 228.1349
+
 import os
 import argparse
 import os.path
@@ -17,6 +19,8 @@ import csv
 from pyteomics import mzml, auxiliary, mass
 from collections import OrderedDict
 from matplotlib.backends.backend_pdf import PdfPages
+from scipy.optimize import curve_fit
+from numpy import exp
 
 class MSRunPeakFinder:
 
@@ -92,11 +96,12 @@ class MSRunPeakFinder:
                     # compare intensities to the smallest intensity
                     for index in range(len(spectrum['m/z array'])):
                         peak = spectrum['m/z array'][index]
+                        peak -= self.peak_correction_factor
                         if peak > 400:
                             break
                         else:
                             intensity = spectrum['intensity array'][index]
-                            self.by_strength[int(10000 * peak + 0.5)] += get_strength(intensity, self.smallest_peak_intensity)
+                            self.by_strength[int(10000 * peak + 0.5)] += get_strength(intensity, smallest_peak_intensity)
 
                 # updates terminal with the progress of reading peaks
                 if self.stats['counter']/1000 == int(self.stats['counter']/1000):
@@ -271,6 +276,7 @@ class MSRunPeakFinder:
                 mz_values.append(add_index / 10000 - peak[0])
                 intensity_values.append(self.by_count[add_index])
             # change the axis labels to be a smaller text
+
             ax[x,y].step(mz_values, intensity_values, where='mid')
             ax[x,y].tick_params(axis='x', labelsize='xx-small')
             ax[x,y].locator_params(axis='x', nbins=5)
@@ -289,6 +295,18 @@ class MSRunPeakFinder:
                 ax[x,y].text(-0.0017, max(intensity_values) * 1.03, f'peak center: \n{peak[0]}', fontsize='xx-small', ha='left', va='top',)
                 # ax[x,y].set_title(f"Peak {peak[0]}", fontsize="xx-small")
 
+            # add gaussian fitting
+            n = len(mz_values)
+            center = int(n/2)
+            binsize = mz_values[center]-mz_values[center-1]
+
+            try:
+            #if 1:
+                popt,pcov = curve_fit(gaussian_function,mz_values,intensity_values,p0=[intensity_values[center],mz_values[center],binsize])
+                ax[x,y].plot(mz_values,gaussian_function(mz_values,*popt),'ro:')
+            except:
+                continue
+
             # creates a new figure if full
             y += 1
             y %= self.columns
@@ -297,9 +315,71 @@ class MSRunPeakFinder:
                 x %= self.rows
                 if x == 0:
                     pdf.savefig(fig)
+                    plt.close('all')
                     fig, ax = plt.subplots(self.rows, self.columns,figsize=(8.5,11))
         
-        pdf.savefig(fig)
+        if x != 0:
+            pdf.savefig(fig)
+        pdf.close()
+
+    def plot_three_histograms(self):
+        x = 0
+        pdf = PdfPages('common_peaks.pdf')
+        fig, ax = plt.subplots(self.rows, self.columns, figsize=(8.5,11))
+        for peak in self.observed_peaks:
+            fig.subplots_adjust(top=0.98, bottom=0.05, left=0.12, right=0.98, hspace=0.2, wspace=0.38)
+            mz_values = []
+            # 0 is bycount, 1 is byintensity, 2 is bystrength
+            total_intensity_values = [[], [], []]
+            for index in range(31):
+                # change it to be 0
+                add_index = int(peak[0] * 10000 + index - 16)
+                mz_values.append(add_index / 10000 - peak[0])
+                total_intensity_values[0].append(self.by_count[add_index])
+                total_intensity_values[1].append(self.by_intensity[add_index])
+                total_intensity_values[2].append(self.by_strength[add_index])
+            # change the axis labels to be a smaller text
+            for y in range(3):
+                y = y - 1
+                ax[x,y].step(mz_values, total_intensity_values[y], where='mid')
+                ax[x,y].tick_params(axis='x', labelsize='xx-small')
+                ax[x,y].locator_params(axis='x', nbins=5)
+                # ax[x,y].set_xticks([-0.0015, -0.0007, 0, 0.0007, 0.0015])
+                ax[x,y].tick_params(axis='y', labelsize='xx-small')
+                if len(peak) >= 3:
+                    ax[x,y].axvline(x=peak[2][0] - peak[0], color='black', lw=1, linestyle='--')
+                    index = 2
+                    identified_ion_name = ''
+                    while index <= len(peak) - 1:
+                        identified_ion_name += peak[index][2] + '\n'
+                        index += 1
+                    ax[x,y].text(-0.0017, max(total_intensity_values[y]) * 1.03, f'peak center: \n{peak[0]}\nion m/z: \n{peak[2][0]}\nion id: \n{identified_ion_name}', fontsize='xx-small', ha='left', va='top')
+                    # ax[x,y].set_title(f"Peak {peak[0]}, Amino Acid {peak[4]}", fontsize="xx-small")
+                else:
+                    ax[x,y].text(-0.0017, max(total_intensity_values[y]) * 1.03, f'peak center: \n{peak[0]}', fontsize='xx-small', ha='left', va='top',)
+                    # ax[x,y].set_title(f"Peak {peak[0]}", fontsize="xx-small")
+
+                # add gaussian fitting
+                n = len(mz_values)
+                center = int(n/2)
+                binsize = mz_values[center]-mz_values[center-1]
+
+                try:
+                    popt,pcov = curve_fit(gaussian_function,mz_values,total_intensity_values[y],p0=[total_intensity_values[y][center],mz_values[center],binsize])
+                    ax[x,y].plot(mz_values,gaussian_function(mz_values,*popt),'ro:')
+                except:
+                    continue
+
+            # creates a new figure if full
+            x += 1
+            x %= self.rows
+            if x == 0:
+                pdf.savefig(fig)
+                plt.close('all')
+                fig, ax = plt.subplots(self.rows, self.columns,figsize=(8.5,11))
+        
+        if x != 0:
+            pdf.savefig(fig)
         pdf.close()
 
     def show_stats(self):
@@ -310,6 +390,11 @@ class MSRunPeakFinder:
 
         print(f"INFO: Elapsed time: {t1-self.t0}")
         print(f"INFO: Processed {self.stats['counter']/(t1-self.t0)} spectra per second")
+
+    # Gaussian function used for curve fitting
+def gaussian_function(x,a,x0,sigma):
+
+    return a*exp(-(x-x0)**2/(2*sigma**2))
 
 def get_strength(intensity, smallest_peak_intensity):
     if intensity <= 3 * smallest_peak_intensity:
@@ -347,7 +432,8 @@ def main():
     # plot graphs of each peak as a pop-up
     # peak_finder.show_intense_peaks()
     # save graphs of each peak to a pdf
-    peak_finder.plot_intense_peaks()
+    # peak_finder.plot_intense_peaks()
+    peak_finder.plot_three_histograms()
     # print out data, including run time, number of peaks found, etc
     peak_finder.show_stats()
 
