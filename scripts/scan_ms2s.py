@@ -80,7 +80,7 @@ class MSRunPeakFinder:
                     self.stats['ms1spectra'] += 1
                 elif spectrum['ms level'] == 2:
                     self.stats['ms2spectra'] += 1
-                    smallest_peak_intensity = sys.maxsize
+                    self.smallest_peak_intensity = sys.maxsize
                     for index in range(len(spectrum['m/z array'])):
                         peak = spectrum['m/z array'][index]
                         peak -= self.peak_correction_factor
@@ -91,7 +91,7 @@ class MSRunPeakFinder:
                             self.all_peaks_intensities.append(intensity)
                             self.by_count[int(10000 * peak + 0.5)] += 1
                             self.by_intensity[int(10000 * peak + 0.5)] += intensity
-                            self.smallest_peak_intensity = min(smallest_peak_intensity, intensity)
+                            self.smallest_peak_intensity = min(self.smallest_peak_intensity, intensity)
 
                     # compare intensities to the smallest intensity
                     for index in range(len(spectrum['m/z array'])):
@@ -101,7 +101,7 @@ class MSRunPeakFinder:
                             break
                         else:
                             intensity = spectrum['intensity array'][index]
-                            self.by_strength[int(10000 * peak + 0.5)] += get_strength(intensity, smallest_peak_intensity)
+                            self.by_strength[int(10000 * peak + 0.5)] += get_strength(intensity, self.smallest_peak_intensity)
 
                 # updates terminal with the progress of reading peaks
                 if self.stats['counter']/1000 == int(self.stats['counter']/1000):
@@ -340,7 +340,6 @@ class MSRunPeakFinder:
                 total_intensity_values[2].append(self.by_strength[add_index])
             # change the axis labels to be a smaller text
             for y in range(3):
-                y = y - 1
                 ax[x,y].step(mz_values, total_intensity_values[y], where='mid')
                 ax[x,y].tick_params(axis='x', labelsize='xx-small')
                 ax[x,y].locator_params(axis='x', nbins=5)
