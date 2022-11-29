@@ -34,7 +34,7 @@ class MSRunPeakFinder:
         self.all_peaks_intensities = [] # keeps track of all intensities
         self.observed_peaks = [] # keeps track of all peaks over a certain intensities, identified and unidentified
         self.known_ions = []
-        self.peak_correction_factor = 0.0006 # eventually make this not a constant
+        self.peak_correction_factor = 0.0004 # eventually make this not a constant
         self.t0 = timeit.default_timer()
         self.stats = { 'counter': 0, 'ms1spectra': 0, 'ms2spectra': 0 }
 
@@ -82,26 +82,30 @@ class MSRunPeakFinder:
                     self.stats['ms2spectra'] += 1
                     self.smallest_peak_intensity = sys.maxsize
                     for index in range(len(spectrum['m/z array'])):
-                        peak = spectrum['m/z array'][index]
-                        peak -= self.peak_correction_factor
-                        if peak > 400:
+                        peak_mz = spectrum['m/z array'][index]
+                        if peak_mz < 120:
+                            peak_mz -= (120 - peak_mz) * 0.00001
+                        peak_mz -= self.peak_correction_factor
+                        if peak_mz > 400:
                             break
                         else:
                             intensity = spectrum['intensity array'][index]
                             self.all_peaks_intensities.append(intensity)
-                            self.by_count[int(10000 * peak + 0.5)] += 1
-                            self.by_intensity[int(10000 * peak + 0.5)] += intensity
+                            self.by_count[int(10000 * peak_mz + 0.5)] += 1
+                            self.by_intensity[int(10000 * peak_mz + 0.5)] += intensity
                             self.smallest_peak_intensity = min(self.smallest_peak_intensity, intensity)
 
                     # compare intensities to the smallest intensity
                     for index in range(len(spectrum['m/z array'])):
-                        peak = spectrum['m/z array'][index]
-                        peak -= self.peak_correction_factor
-                        if peak > 400:
+                        peak_mz = spectrum['m/z array'][index]
+                        peak_mz -= self.peak_correction_factor
+                        if peak_mz < 120:
+                            peak_mz -= (120 - peak_mz) * 0.00001
+                        if peak_mz > 400:
                             break
                         else:
                             intensity = spectrum['intensity array'][index]
-                            self.by_strength[int(10000 * peak + 0.5)] += get_strength(intensity, self.smallest_peak_intensity)
+                            self.by_strength[int(10000 * peak_mz + 0.5)] += get_strength(intensity, self.smallest_peak_intensity)
 
                 # updates terminal with the progress of reading peaks
                 if self.stats['counter']/1000 == int(self.stats['counter']/1000):
@@ -173,20 +177,20 @@ class MSRunPeakFinder:
                 else:
                     base_acid_mass = mass.calculate_mass(sequence=acid[0], ion_type=ion, charge=1) + amino_acid_modifications[acid]['mz']
 
-                base_acid_mass = int(base_acid_mass * 10000 + 0.5) / 10000.0
+                base_acid_mass = int(base_acid_mass * 100000 + 0.5) / 100000.0
 
                 # add possible modifications, but only for a ions
                 if ion == 'a':
                     # add base a ion
-                    self.known_ions.append([base_acid_mass, ion + '-' + acid])
+                    self.known_ions.append([base_acid_mass, 'I' + acid])
                     # add base a ion's isotope
-                    self.known_ions.append([int(10000 * (base_acid_mass + 1.003355)) / 10000, ion + '-' + acid + '+i'])
+                    self.known_ions.append([int(100000 * (base_acid_mass + 1.0034)) / 100000, 'I' + acid + '+i'])
                     # check if there are any possible modifications, if there are, add them too
                     for modification in modification_deltas[acid[0]]:
                         acid_mass = base_acid_mass
                         acid_mass += modification_deltas[acid[0]][modification]
-                        acid_mass = int(acid_mass * 10000 + 0.5) / 10000.0
-                        self.known_ions.append([acid_mass, ion + '-' + acid + modification])
+                        acid_mass = int(acid_mass * 100000 + 0.5) / 100000.0
+                        self.known_ions.append([acid_mass, 'I' + acid + modification])
                 # add b and y ions
                 else:
                     self.known_ions.append([base_acid_mass, ion + '-' + acid])
@@ -208,7 +212,7 @@ class MSRunPeakFinder:
                     else:
                         pair_mass_2 = amino_acid_modifications[pair_acid_2]['mz'] + mass.calculate_mass(sequence=pair_acid_2[0], ion_type='b', charge=0)
                     
-                    pair_mass = int(10000 * (pair_mass_1 + pair_mass_2) + 0.5) / 10000
+                    pair_mass = int(100000 * (pair_mass_1 + pair_mass_2) + 0.5) / 100000
                     self.known_ions.append([pair_mass, ion + '-' + pair_acid_1 + pair_acid_2])
                     # if pair_acid_1 + pair_acid_2 == 'RR':
                         # print(f'1: {pair_mass_1}, 2: {pair_mass_2}, ion: {ion}')
@@ -222,7 +226,7 @@ class MSRunPeakFinder:
         previous_peak = [0, 0]
         counted = False
         for i in range(len(self.by_count)):
-            if self.by_count[i] >= 50:
+            if self.by_count[i] >= 30:
                 if self.by_count[i] < previous_peak[1] and not counted:
                     if self.by_count[i + 1] < self.by_count[i]:
                         self.observed_peaks.append(previous_peak)
@@ -241,7 +245,7 @@ class MSRunPeakFinder:
             peak = self.observed_peaks[index]
             for amino_acid in self.known_ions:
                 if peak[0] > amino_acid[0] - self.tolerance and peak[0] < amino_acid[0] + self.tolerance:
-                    identified_peak = [amino_acid[0], int(10000*(amino_acid[0] - peak[0]) + 0.5) / 10000, amino_acid[1]]
+                    identified_peak = [amino_acid[0], int(100000*(amino_acid[0] - peak[0]) + 0.5) / 100000, amino_acid[1]]
                     self.observed_peaks[index].append(identified_peak)
 
     def write_output(self):
@@ -282,19 +286,7 @@ class MSRunPeakFinder:
             ax[x,y].locator_params(axis='x', nbins=5)
             # ax[x,y].set_xticks([-0.0015, -0.0007, 0, 0.0007, 0.0015])
             ax[x,y].tick_params(axis='y', labelsize='xx-small')
-            if len(peak) >= 3:
-                ax[x,y].axvline(x=peak[2][0] - peak[0], color='black', lw=1, linestyle='--')
-                index = 2
-                identified_ion_name = ''
-                while index <= len(peak) - 1:
-                    identified_ion_name += peak[index][2] + '\n'
-                    index += 1
-                ax[x,y].text(-0.0017, max(intensity_values) * 1.03, f'peak center: \n{peak[0]}\nion m/z: \n{peak[2][0]}\nion id: \n{identified_ion_name}', fontsize='xx-small', ha='left', va='top')
-                # ax[x,y].set_title(f"Peak {peak[0]}, Amino Acid {peak[4]}", fontsize="xx-small")
-            else:
-                ax[x,y].text(-0.0017, max(intensity_values) * 1.03, f'peak center: \n{peak[0]}', fontsize='xx-small', ha='left', va='top',)
-                # ax[x,y].set_title(f"Peak {peak[0]}", fontsize="xx-small")
-
+            
             # add gaussian fitting
             n = len(mz_values)
             center = int(n/2)
@@ -303,9 +295,24 @@ class MSRunPeakFinder:
             try:
             #if 1:
                 popt,pcov = curve_fit(gaussian_function,mz_values,intensity_values,p0=[intensity_values[center],mz_values[center],binsize])
-                ax[x,y].plot(mz_values,gaussian_function(mz_values,*popt),'ro:')
+                ax[x,y].plot(mz_values,gaussian_function(mz_values,*popt),'r:')
             except:
                 continue
+            
+            peak_fit_center = int(100000*(peak[0] + popt[1])) / 100000
+
+            if len(peak) >= 3:
+                ax[x,y].axvline(x=peak[2][0] - peak[0], color='black', lw=1, linestyle='--')
+                index = 2
+                identified_ion_name = ''
+                while index <= len(peak) - 1:
+                    identified_ion_name += peak[index][2] + '\n    '
+                    index += 1
+                ax[x,y].text(-0.0017, max(intensity_values) * 1.03, f'peak fit center: \n    {peak_fit_center}\nion m/z: \n    {peak[2][0]}\nion id: \n    {identified_ion_name}', fontsize='xx-small', ha='left', va='top')
+                # ax[x,y].set_title(f"Peak {peak[0]}, Amino Acid {peak[4]}", fontsize="xx-small")
+            else:
+                ax[x,y].text(-0.0017, max(intensity_values) * 1.03, f'peak fit center: \n    {peak_fit_center}', fontsize='xx-small', ha='left', va='top',)
+                # ax[x,y].set_title(f"Peak {peak[0]}", fontsize="xx-small")
 
             # creates a new figure if full
             y += 1
@@ -345,18 +352,6 @@ class MSRunPeakFinder:
                 ax[x,y].locator_params(axis='x', nbins=5)
                 # ax[x,y].set_xticks([-0.0015, -0.0007, 0, 0.0007, 0.0015])
                 ax[x,y].tick_params(axis='y', labelsize='xx-small')
-                if len(peak) >= 3:
-                    ax[x,y].axvline(x=peak[2][0] - peak[0], color='black', lw=1, linestyle='--')
-                    index = 2
-                    identified_ion_name = ''
-                    while index <= len(peak) - 1:
-                        identified_ion_name += peak[index][2] + '\n'
-                        index += 1
-                    ax[x,y].text(-0.0017, max(total_intensity_values[y]) * 1.03, f'peak center: \n{peak[0]}\nion m/z: \n{peak[2][0]}\nion id: \n{identified_ion_name}', fontsize='xx-small', ha='left', va='top')
-                    # ax[x,y].set_title(f"Peak {peak[0]}, Amino Acid {peak[4]}", fontsize="xx-small")
-                else:
-                    ax[x,y].text(-0.0017, max(total_intensity_values[y]) * 1.03, f'peak center: \n{peak[0]}', fontsize='xx-small', ha='left', va='top',)
-                    # ax[x,y].set_title(f"Peak {peak[0]}", fontsize="xx-small")
 
                 # add gaussian fitting
                 n = len(mz_values)
@@ -365,9 +360,24 @@ class MSRunPeakFinder:
 
                 try:
                     popt,pcov = curve_fit(gaussian_function,mz_values,total_intensity_values[y],p0=[total_intensity_values[y][center],mz_values[center],binsize])
-                    ax[x,y].plot(mz_values,gaussian_function(mz_values,*popt),'ro:')
+                    ax[x,y].plot(mz_values,gaussian_function(mz_values,*popt),'r:')
                 except:
                     continue
+
+                peak_fit_center = int(100000*(peak[0] + popt[1])) / 100000
+
+                if len(peak) >= 3:
+                    ax[x,y].axvline(x=peak[2][0] - peak[0], color='black', lw=1, linestyle='--')
+                    index = 2
+                    identified_ion_name = ''
+                    while index <= len(peak) - 1:
+                        identified_ion_name += peak[index][2] + '\n    '
+                        index += 1
+                    ax[x,y].text(-0.0017, max(total_intensity_values[y]) * 1.03, f'peak center: \n    {peak_fit_center}\nion m/z: \n    {peak[2][0]}\nion id: \n    {identified_ion_name}', fontsize='xx-small', ha='left', va='top')
+                    # ax[x,y].set_title(f"Peak {peak[0]}, Amino Acid {peak[4]}", fontsize="xx-small")
+                else:
+                    ax[x,y].text(-0.0017, max(total_intensity_values[y]) * 1.03, f'peak center: \n    {peak_fit_center}', fontsize='xx-small', ha='left', va='top',)
+                    # ax[x,y].set_title(f"Peak {peak[0]}", fontsize="xx-small")
 
             # creates a new figure if full
             x += 1
@@ -380,6 +390,87 @@ class MSRunPeakFinder:
         if x != 0:
             pdf.savefig(fig)
         pdf.close()
+
+    def plot_peaks_strength(self):
+        x = 0
+        y = 0
+        pdf = PdfPages('common_peaks.pdf')
+        fig, ax = plt.subplots(self.rows, self.columns, figsize=(8.5,11))
+        for peak in self.observed_peaks:
+            fig.subplots_adjust(top=0.98, bottom=0.05, left=0.12, right=0.98, hspace=0.2, wspace=0.38)
+            mz_values = []
+            intensity_values = []
+            ppm_values = []
+            ppm_delta = 15
+            mz_delta = int((ppm_delta / 1e6) * peak[0] * 10000)
+            for index in range(mz_delta * 2 + 1):
+                # change it to be 0
+                add_index = int(peak[0] * 10000 + index - mz_delta - 1)
+                mz_values.append(add_index / 10000 - peak[0])
+                ppm_values.append((add_index / 10000 - peak[0]) * 1e6 / peak[0])
+                intensity_values.append(self.by_strength[add_index])
+            # change the axis labels to be a smaller text
+
+            ax[x,y].step(ppm_values, intensity_values, where='mid')
+            ax[x,y].tick_params(axis='x', labelsize='xx-small')
+            ax[x,y].locator_params(axis='x', nbins=5)
+            # ax[x,y].set_xticks([-0.0015, -0.0007, 0, 0.0007, 0.0015])
+            ax[x,y].tick_params(axis='y', labelsize='xx-small')
+
+            # add gaussian fitting
+            n = len(ppm_values)
+            center = int(n/2)
+            binsize = ppm_values[center]-ppm_values[center-1]
+
+            try:
+            #if 1:
+                popt,pcov = curve_fit(gaussian_function,ppm_values,intensity_values,p0=[intensity_values[center],ppm_values[center],binsize])
+                ax[x,y].plot(ppm_values,gaussian_function(ppm_values,*popt),'r:')
+            except:
+                continue
+
+            peak_fit_center = int(100000*(peak[0] + (popt[1] * peak[0] / 1e6))) / 100000
+
+            if len(peak) >= 3:
+                ax[x,y].axvline(x=peak[2][0] - peak[0], color='black', lw=1, linestyle='--')
+                index = 2
+                identified_ion_name = ''
+                while index <= len(peak) - 1:
+                    identified_ion_name += peak[index][2] + '\n    '
+                    index += 1
+                ax[x,y].text(ppm_values[0], max(intensity_values) * 1.03, f'peak fit center: \n    {peak_fit_center}\nion m/z: \n    {peak[2][0]}\nion id: \n    {identified_ion_name}', fontsize='xx-small', ha='left', va='top')
+                # ax[x,y].set_title(f"Peak {peak[0]}, Amino Acid {peak[4]}", fontsize="xx-small")
+            else:
+                ax[x,y].text(ppm_values[0], max(intensity_values) * 1.03, f'peak fit center: \n    {peak_fit_center}', fontsize='xx-small', ha='left', va='top',)
+                # ax[x,y].set_title(f"Peak {peak[0]}", fontsize="xx-small")
+
+            # creates a new figure if full
+            y += 1
+            y %= self.columns
+            if y == 0:
+                x += 1
+                x %= self.rows
+                if x == 0:
+                    pdf.savefig(fig)
+                    plt.close('all')
+                    fig, ax = plt.subplots(self.rows, self.columns,figsize=(8.5,11))
+        
+        if x != 0:
+            pdf.savefig(fig)
+        pdf.close()
+        plt.close()
+
+    def delta_scatterplot(self):
+        mz_values = []
+        intensity_values = []
+        for peak in self.observed_peaks:
+            if len(peak) >= 3:
+                mz_values.append(peak[0])
+                intensity_values.append(peak[2][1])
+            else:
+                continue
+        plt.scatter(mz_values, intensity_values)
+        plt.savefig('delta_scatterplot.pdf')
 
     def show_stats(self):
         t1 = timeit.default_timer()
@@ -431,8 +522,8 @@ def main():
     # plot graphs of each peak as a pop-up
     # peak_finder.show_intense_peaks()
     # save graphs of each peak to a pdf
-    # peak_finder.plot_intense_peaks()
-    peak_finder.plot_three_histograms()
+    peak_finder.plot_peaks_strength()
+    peak_finder.delta_scatterplot()
     # print out data, including run time, number of peaks found, etc
     peak_finder.show_stats()
 
