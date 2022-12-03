@@ -182,18 +182,19 @@ class MSRunPeakFinder:
                 # add possible modifications, but only for a ions
                 if ion == 'a':
                     # add base a ion
-                    self.known_ions.append([base_acid_mass, 'I' + acid])
+                    self.known_ions.append([base_acid_mass, 'I' + acid, False])
                     # add base a ion's isotope
-                    self.known_ions.append([int(100000 * (base_acid_mass + 1.0034)) / 100000, 'I' + acid + '+i'])
+                    self.known_ions.append([int(100000 * (base_acid_mass + 1.0034)) / 100000, 'I' + acid + '+i', False])
                     # check if there are any possible modifications, if there are, add them too
                     for modification in modification_deltas[acid[0]]:
                         acid_mass = base_acid_mass
                         acid_mass += modification_deltas[acid[0]][modification]
                         acid_mass = int(acid_mass * 100000 + 0.5) / 100000.0
-                        self.known_ions.append([acid_mass, 'I' + acid + modification])
+                        self.known_ions.append([acid_mass, 'I' + acid + modification, False])
                 # add b and y ions
                 else:
-                    self.known_ions.append([base_acid_mass, ion + '-' + acid])
+                    self.known_ions.append([base_acid_mass, ion + '-' + acid, False])
+                    self.known_ions.append([int(100000 * (base_acid_mass + 1.0034)) / 100000, ion + '-' + acid + '+i', False])
 
         # added double nested for loops to identify pairs of amino acids (i.e. A and A)
         for identifier_index_1 in range(len(amino_acids)):
@@ -213,9 +214,18 @@ class MSRunPeakFinder:
                         pair_mass_2 = amino_acid_modifications[pair_acid_2]['mz'] + mass.calculate_mass(sequence=pair_acid_2[0], ion_type='b', charge=0)
                     
                     pair_mass = int(100000 * (pair_mass_1 + pair_mass_2) + 0.5) / 100000
-                    self.known_ions.append([pair_mass, ion + '-' + pair_acid_1 + pair_acid_2])
+                    self.known_ions.append([pair_mass, ion + '-' + pair_acid_1 + pair_acid_2, False])
                     # if pair_acid_1 + pair_acid_2 == 'RR':
                         # print(f'1: {pair_mass_1}, 2: {pair_mass_2}, ion: {ion}')
+
+        # consider water and ammonia losses
+        water = mass.calculate_mass(formula='H2O')
+        ammonia = mass.calculate_mass(formula='NH3')
+        water_ammonia = water + ammonia
+        for index in range(len(self.known_ions)):
+            self.known_ions.append([self.known_ions[index][0] - water, self.known_ions[index][1] + '-H2O', False])
+            self.known_ions.append([self.known_ions[index][0] - ammonia, self.known_ions[index][1] + '-NH3', False])
+            self.known_ions.append([self.known_ions[index][0] - water_ammonia, self.known_ions[index][1] + '-H2O-NH3', False])
 
         # print(len(self.known_ions))
         # print(self.known_ions[800 : 850])
@@ -241,12 +251,21 @@ class MSRunPeakFinder:
     def identify_peaks(self):
         # out of the intense peaks, see which ones are identifiable
         # includes all possible identifications
+        removable_peaks_index = []
         for index in range(len(self.observed_peaks)):
             peak = self.observed_peaks[index]
-            for amino_acid in self.known_ions:
-                if peak[0] > amino_acid[0] - self.tolerance and peak[0] < amino_acid[0] + self.tolerance:
+            for ion_index in range(len(self.known_ions)):
+                amino_acid = self.known_ions[ion_index]
+                if peak[0] > amino_acid[0] - self.tolerance and peak[0] < amino_acid[0] + self.tolerance and not amino_acid[2]:
                     identified_peak = [amino_acid[0], int(100000*(amino_acid[0] - peak[0]) + 0.5) / 100000, amino_acid[1]]
                     self.observed_peaks[index].append(identified_peak)
+                    self.known_ions[ion_index][2] = True
+                elif peak[0] > amino_acid[0] - self.tolerance and peak[0] < amino_acid[0] + self.tolerance and amino_acid[2]:
+                    removable_peaks_index.append(index)
+
+        for index in range(len(removable_peaks_index)):
+            if len(self.observed_peaks[removable_peaks_index[index] - index]) == 2:
+                del self.observed_peaks[removable_peaks_index[index] - index]
 
     def write_output(self):
         with open('popular_spectra.tsv', 'w') as file:
@@ -432,13 +451,15 @@ class MSRunPeakFinder:
             peak_fit_center = int(100000*(peak[0] + (popt[1] * peak[0] / 1e6))) / 100000
 
             if len(peak) >= 3:
-                ax[x,y].axvline(x=peak[2][0] - peak[0], color='black', lw=1, linestyle='--')
+                line_x = (peak[2][0] - peak[0]) * 1e6 / peak[0]
+                ax[x,y].axvline(x=line_x, color='black', lw=1, linestyle='--')
                 index = 2
                 identified_ion_name = ''
+                ion_mz = int(100000 * peak[2][0] + 0.5) / 100000
                 while index <= len(peak) - 1:
                     identified_ion_name += peak[index][2] + '\n    '
                     index += 1
-                ax[x,y].text(ppm_values[0], max(intensity_values) * 1.03, f'peak fit center: \n    {peak_fit_center}\nion m/z: \n    {peak[2][0]}\nion id: \n    {identified_ion_name}', fontsize='xx-small', ha='left', va='top')
+                ax[x,y].text(ppm_values[0], max(intensity_values) * 1.03, f'peak fit center: \n    {peak_fit_center}\nion m/z: \n    {ion_mz}\nion id: \n    {identified_ion_name}', fontsize='xx-small', ha='left', va='top')
                 # ax[x,y].set_title(f"Peak {peak[0]}, Amino Acid {peak[4]}", fontsize="xx-small")
             else:
                 ax[x,y].text(ppm_values[0], max(intensity_values) * 1.03, f'peak fit center: \n    {peak_fit_center}', fontsize='xx-small', ha='left', va='top',)
