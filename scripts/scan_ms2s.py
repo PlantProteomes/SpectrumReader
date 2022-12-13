@@ -49,7 +49,7 @@ class MSRunPeakFinder:
         # else:
             # self.columns = columns
         if tolerance is None or tolerance <= 0:
-            self.tolerance = 0.002
+            self.tolerance = 5
         else:
             self.tolerance = tolerance
 
@@ -196,7 +196,8 @@ class MSRunPeakFinder:
                     self.known_ions.append([base_acid_mass, ion + '-' + acid, False])
                     self.known_ions.append([int(100000 * (base_acid_mass + 1.0034)) / 100000, ion + '-' + acid + '+i', False])
 
-        # added double nested for loops to identify pairs of amino acids (i.e. A and A)
+        # double nested for loops to identify pairs of amino acids (i.e. A and A)
+        # first amino acid
         for identifier_index_1 in range(len(amino_acids)):
             for ion in ion_types:
                 pair_acid_1 = amino_acids[identifier_index_1]
@@ -205,6 +206,8 @@ class MSRunPeakFinder:
                     pair_mass_1 = mass.calculate_mass(sequence=pair_acid_1, ion_type=ion, charge=1)
                 else:
                     pair_mass_1 = amino_acid_modifications[pair_acid_1]['mz'] + mass.calculate_mass(sequence=pair_acid_1[0], ion_type=ion, charge=1)
+                
+                # second amino acid
                 for identifier_index_2 in range(len(amino_acids) - identifier_index_1):
                     identifier_index_2 += identifier_index_1
                     pair_acid_2 = amino_acids[identifier_index_2]
@@ -213,10 +216,47 @@ class MSRunPeakFinder:
                     else:
                         pair_mass_2 = amino_acid_modifications[pair_acid_2]['mz'] + mass.calculate_mass(sequence=pair_acid_2[0], ion_type='b', charge=0)
                     
+                    # add two amino acids together
                     pair_mass = int(100000 * (pair_mass_1 + pair_mass_2) + 0.5) / 100000
                     self.known_ions.append([pair_mass, ion + '-' + pair_acid_1 + pair_acid_2, False])
                     # if pair_acid_1 + pair_acid_2 == 'RR':
                         # print(f'1: {pair_mass_1}, 2: {pair_mass_2}, ion: {ion}')
+
+        # triple nested for loops to identify trios of amino acids (i.e. A and A)
+        # first amino acid
+        for identifier_index_1 in range(len(amino_acids)):
+            for ion in ion_types:
+                trio_acid_1 = amino_acids[identifier_index_1]
+                # checks if it is Carbamidomethyl or Oxidation
+                if len(trio_acid_1) == 1:
+                    trio_mass_1 = mass.calculate_mass(sequence=trio_acid_1, ion_type=ion, charge=1)
+                else:
+                    trio_mass_1 = amino_acid_modifications[trio_acid_1]['mz'] + mass.calculate_mass(sequence=trio_acid_1[0], ion_type=ion, charge=1)
+                
+                # second amino acid
+                for identifier_index_2 in range(len(amino_acids) - identifier_index_1):
+                    identifier_index_2 += identifier_index_1
+                    trio_acid_2 = amino_acids[identifier_index_2]
+                    if len(trio_acid_2) == 1:
+                        trio_mass_2 = mass.calculate_mass(sequence=trio_acid_2, ion_type='b', charge=0)
+                    else:
+                        trio_mass_2 = amino_acid_modifications[trio_acid_2]['mz'] + mass.calculate_mass(sequence=trio_acid_2[0], ion_type='b', charge=0)
+                    
+                    # third amino acid
+                    for identifier_index_3 in range(len(amino_acids) - identifier_index_2):
+                        identifier_index_3 += identifier_index_2
+                        trio_acid_3 = amino_acids[identifier_index_3]
+                        if len(trio_acid_3) == 1:
+                            trio_mass_3 = mass.calculate_mass(sequence=trio_acid_3, ion_type='b', charge=0)
+                        else:
+                            trio_mass_3 = amino_acid_modifications[trio_acid_3]['mz'] + mass.calculate_mass(sequence=trio_acid_3[0], ion_type='b', charge=0)
+
+                        # add all 3 together
+                        trio_mass = int(100000 * (trio_mass_1 + trio_mass_2 + trio_mass_3) + 0.5) / 100000
+                        if trio_mass <= 400:
+                            self.known_ions.append([trio_mass, ion + '-' + trio_acid_1 + trio_acid_2 + trio_acid_3, False])
+                        else:
+                            continue
 
         # consider water and ammonia losses
         water = mass.calculate_mass(formula='H2O')
@@ -256,11 +296,13 @@ class MSRunPeakFinder:
             peak = self.observed_peaks[index]
             for ion_index in range(len(self.known_ions)):
                 amino_acid = self.known_ions[ion_index]
-                if peak[0] > amino_acid[0] - self.tolerance and peak[0] < amino_acid[0] + self.tolerance and not amino_acid[2]:
+                # check tolerance based on ppm
+                peak_tolerance = self.tolerance * peak[0] / 1e6
+                if peak[0] > amino_acid[0] - peak_tolerance and peak[0] < amino_acid[0] + peak_tolerance and not amino_acid[2]:
                     identified_peak = [amino_acid[0], int(100000*(amino_acid[0] - peak[0]) + 0.5) / 100000, amino_acid[1]]
                     self.observed_peaks[index].append(identified_peak)
                     self.known_ions[ion_index][2] = True
-                elif peak[0] > amino_acid[0] - self.tolerance and peak[0] < amino_acid[0] + self.tolerance and amino_acid[2]:
+                elif peak[0] > amino_acid[0] - peak_tolerance and peak[0] < amino_acid[0] + peak_tolerance and amino_acid[2]:
                     removable_peaks_index.append(index)
 
         for index in range(len(removable_peaks_index)):
@@ -268,7 +310,7 @@ class MSRunPeakFinder:
                 del self.observed_peaks[removable_peaks_index[index] - index]
 
     def write_output(self):
-        with open('popular_spectra.tsv', 'w') as file:
+        with open('common_peaks.tsv', 'w') as file:
             writer = csv.writer(file, delimiter='\t', lineterminator='\n')
             writer.writerows(self.observed_peaks)
 
@@ -453,16 +495,18 @@ class MSRunPeakFinder:
             if len(peak) >= 3:
                 line_x = (peak[2][0] - peak[0]) * 1e6 / peak[0]
                 ax[x,y].axvline(x=line_x, color='black', lw=1, linestyle='--')
-                index = 2
+                count = 2
                 identified_ion_name = ''
                 ion_mz = int(100000 * peak[2][0] + 0.5) / 100000
-                while index <= len(peak) - 1:
-                    identified_ion_name += peak[index][2] + '\n    '
-                    index += 1
-                ax[x,y].text(ppm_values[0], max(intensity_values) * 1.03, f'peak fit center: \n    {peak_fit_center}\nion m/z: \n    {ion_mz}\nion id: \n    {identified_ion_name}', fontsize='xx-small', ha='left', va='top')
+                while count <= len(peak) - 1 and count <= 10:
+                    identified_ion_name += peak[count][2] + '\n    '
+                    count += 1
+                    if count == 11 and count <= len(peak) - 1:
+                        identified_ion_name += "..."
+                ax[x,y].text(-16, max(intensity_values) * 1.03, f'peak fit center: \n    {peak_fit_center}\nion m/z: \n    {ion_mz}\nion id: \n    {identified_ion_name}', fontsize='xx-small', ha='left', va='top')
                 # ax[x,y].set_title(f"Peak {peak[0]}, Amino Acid {peak[4]}", fontsize="xx-small")
             else:
-                ax[x,y].text(ppm_values[0], max(intensity_values) * 1.03, f'peak fit center: \n    {peak_fit_center}', fontsize='xx-small', ha='left', va='top',)
+                ax[x,y].text(-16, max(intensity_values) * 1.03, f'peak fit center: \n    {peak_fit_center}', fontsize='xx-small', ha='left', va='top',)
                 # ax[x,y].set_title(f"Peak {peak[0]}", fontsize="xx-small")
 
             # creates a new figure if full
@@ -524,7 +568,7 @@ def main():
     argparser.add_argument('--mzml_file', action='store', help='Name of the mzML file to read')
     argparser.add_argument('--rows', action='store', type=int, help='Number of rows for graphs')
     argparser.add_argument('--columns', action='store', type=int, help='Number of columns for output')
-    argparser.add_argument('--tolerance', action='store', type=float, help='Tolerance for identifying peaks')
+    argparser.add_argument('--tolerance', action='store', type=float, help='Tolerance for identifying peaks in ppm')
 
     params = argparser.parse_args()
 
