@@ -1,7 +1,17 @@
 #!/usr/bin/env python3
 
 # must first change to scripts folder through "cd .\scripts\"
-# python generate_input_files.py --unknown_mz 105.0659  
+# unknowns
+# python generate_input_files.py --unknown_mz 105.0659 
+# python generate_input_files.py --unknown_mz 106.0487
+# python generate_input_files.py --unknown_mz 117.1023
+# python generate_input_files.py --unknown_mz 119.0816
+
+# knowns
+# python generate_input_files.py --unknown_mz 111.07467
+# python generate_input_files.py --unknown_mz 129.10223
+# python generate_input_files.py --unknown_mz 130.08625
+
 
 import os
 import argparse
@@ -34,6 +44,7 @@ class inputGenerator:
         self.known_ions = [
             ['IQ', 101.0709],
             ['IK', 101.1073],
+            ['IE', 102.05495],
             ['IM', 104.0529],
             ['IH', 110.0712],
             ['IF', 120.0809],
@@ -41,7 +52,9 @@ class inputGenerator:
             ['b-K', 129.1022],
             ['IC[Carbamidomethyl]', 133.0430],
             ['IY', 136.0757],
+            ['a-AV', 143.1179],
             ['yK', 147.1128],
+            ['b-GP', 155.0815],
             ['IW', 159.0917],
             ['y-R', 175.1190]
         ]

@@ -15,6 +15,7 @@ import spectrum_utils.plot as sup
 import numpy as np
 import sys
 import csv
+import gzip
 
 from pyteomics import mzml, auxiliary, mass
 from collections import OrderedDict
@@ -24,48 +25,69 @@ from numpy import exp
 
 class MSRunPeakFinder:
 
-    def __init__(self, file_name, rows, columns, tolerance):
+    def __init__(self):
+
+        argparser = argparse.ArgumentParser(description='An example program that reads an mzML file sequentially')
+        argparser.add_argument('--mzml_file', action='store', help='Name of the mzML file to read')
+        argparser.add_argument('--rows', action='store', type=int, help='Number of rows for graphs')
+        argparser.add_argument('--columns', action='store', type=int, help='Number of columns for output')
+        argparser.add_argument('--tolerance', action='store', type=float, help='Tolerance for identifying peaks in ppm')
+        argparser.add_argument('--correction_factor', action='store', help='Correction Factor for every peak in ppm')
+
+        params = argparser.parse_args()
 
         # variables declaration
-        self.file_name = file_name
         self.by_count = np.zeros((4000000,), dtype=int)
-        self.by_intensity = np.zeros((4000000,), dtype=int)
+        self.by_intensity = np.zeros((4000000,), dtype=float)
         self.by_strength = np.zeros((4000000,), dtype=int)
         self.all_peaks_intensities = [] # keeps track of all intensities
         self.observed_peaks = [] # keeps track of all peaks over a certain intensities, identified and unidentified
         self.known_ions = []
-        self.peak_correction_factor = 0.0004 # eventually make this not a constant
         self.t0 = timeit.default_timer()
         self.stats = { 'counter': 0, 'ms1spectra': 0, 'ms2spectra': 0 }
 
         # for pdf graph output
         # rename to plot_output_rows/columns
-        if rows is None or rows <= 0:
+        if params.rows is None or params.rows <= 0:
             self.rows = 5
         else:
-            self.rows = rows
-        # if columns is None or columns <= 0:
+            self.rows = params.rows
+        # if params.columns is None or params.columns <= 0:
         self.columns = 3
         # else:
-            # self.columns = columns
-        if tolerance is None or tolerance <= 0:
+            # self.columns = params.columns
+        if params.tolerance is None or params.tolerance <= 0:
             self.tolerance = 5
         else:
-            self.tolerance = tolerance
+            self.tolerance = params.tolerance
 
         # verify valid file to read
-        if file_name is None or file_name == "":
+        if params.mzml_file is None or params.mzml_file == "":
             print('ERROR: Parameter --mzml_file must be provided. See --help for more information')
             return
 
         # tries to open the params file specified
-        if not os.path.isfile(file_name):
-            print(f"ERROR: File '{file_name}' not found or not a file")
+        if not os.path.isfile(params.mzml_file):
+            print(f"ERROR: File '{params.mzml_file}' not found or not a file")
             return
+
+        self.file_name = params.mzml_file
+
+        if self.file_name.endswith('.gz'):
+            self.infile = gzip.open(self.file_name)
+            self.peak_file = self.file_name[0:len(self.file_name) - 8]
+        else:
+            self.infile = open(self.file_name, 'rb')
+            self.peak_file = self.file_name[0:len(self.file_name) - 5]
+
+        if params.correction_factor is not None and params.correction_factor != 0:
+            self.peak_correction_factor = params.correction_factor
+        else:
+            self.peak_correction_factor = -0.0004
 
     def aggregate_spectra(self):   
 
-        with mzml.read(self.file_name) as reader:
+        with mzml.read(self.infile) as reader:
             for spectrum in reader:
 
                 #### Update counters and print progress
@@ -85,20 +107,23 @@ class MSRunPeakFinder:
                         peak_mz = spectrum['m/z array'][index]
                         if peak_mz < 120:
                             peak_mz -= (120 - peak_mz) * 0.00001
-                        peak_mz -= self.peak_correction_factor
+                        # print(peak_mz, self.peak_correction_factor * peak_mz / 1e6)
+                        # peak_mz -= self.peak_correction_factor * peak_mz / 1e6
+                        peak_mz += self.peak_correction_factor
                         if peak_mz > 400:
                             break
                         else:
                             intensity = spectrum['intensity array'][index]
                             self.all_peaks_intensities.append(intensity)
                             self.by_count[int(10000 * peak_mz + 0.5)] += 1
-                            self.by_intensity[int(10000 * peak_mz + 0.5)] += intensity
+                            # self.by_intensity[int(10000 * peak_mz + 0.5)] += intensity
                             self.smallest_peak_intensity = min(self.smallest_peak_intensity, intensity)
 
                     # compare intensities to the smallest intensity
                     for index in range(len(spectrum['m/z array'])):
                         peak_mz = spectrum['m/z array'][index]
-                        peak_mz -= self.peak_correction_factor
+                        # peak_mz -= self.peak_correction_factor * peak_mz / 1e6
+                        peak_mz += self.peak_correction_factor
                         if peak_mz < 120:
                             peak_mz -= (120 - peak_mz) * 0.00001
                         if peak_mz > 400:
@@ -157,44 +182,44 @@ class MSRunPeakFinder:
         # calculate the additional deltas from possible explanations in aa_immonium_losses
         # turns formula into numbers
         for modification in aa_immonium_losses:
-            delta_masses = {}
+            delta_mzs = {}
             for variant in aa_immonium_losses[modification]:
-                delta_mass = 0
+                delta_mz = 0
                 variant_add = variant.split('-')[0].split('+')[1:]
                 variant_subtract = variant.split('-')[1:]
                 for variant_formula in variant_add:
-                    delta_mass += mass.calculate_mass(formula=variant_formula)
+                    delta_mz += mass.calculate_mass(formula=variant_formula)
                 for variant_formula in variant_subtract:
-                    delta_mass -= mass.calculate_mass(formula=variant_formula)
-                delta_masses[variant] = delta_mass
-            modification_deltas[modification] = delta_masses
+                    delta_mz -= mass.calculate_mass(formula=variant_formula)
+                delta_mzs[variant] = delta_mz
+            modification_deltas[modification] = delta_mzs
         
         # populate amino_acid_mass with theoretical ions and their mass
         for acid in amino_acids:
             for ion in ion_types:
                 if len(acid) == 1:
-                    base_acid_mass = mass.calculate_mass(sequence=acid, ion_type=ion, charge=1)
+                    base_acid_mz = mass.calculate_mass(sequence=acid, ion_type=ion, charge=1)
                 else:
-                    base_acid_mass = mass.calculate_mass(sequence=acid[0], ion_type=ion, charge=1) + amino_acid_modifications[acid]['mz']
+                    base_acid_mz = mass.calculate_mass(sequence=acid[0], ion_type=ion, charge=1) + amino_acid_modifications[acid]['mz']
 
-                base_acid_mass = int(base_acid_mass * 100000 + 0.5) / 100000.0
+                base_acid_mz = int(base_acid_mz * 100000 + 0.5) / 100000.0
 
                 # add possible modifications, but only for a ions
                 if ion == 'a':
                     # add base a ion
-                    self.known_ions.append([base_acid_mass, 'I' + acid, False])
+                    self.known_ions.append([base_acid_mz, 'I' + acid, False])
                     # add base a ion's isotope
-                    self.known_ions.append([int(100000 * (base_acid_mass + 1.0034)) / 100000, 'I' + acid + '+i', False])
+                    self.known_ions.append([int(100000 * (base_acid_mz + 1.0034)) / 100000, 'I' + acid + '+i', False])
                     # check if there are any possible modifications, if there are, add them too
                     for modification in modification_deltas[acid[0]]:
-                        acid_mass = base_acid_mass
-                        acid_mass += modification_deltas[acid[0]][modification]
-                        acid_mass = int(acid_mass * 100000 + 0.5) / 100000.0
-                        self.known_ions.append([acid_mass, 'I' + acid + modification, False])
+                        acid_mz = base_acid_mz
+                        acid_mz += modification_deltas[acid[0]][modification]
+                        acid_mz = int(acid_mz * 100000 + 0.5) / 100000.0
+                        self.known_ions.append([acid_mz, 'I' + acid + modification, False])
                 # add b and y ions
                 else:
-                    self.known_ions.append([base_acid_mass, ion + '-' + acid, False])
-                    self.known_ions.append([int(100000 * (base_acid_mass + 1.0034)) / 100000, ion + '-' + acid + '+i', False])
+                    self.known_ions.append([base_acid_mz, ion + '-' + acid, False])
+                    self.known_ions.append([int(100000 * (base_acid_mz + 1.0034)) / 100000, ion + '-' + acid + '+i', False])
 
         # double nested for loops to identify pairs of amino acids (i.e. A and A)
         # first amino acid
@@ -203,22 +228,22 @@ class MSRunPeakFinder:
                 pair_acid_1 = amino_acids[identifier_index_1]
                 # checks if it is Carbamidomethyl or Oxidation
                 if len(pair_acid_1) == 1:
-                    pair_mass_1 = mass.calculate_mass(sequence=pair_acid_1, ion_type=ion, charge=1)
+                    pair_mz_1 = mass.calculate_mass(sequence=pair_acid_1, ion_type=ion, charge=1)
                 else:
-                    pair_mass_1 = amino_acid_modifications[pair_acid_1]['mz'] + mass.calculate_mass(sequence=pair_acid_1[0], ion_type=ion, charge=1)
+                    pair_mz_1 = amino_acid_modifications[pair_acid_1]['mz'] + mass.calculate_mass(sequence=pair_acid_1[0], ion_type=ion, charge=1)
                 
                 # second amino acid
                 for identifier_index_2 in range(len(amino_acids) - identifier_index_1):
                     identifier_index_2 += identifier_index_1
                     pair_acid_2 = amino_acids[identifier_index_2]
                     if len(pair_acid_2) == 1:
-                        pair_mass_2 = mass.calculate_mass(sequence=pair_acid_2, ion_type='b', charge=0)
+                        pair_mz_2 = mass.calculate_mass(sequence=pair_acid_2, ion_type='b', charge=0)
                     else:
-                        pair_mass_2 = amino_acid_modifications[pair_acid_2]['mz'] + mass.calculate_mass(sequence=pair_acid_2[0], ion_type='b', charge=0)
+                        pair_mz_2 = amino_acid_modifications[pair_acid_2]['mz'] + mass.calculate_mass(sequence=pair_acid_2[0], ion_type='b', charge=0)
                     
                     # add two amino acids together
-                    pair_mass = int(100000 * (pair_mass_1 + pair_mass_2) + 0.5) / 100000
-                    self.known_ions.append([pair_mass, ion + '-' + pair_acid_1 + pair_acid_2, False])
+                    pair_mz = int(100000 * (pair_mz_1 + pair_mz_2) + 0.5) / 100000
+                    self.known_ions.append([pair_mz, ion + '-' + pair_acid_1 + pair_acid_2, False])
                     # if pair_acid_1 + pair_acid_2 == 'RR':
                         # print(f'1: {pair_mass_1}, 2: {pair_mass_2}, ion: {ion}')
 
@@ -229,32 +254,32 @@ class MSRunPeakFinder:
                 trio_acid_1 = amino_acids[identifier_index_1]
                 # checks if it is Carbamidomethyl or Oxidation
                 if len(trio_acid_1) == 1:
-                    trio_mass_1 = mass.calculate_mass(sequence=trio_acid_1, ion_type=ion, charge=1)
+                    trio_mz_1 = mass.calculate_mass(sequence=trio_acid_1, ion_type=ion, charge=1)
                 else:
-                    trio_mass_1 = amino_acid_modifications[trio_acid_1]['mz'] + mass.calculate_mass(sequence=trio_acid_1[0], ion_type=ion, charge=1)
+                    trio_mz_1 = amino_acid_modifications[trio_acid_1]['mz'] + mass.calculate_mass(sequence=trio_acid_1[0], ion_type=ion, charge=1)
                 
                 # second amino acid
                 for identifier_index_2 in range(len(amino_acids) - identifier_index_1):
                     identifier_index_2 += identifier_index_1
                     trio_acid_2 = amino_acids[identifier_index_2]
                     if len(trio_acid_2) == 1:
-                        trio_mass_2 = mass.calculate_mass(sequence=trio_acid_2, ion_type='b', charge=0)
+                        trio_mz_2 = mass.calculate_mass(sequence=trio_acid_2, ion_type='b', charge=0)
                     else:
-                        trio_mass_2 = amino_acid_modifications[trio_acid_2]['mz'] + mass.calculate_mass(sequence=trio_acid_2[0], ion_type='b', charge=0)
+                        trio_mz_2 = amino_acid_modifications[trio_acid_2]['mz'] + mass.calculate_mass(sequence=trio_acid_2[0], ion_type='b', charge=0)
                     
                     # third amino acid
                     for identifier_index_3 in range(len(amino_acids) - identifier_index_2):
                         identifier_index_3 += identifier_index_2
                         trio_acid_3 = amino_acids[identifier_index_3]
                         if len(trio_acid_3) == 1:
-                            trio_mass_3 = mass.calculate_mass(sequence=trio_acid_3, ion_type='b', charge=0)
+                            trio_mz_3 = mass.calculate_mass(sequence=trio_acid_3, ion_type='b', charge=0)
                         else:
-                            trio_mass_3 = amino_acid_modifications[trio_acid_3]['mz'] + mass.calculate_mass(sequence=trio_acid_3[0], ion_type='b', charge=0)
+                            trio_mz_3 = amino_acid_modifications[trio_acid_3]['mz'] + mass.calculate_mass(sequence=trio_acid_3[0], ion_type='b', charge=0)
 
                         # add all 3 together
-                        trio_mass = int(100000 * (trio_mass_1 + trio_mass_2 + trio_mass_3) + 0.5) / 100000
-                        if trio_mass <= 400:
-                            self.known_ions.append([trio_mass, ion + '-' + trio_acid_1 + trio_acid_2 + trio_acid_3, False])
+                        trio_mz = int(100000 * (trio_mz_1 + trio_mz_2 + trio_mz_3) + 0.5) / 100000
+                        if trio_mz <= 400:
+                            self.known_ions.append([trio_mz, ion + '-' + trio_acid_1 + trio_acid_2 + trio_acid_3, False])
                         else:
                             continue
 
@@ -269,6 +294,16 @@ class MSRunPeakFinder:
 
         # print(len(self.known_ions))
         # print(self.known_ions[800 : 850])
+        proton_mass = 1.007276
+        # self.known_ions.append([105.0659, "C3H8N2O2", False]) # ppm = 1.18
+        # self.known_ions.append([106.0487, "CH5N4O2", False]) # ppm = 2.38
+        # self.known_ions.append([116.0951, "C5H12N2O", False]) # ppm = 1.18
+        # self.known_ions.append([119.0816, "C4H10N2O2", False]) # ppm = 1.46
+        self.known_ions.append([mass.calculate_mass(formula="C3H8N2O2") + proton_mass, "C3H8N2O2", False]) # ppm = 1.18
+        self.known_ions.append([mass.calculate_mass(formula="CH5N4O2") + proton_mass, "CH5N4O2", False]) # ppm = 2.38
+        self.known_ions.append([mass.calculate_mass(formula="C5H12N2O") + proton_mass, "C5H12N2O", False]) # ppm = 1.18
+        self.known_ions.append([mass.calculate_mass(formula="C4H10N2O2") + proton_mass, "C4H10N2O2", False]) # ppm = 1.46
+
         self.known_ions.sort()
 
     def find_peaks(self):
@@ -310,7 +345,8 @@ class MSRunPeakFinder:
                 del self.observed_peaks[removable_peaks_index[index] - index]
 
     def write_output(self):
-        with open('common_peaks.tsv', 'w') as file:
+        with open(f'{self.peak_file}.tsv', 'w') as file:
+        # with open('common_peaks.tsv', 'w') as file:
             writer = csv.writer(file, delimiter='\t', lineterminator='\n')
             writer.writerows(self.observed_peaks)
 
@@ -455,7 +491,8 @@ class MSRunPeakFinder:
     def plot_peaks_strength(self):
         x = 0
         y = 0
-        pdf = PdfPages('common_peaks.pdf')
+        # pdf = PdfPages('common_peaks.pdf')
+        pdf = PdfPages(f'{self.peak_file}.pdf')
         fig, ax = plt.subplots(self.rows, self.columns, figsize=(8.5,11))
         for peak in self.observed_peaks:
             fig.subplots_adjust(top=0.98, bottom=0.05, left=0.12, right=0.98, hspace=0.2, wspace=0.38)
@@ -527,15 +564,16 @@ class MSRunPeakFinder:
 
     def delta_scatterplot(self):
         mz_values = []
-        intensity_values = []
+        delta_values_ppm = []
         for peak in self.observed_peaks:
             if len(peak) >= 3:
                 mz_values.append(peak[0])
-                intensity_values.append(peak[2][1])
+                delta_values_ppm.append(peak[2][1] * 1e6 / peak[2][0])
             else:
                 continue
-        plt.scatter(mz_values, intensity_values)
-        plt.savefig('delta_scatterplot.pdf')
+        plt.scatter(mz_values, delta_values_ppm, 0.5)
+        # plt.savefig('delta_scatterplot.pdf')
+        plt.savefig(f'{self.peak_file}_delta_scatterplot.pdf')
 
     def show_stats(self):
         t1 = timeit.default_timer()
@@ -563,16 +601,7 @@ def get_strength(intensity, smallest_peak_intensity):
 
 # put main at the end of the program, define identify peaks method first
 def main():
-
-    argparser = argparse.ArgumentParser(description='An example program that reads an mzML file sequentially')
-    argparser.add_argument('--mzml_file', action='store', help='Name of the mzML file to read')
-    argparser.add_argument('--rows', action='store', type=int, help='Number of rows for graphs')
-    argparser.add_argument('--columns', action='store', type=int, help='Number of columns for output')
-    argparser.add_argument('--tolerance', action='store', type=float, help='Tolerance for identifying peaks in ppm')
-
-    params = argparser.parse_args()
-
-    peak_finder = MSRunPeakFinder(params.mzml_file, params.rows, params.columns, params.tolerance)
+    peak_finder = MSRunPeakFinder()
     # find the intensity of each m/z value
     peak_finder.aggregate_spectra()
     # create a histogram of all the intensities between 0 and 20000

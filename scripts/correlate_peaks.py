@@ -1,9 +1,14 @@
 #!/usr/bin/env python3
 
 # must first change to scripts folder through "cd .\scripts\"
-# python correlate_peaks.py --mzml_file ..\data\HFX_9850_GVA_DLD1_2_180719.mzML --peak_file peak_pairs.txt
-# python correlate_peaks.py --mzml_file ..\data\HFX_9850_GVA_DLD1_2_180719.mzML --peak_file correlations_with_105.0659.tsv
-# first 3, 5 are correlated, 4th and last one is not
+# python correlate_peaks.py --mzml_file ..\data\HFX_9850_GVA_DLD1_2_180719_subset.mzML --peak_file peak_pairs.txt
+# python correlate_peaks.py --mzml_file ..\data\HFX_9850_GVA_DLD1_2_180719_subset.mzML --peak_file correlations_with_105.0659.tsv
+# python correlate_peaks.py --mzml_file ..\data\HFX_9850_GVA_DLD1_2_180719_subset.mzML --peak_file correlations_with_106.0487.tsv
+# python correlate_peaks.py --mzml_file ..\data\HFX_9850_GVA_DLD1_2_180719_subset.mzML --peak_file correlations_with_111.07467.tsv
+# python correlate_peaks.py --mzml_file ..\data\HFX_9850_GVA_DLD1_2_180719_subset.mzML --peak_file correlations_with_117.1023.tsv
+# python correlate_peaks.py --mzml_file ..\data\HFX_9850_GVA_DLD1_2_180719_subset.mzML --peak_file correlations_with_119.0816.tsv
+# python correlate_peaks.py --mzml_file ..\data\HFX_9850_GVA_DLD1_2_180719_subset.mzML --peak_file correlations_with_129.10223.tsv
+# python correlate_peaks.py --mzml_file ..\data\HFX_9850_GVA_DLD1_2_180719_subset.mzML --peak_file correlations_with_130.08625.tsv
 
 import os
 import argparse
@@ -50,13 +55,13 @@ class MSRunSpectraFinder:
         self.mzml_file = params.mzml_file
         self.peak_file = params.peak_file[0:len(params.peak_file) - 4]
 
-        self.correlate_pairs = []
+        self.pairs = []
         with open(params.peak_file) as file:
             lines = [line.rstrip() for line in file]
             for pairs in lines:
                 line_split = [i for i in pairs.split("\t")]
                 pair = [float(line_split[0]), line_split[1], float(line_split[2])]
-                self.correlate_pairs.append(pair)
+                self.pairs.append(pair)
 
         self.has_pxd = False
         if params.pxd is not None and params.pxd != "":
@@ -127,7 +132,7 @@ class MSRunSpectraFinder:
     def show_stats(self):
         #### Print final timing information
         t1 = timeit.default_timer()
-        print(f"INFO: Read {self.stats['counter']} spectra from {self.mzml_file}")
+        print(f"INFO: Read {self.stats_counter} spectra from {self.mzml_file}")
         print(f"INFO: Elapsed time: {t1-self.t0}")
         print(f"INFO: Processed {self.stats_counter/(t1-self.t0)} spectra per second")
 
@@ -136,14 +141,14 @@ class MSRunSpectraFinder:
         y = 0
         pdf = PdfPages(f'{self.peak_file}.pdf')
         fig, ax = plt.subplots(5, 3, figsize=(8.5,11))
-        for index in range(len(self.correlate_pairs)):
+        for index in range(len(self.pairs)):
             fig.subplots_adjust(top=0.98, bottom=0.05, left=0.12, right=0.98, hspace=0.2, wspace=0.38)
             ax[x, y].scatter(self.peak_unknown_intensity[index], self.peak_known_intensity[index], 0.5)
             ax[x, y].set_xscale("log")
             ax[x, y].set_yscale("log")
             ax[x, y].tick_params(axis='x', labelsize='xx-small')
             ax[x, y].tick_params(axis='y', labelsize='xx-small')
-            ax[x, y].text(min(self.peak_unknown_intensity[index]), max(self.peak_known_intensity[index]) * 1.03, f'unknown: \n    {self.correlate_pairs[index][0]}\nknown: \n    {self.correlate_pairs[index][1]}, {self.correlate_pairs[index][2]}', fontsize='xx-small', ha='left', va='top',)
+            ax[x, y].text(min(self.peak_unknown_intensity[index]), max(self.peak_known_intensity[index]) * 1.03, f'unknown: \n    {self.pairs[index][0]}\nknown: \n    {self.pairs[index][1]}, {self.pairs[index][2]}', fontsize='xx-small', ha='left', va='top',)
 
             y += 1
             y %= 3
@@ -153,7 +158,7 @@ class MSRunSpectraFinder:
                 if x == 0:
                     pdf.savefig(fig)
                     plt.close('all')
-                    fig, ax = plt.subplots(self.rows, self.columns,figsize=(8.5,11))
+                    fig, ax = plt.subplots(5, 3,figsize=(8.5,11))
         
         if x != 0:
             pdf.savefig(fig)
@@ -164,7 +169,8 @@ def main():
 
     spectra_finder = MSRunSpectraFinder()
 
-    for pair in spectra_finder.correlate_pairs:
+    pairs = spectra_finder.pairs
+    for pair in pairs:
         # find all scans with both peaks
         spectra_finder.find_spectra(pair)
         
