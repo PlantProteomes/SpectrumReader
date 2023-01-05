@@ -75,6 +75,7 @@ class MSRunSpectraFinder:
 
         self.peak_known_intensity = []
         self.peak_unknown_intensity = []
+        self.debug = []
 
         self.lower_bound = 0
         self.upper_bound = 0
@@ -105,6 +106,7 @@ class MSRunSpectraFinder:
                             elif mz > self.upper_bound:
                                 break
                             else:
+                                # need to break after the first one as well?
                                 current_intensity = spectrum['intensity array'][index]
 
                                 lower_peak_bound = pair[2] - self.peak_tolerance
@@ -112,6 +114,8 @@ class MSRunSpectraFinder:
                                 if spectrum['m/z array'][len(spectrum['m/z array']) - 1] < lower_peak_bound:
                                         continue
                                 else:
+                                    found = False
+                                    printed = False
                                     for index in range(len(spectrum['m/z array'])):
                                         mz = spectrum['m/z array'][index]
                                         if mz < lower_peak_bound:
@@ -122,6 +126,13 @@ class MSRunSpectraFinder:
                                             known_intensity = spectrum['intensity array'][index]
                                             peak_unknown_intensity.append(current_intensity)
                                             peak_known_intensity.append(known_intensity)
+                                            # here lies the problem - make a record of everything and find the one closest to pair[2]
+                                            # if there is more than 1, either pick the brightest peak or the peak closest to the desired m/z value
+                                            # after inspecting the tolerance window, decide which one is the closest and then record the intensity
+                                            if found == True and printed == False and self.lower_bound == lower_peak_bound:
+                                                self.debug.append(spectrum)
+                                                printed = True
+                                            found = True
                                             continue
 
                     if self.stats_counter/1000 == int(self.stats_counter/1000):
@@ -176,6 +187,9 @@ def main():
         
     # print out intensities as a scatterplot
     spectra_finder.correlate_peaks()
+
+    for spectra in spectra_finder.debug:
+        print(spectra)
 
     spectra_finder.show_stats()
 

@@ -1,7 +1,11 @@
 #!/usr/bin/env python3
 
 # must first change to scripts folder through "cd .\scripts\"
-# to run the program (use terminal): python scan_ms2s.py --mzml_file ..\data\HFX_9850_GVA_DLD1_2_180719.mzML --rows 3 --columns 5
+# to run the program (use terminal): python scan_ms2s.py --mzml_file ..\data\HFX_9850_GVA_DLD1_2_180719_subset.mzML --rows 3 --columns 5
+# to run the program (use terminal): python scan_ms2s.py --mzml_file ..\data\HFX_9850_GVA_DLD1_2_180719.mzML.gz
+# to run the program (use terminal): python scan_ms2s.py --mzml_file ..\data\QEX03_210305_PTMscan_wt_IP_63.mzML.gz
+# to run the program (use terminal): python scan_ms2s.py --mzml_file ..\data\06CPTAC_BCprospective_W_BI_20161116_BA_f17.mzML.gz
+# to run the program (use terminal): python scan_ms2s.py --mzml_file ..\data\Q20181210_06.mzML.gz
 
 # bad outputs for some of these, ex: peak 228.1349
 
@@ -105,8 +109,8 @@ class MSRunPeakFinder:
                     self.smallest_peak_intensity = sys.maxsize
                     for index in range(len(spectrum['m/z array'])):
                         peak_mz = spectrum['m/z array'][index]
-                        if peak_mz < 120:
-                            peak_mz -= (120 - peak_mz) * 0.00001
+                        # if peak_mz < 120:
+                            # peak_mz -= (120 - peak_mz) * 0.00001
                         # print(peak_mz, self.peak_correction_factor * peak_mz / 1e6)
                         # peak_mz -= self.peak_correction_factor * peak_mz / 1e6
                         peak_mz += self.peak_correction_factor
@@ -525,6 +529,7 @@ class MSRunPeakFinder:
                 popt,pcov = curve_fit(gaussian_function,ppm_values,intensity_values,p0=[intensity_values[center],ppm_values[center],binsize])
                 ax[x,y].plot(ppm_values,gaussian_function(ppm_values,*popt),'r:')
             except:
+                # either skip it or show it, for now just skip it
                 continue
 
             peak_fit_center = int(100000*(peak[0] + (popt[1] * peak[0] / 1e6))) / 100000
