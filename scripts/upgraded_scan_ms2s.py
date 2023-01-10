@@ -20,6 +20,7 @@ import numpy as np
 import sys
 import csv
 import gzip
+import statistics
 
 from pyteomics import mzml, auxiliary, mass
 from collections import OrderedDict
@@ -129,8 +130,8 @@ class MSRunPeakFinder:
                         peak_mz = spectrum['m/z array'][index]
                         # peak_mz -= self.peak_correction_factor * peak_mz / 1e6
                         peak_mz += self.peak_correction_factor
-                        if peak_mz < 120:
-                            peak_mz -= (120 - peak_mz) * 0.00001
+                        # if peak_mz < 120:
+                            # peak_mz -= (120 - peak_mz) * 0.00001
                         if peak_mz > 400:
                             break
                         else:
@@ -297,7 +298,7 @@ class MSRunPeakFinder:
             self.known_ions.append([self.known_ions[index][0] - ammonia, self.known_ions[index][1] + '-NH3', False])
             self.known_ions.append([self.known_ions[index][0] - water_ammonia, self.known_ions[index][1] + '-H2O-NH3', False])
             if self.known_ions[index][1][0] == 'a' or self.known_ions[index][1][0] == 'b' or self.known_ions[index][1][0] == 'I' or 'K' in self.known_ions[index][1]:
-                self.known_ions.append([self.known_ions[index][0] + 229.162932, self.known_ions[index][1] + 'TMT', False])
+                self.known_ions.append([self.known_ions[index][0] + 229.162932, self.known_ions[index][1] + '+TMT', False])
 
         # print(len(self.known_ions))
         # print(self.known_ions[800 : 850])
@@ -387,12 +388,14 @@ class MSRunPeakFinder:
         peak_mz = round((peak[0] + (popt[1] * peak[0] / 1e6)), 5)
         return [peak_mz, round(popt[0], 1)]
 
-    def identify_peaks(self):
+    def identify_peaks(self): # add a new parameter called popt from the gaussian fits
         # out of the intense peaks, see which ones are identifiable
         # includes all possible identifications
         removable_peaks_index = []
         for index in range(len(self.observed_peaks)):
             peak = self.observed_peaks[index]
+            # call the gaussian function with all the popts, but x is peak[0] (ex: x=peak[0]=150)
+            # output should be the correction that needs to be applied to peak[0], output is ~0.6/0.7, then do x-output
             for ion_index in range(len(self.known_ions)):
                 amino_acid = self.known_ions[ion_index]
                 # check tolerance based on ppm
@@ -637,10 +640,10 @@ class MSRunPeakFinder:
             else:
                 continue
         plt.scatter(mz_values, delta_values_ppm, 0.5)
-        # b, a = np.polyfit(mz_values, delta_values_ppm, deg=0)
-        # plt.axhline(y = a)
+        horizontal_fit_line = statistics.median(delta_values_ppm)
+        plt.axhline(y = horizontal_fit_line)
+        plt.title(f"residuals of identified peaks\n medium = {horizontal_fit_line}")
         # plt.savefig('delta_scatterplot.pdf')
-        # lt.title(a)
         plt.savefig(f'{self.peak_file}_delta_scatterplot.pdf')
 
     def show_stats(self):
@@ -653,9 +656,11 @@ class MSRunPeakFinder:
         print(f"INFO: Processed {self.stats['counter']/(t1-self.t0)} spectra per second")
 
     # Gaussian function used for curve fitting
-def gaussian_function(x,a,x0,sigma):
-
-    return a*exp(-(x-x0)**2/(2*sigma**2))
+def gaussian_function(x,a,x0,sigma): # add c as an input parameter
+    # a = amplitude
+    # x0 = center point of the gaussian
+    # sigma = measure of the width of the gaussian
+    return a*exp(-(x-x0)**2/(2*sigma**2)) # +c
 
 def get_strength(intensity, smallest_peak_intensity):
     if intensity <= 3 * smallest_peak_intensity:
