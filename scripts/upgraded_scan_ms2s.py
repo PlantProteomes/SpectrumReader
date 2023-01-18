@@ -48,6 +48,7 @@ class MSRunPeakFinder:
         self.all_peaks_intensities = [] # keeps track of all intensities
         self.triggered_peaks = []
         self.observed_peaks = [] # keeps track of all peaks over a certain intensities, identified and unidentified
+        self.corrected_observed_peaks = []
         self.known_ions = []
         self.t0 = timeit.default_timer()
         self.stats = { 'counter': 0, 'ms1spectra': 0, 'ms2spectra': 0 }
@@ -333,6 +334,11 @@ class MSRunPeakFinder:
 
         self.known_ions.sort()
 
+    def reset_identifications(self):
+        for index in range(len(self.known_ions)):
+            if self.known_ions[index][2]:
+                self.known_ions[index][2] = False
+
     def find_initial_triggers(self):
         # scan through peaks to find all peaks with over 50
         previous_peak = [0, 0]
@@ -360,7 +366,10 @@ class MSRunPeakFinder:
                 if peak_and_intensity[0] == 0 and peak_and_intensity[1] == 0:
                     continue
                 else:
-                    self.observed_peaks.append(peak_and_intensity)
+                    if len(self.observed_peaks) > 0 and peak_and_intensity[0] == self.observed_peaks[len(self.observed_peaks) - 1][0] and peak_and_intensity[1] == self.observed_peaks[len(self.observed_peaks) - 1][1]:
+                        continue
+                    else:
+                        self.observed_peaks.append(peak_and_intensity)        
             
     def get_peak_fit_center(self, peak):
         mz_values = []
@@ -388,28 +397,45 @@ class MSRunPeakFinder:
         peak_mz = round((peak[0] + (popt[1] * peak[0] / 1e6)), 5)
         return [peak_mz, round(popt[0], 1)]
 
-    def identify_peaks(self): # add a new parameter called popt from the gaussian fits
-        # out of the intense peaks, see which ones are identifiable
-        # includes all possible identifications
+    def identify_peaks(self):
         removable_peaks_index = []
-        for index in range(len(self.observed_peaks)):
-            peak = self.observed_peaks[index]
-            # call the gaussian function with all the popts, but x is peak[0] (ex: x=peak[0]=150)
-            # output should be the correction that needs to be applied to peak[0], output is ~0.6/0.7, then do x-output
-            for ion_index in range(len(self.known_ions)):
-                amino_acid = self.known_ions[ion_index]
-                # check tolerance based on ppm
-                peak_tolerance = self.tolerance * peak[0] / 1e6
-                if peak[0] > amino_acid[0] - peak_tolerance and peak[0] < amino_acid[0] + peak_tolerance and not amino_acid[2]:
-                    identified_peak = [amino_acid[0], int(100000*(amino_acid[0] - peak[0]) + 0.5) / 100000, amino_acid[1]]
-                    self.observed_peaks[index].append(identified_peak)
-                    self.known_ions[ion_index][2] = True
-                elif peak[0] > amino_acid[0] - peak_tolerance and peak[0] < amino_acid[0] + peak_tolerance and amino_acid[2]:
-                    removable_peaks_index.append(index)
+        if self.fit_coefficients is None:
+            for index in range(len(self.observed_peaks)):
+                peak = self.observed_peaks[index]
+                for ion_index in range(len(self.known_ions)):
+                    amino_acid = self.known_ions[ion_index]
+                    # check tolerance based on ppm
+                    peak_tolerance = self.tolerance * peak[0] / 1e6
+                    if peak[0] > amino_acid[0] - peak_tolerance and peak[0] < amino_acid[0] + peak_tolerance and not amino_acid[2]:
+                        identified_peak = [amino_acid[0], int(100000*(amino_acid[0] - peak[0]) + 0.5) / 100000, amino_acid[1]]
+                        self.observed_peaks[index].append(identified_peak)
+                        self.known_ions[ion_index][2] = True
+                    elif peak[0] > amino_acid[0] - peak_tolerance and peak[0] < amino_acid[0] + peak_tolerance and amino_acid[2]:
+                        removable_peaks_index.append(index)
 
-        for index in range(len(removable_peaks_index)):
-            if len(self.observed_peaks[removable_peaks_index[index] - index]) == 2:
-                del self.observed_peaks[removable_peaks_index[index] - index]
+            for index in range(len(removable_peaks_index)):
+                if len(self.observed_peaks[removable_peaks_index[index] - index]) == 2:
+                    del self.observed_peaks[removable_peaks_index[index] - index]
+        else:
+            self.reset_identifications()
+            for index in range(len(self.observed_peaks)):
+                peak = self.observed_peaks[index]
+                if len(peak) > 2:
+                    self.observed_peaks[index] = [peak[0], peak[1]]
+                for ion_index in range(len(self.known_ions)):
+                    amino_acid = self.known_ions[ion_index]
+                    # check tolerance based on ppm
+                    peak_tolerance = self.tolerance * peak[0] / 1e6
+                    if peak[0] > amino_acid[0] - peak_tolerance and peak[0] < amino_acid[0] + peak_tolerance and not amino_acid[2]:
+                        identified_peak = [amino_acid[0], int(100000*(amino_acid[0] - peak[0]) + 0.5) / 100000, amino_acid[1]]
+                        self.observed_peaks[index].append(identified_peak)
+                        self.known_ions[ion_index][2] = True
+                    elif peak[0] > amino_acid[0] - peak_tolerance and peak[0] < amino_acid[0] + peak_tolerance and amino_acid[2]:
+                        removable_peaks_index.append(index)
+
+            for index in range(len(removable_peaks_index)):
+                if len(self.observed_peaks[removable_peaks_index[index] - index]) == 2:
+                    del self.observed_peaks[removable_peaks_index[index] - index]
 
     def write_output(self):
         with open(f'{self.peak_file}.tsv', 'w') as file:
@@ -459,7 +485,7 @@ class MSRunPeakFinder:
             try:
             #if 1:
                 popt,pcov = curve_fit(gaussian_function,mz_values,intensity_values,p0=[intensity_values[center],mz_values[center],binsize])
-                ax[x,y].plot(mz_values,gaussian_function(mz_values,*popt),'r:')
+                ax[x,y].plot(mz_values,gaussian_function(mz_values, *popt),'r:')
             except:
                 continue
             
@@ -524,7 +550,7 @@ class MSRunPeakFinder:
 
                 try:
                     popt,pcov = curve_fit(gaussian_function,mz_values,total_intensity_values[y],p0=[total_intensity_values[y][center],mz_values[center],binsize])
-                    ax[x,y].plot(mz_values,gaussian_function(mz_values,*popt),'r:')
+                    ax[x,y].plot(mz_values,gaussian_function(mz_values, *popt),'r:')
                 except:
                     continue
 
@@ -590,7 +616,7 @@ class MSRunPeakFinder:
             try:
             #if 1:
                 popt,pcov = curve_fit(gaussian_function,ppm_values,intensity_values,p0=[intensity_values[center],ppm_values[center],binsize])
-                ax[x,y].plot(ppm_values,gaussian_function(ppm_values,*popt),'r:')
+                ax[x,y].plot(ppm_values,gaussian_function(ppm_values, *popt),'r:')
             except:
                 # either skip it or show it, for now just skip it
                 continue
@@ -631,20 +657,57 @@ class MSRunPeakFinder:
         plt.close()
 
     def delta_scatterplot(self):
-        mz_values = []
-        delta_values_ppm = []
-        for peak in self.observed_peaks:
-            if len(peak) >= 3:
-                mz_values.append(peak[0])
-                delta_values_ppm.append(peak[2][1] * 1e6 / peak[2][0])
-            else:
-                continue
-        plt.scatter(mz_values, delta_values_ppm, 0.5)
-        horizontal_fit_line = statistics.median(delta_values_ppm)
-        plt.axhline(y = horizontal_fit_line)
-        plt.title(f"residuals of identified peaks\n medium = {horizontal_fit_line}")
-        # plt.savefig('delta_scatterplot.pdf')
-        plt.savefig(f'{self.peak_file}_delta_scatterplot.pdf')
+        if self.fit_coefficients is None:
+            mz_values = []
+            delta_values_ppm = []
+            for peak in self.observed_peaks:
+                if len(peak) >= 3:
+                    mz_values.append(peak[0])
+                    delta_values_ppm.append(peak[2][1] * 1e6 / peak[2][0])
+                else:
+                    continue
+            plt.scatter(mz_values, delta_values_ppm, 0.5)
+            # horizontal_fit_line = statistics.median(delta_values_ppm)
+
+            # add gaussian fitting
+            n = len(mz_values)
+            center = int(n/2)
+            binsize = mz_values[center]-mz_values[center-1]
+
+            try:
+                mz_values = np.array(mz_values)# convert mz_values from a list to an array
+                popt, pcov = curve_fit(gaussian_function,mz_values,delta_values_ppm,p0=[delta_values_ppm[center],mz_values[center],binsize])
+                self.fit_coefficients = popt
+            except:
+                print("gaussian fit for delta scatterplot failed")
+
+            plt.plot(mz_values,gaussian_function(mz_values, self.fit_coefficients),'r:')
+            # plt.axhline(y = horizontal_fit_line)
+            # plt.title(f"residuals of identified peaks\n medium = {horizontal_fit_line}")
+            plt.title("residuals of identified peaks")
+            # plt.savefig('delta_scatterplot.pdf')
+            plt.savefig(f'{self.peak_file}_delta_scatterplot_before_correction.pdf')
+        else:
+            mz_values = []
+            delta_values_ppm = []
+            for peak in self.observed_peaks:
+                if len(peak) >= 3:
+                    mz_values.append(peak[0])
+                    delta_values_ppm.append(peak[2][1] * 1e6 / peak[2][0])
+                else:
+                    continue
+            plt.scatter(mz_values, delta_values_ppm, 0.5)
+            plt.savefig(f'{self.peak_file}_delta_scatterplot_after_correction.pdf')
+
+    # change to modify self.observed_peaks instead
+    def apply_correction(self):
+        if self.fit_coefficients is None:
+            return
+        else:
+            for index in range(len(self.observed_peaks)):
+                peak_mz = self.observed_peaks[index][0]
+                peak_intensity = self.observed_peaks[index][1]
+                self.corrected_observed_peaks[index].append([peak_mz - gaussian_function(peak_mz, self.fit_coefficients), peak_intensity])
 
     def show_stats(self):
         t1 = timeit.default_timer()
@@ -656,11 +719,11 @@ class MSRunPeakFinder:
         print(f"INFO: Processed {self.stats['counter']/(t1-self.t0)} spectra per second")
 
     # Gaussian function used for curve fitting
-def gaussian_function(x,a,x0,sigma): # add c as an input parameter
+def gaussian_function(x,a,x0,sigma):
     # a = amplitude
     # x0 = center point of the gaussian
     # sigma = measure of the width of the gaussian
-    return a*exp(-(x-x0)**2/(2*sigma**2)) # +c
+    return a*exp(-(x-x0)**2/(2*sigma**2))
 
 def get_strength(intensity, smallest_peak_intensity):
     if intensity <= 3 * smallest_peak_intensity:
@@ -686,13 +749,16 @@ def main():
     peak_finder.refine_triggered_peaks()
     peak_finder.identify_peaks()
     # save the identified peaks to a file
-    peak_finder.write_output()
+    peak_finder.delta_scatterplot()
     # plot graphs of each peak as a pop-up
     # peak_finder.show_intense_peaks()
     # save graphs of each peak to a pdf
-    peak_finder.plot_peaks_strength()
+    peak_finder.apply_correction()
+    peak_finder.identify_peaks()
     peak_finder.delta_scatterplot()
+    peak_finder.plot_peaks_strength()
     # print out data, including run time, number of peaks found, etc
+    peak_finder.write_output()
     peak_finder.show_stats()
 
 if __name__ == "__main__": main()
