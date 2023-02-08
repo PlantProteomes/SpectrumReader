@@ -55,7 +55,7 @@ class MSRunPeakFinder:
         self.triggered_peaks = []
         self.observed_peaks = [] # keeps track of all peaks over a certain intensities, identified and unidentified
         self.known_ions = []
-        self.minimum_triggers = 300
+        self.minimum_triggers = 30
         self.ppm_delta = 15
         self.t0 = timeit.default_timer()
         self.stats = { 'counter': 0, 'ms1spectra': 0, 'ms2spectra': 0 }
@@ -76,9 +76,11 @@ class MSRunPeakFinder:
         # else:
             # self.columns = params.columns
         if params.tolerance is None or params.tolerance <= 0:
-            self.tolerance = 7
+            self.tolerance = 10
+            self.tolerance_150 = 5
         else:
             self.tolerance = params.tolerance
+            self.tolerance_150 = 5
 
         # verify valid file to read
         if params.mzml_file is None or params.mzml_file == "":
@@ -319,6 +321,11 @@ class MSRunPeakFinder:
 
     def determine_crude_correction(self):
         first_pass_peaks = {
+            'IP': 70.06512,
+            'IV': 72.08078,
+            'IQ-NH3': 84.04439,
+            'IK-NH3': 84.08077,
+            'IL': 86.09643,
             'IQ': 101.07094,
             'IE': 102.05495,
             'IM': 104.05285,
@@ -346,7 +353,20 @@ class MSRunPeakFinder:
             'y-R': 175.11895,
             'a-LP': 183.14919,
             'b-PS': 185.09207,
-            'b-PV': 197.12845
+            'b-PV': 197.12845,
+            'a-DL': 201.12337,
+            'a-AY': 207.11281,
+            'y-AH-H2O': 209.10331,
+            'a-EL': 215.13902,
+            'b-EL-H2O': 225.12337,
+            'a-APS': 228.13427,
+            'b-DL': 229.11828,
+            'y-HV-H2O': 237.1346,
+            'a-APT': 242.14992,
+            'b-DQ': 244.0928,
+            'y-KP': 244.16557,
+            'y-HV': 255.14517,
+            'y-PR': 272.17172
         }
 
         self.crude_xy_scatterplot = []
@@ -454,11 +474,14 @@ class MSRunPeakFinder:
                 spline_correction_mz = y_values[index] * peak[0] / 1e6 # TODO: check if this should be before or after peak[0] += crude_correction_mz
                 peak[0] += spline_correction_mz
 
-            self.observed_peaks[index] = self.observed_peaks[index][0:1]
+            self.observed_peaks[index] = self.observed_peaks[index][0:2]
             for ion_index in range(len(self.known_ions)):
                 amino_acid = self.known_ions[ion_index]
                 # check tolerance based on ppm
-                peak_tolerance = self.tolerance * peak[0] / 1e6
+                if peak[0] >= 150:
+                    peak_tolerance = self.tolerance_150 * peak[0] / 1e6
+                else:
+                    peak_tolerance = self.tolerance * peak[0] / 1e6
                 if peak[0] > amino_acid[0] - peak_tolerance and peak[0] < amino_acid[0] + peak_tolerance and not amino_acid[2]:
                     identified_peak = [amino_acid[0], int(100000*(amino_acid[0] - peak[0]) + 0.5) / 100000, amino_acid[1]]
                     identifications.append(identified_peak)
@@ -480,10 +503,8 @@ class MSRunPeakFinder:
             calibration_ppm.append(closest_match[2])
         self.ax[0][0].plot(peak_mz, calibration_ppm, '.',c="g", markersize=2)
         self.ax[0][0].axhline(y = self.crude_correction, color = 'k', linestyle = 'dashed')
-        self.ax[0][0].axhline(y = 0, color = 'k', linestyle = '-')
+        self.ax[0][0].axhline(y = 0, color = 'k', linewidth = 1, linestyle = '-')
         self.ax[0][0].text(min(peak_mz), 0, f'tolerance: {self.initial_tolerance} ppm', fontsize='xx-small', ha='left', va='top')
-        
-        plt.tight_layout()
 
     def plot_peaks_strength(self):
         x = 0
@@ -578,7 +599,7 @@ class MSRunPeakFinder:
 
     def delta_scatterplots(self):
         for i in range(2):
-            if i == 0: # the first one that i kept
+            if i == 0:
                 mz_values = []
                 delta_values_ppm = []
                 for peak in self.observed_peaks:
@@ -591,7 +612,7 @@ class MSRunPeakFinder:
                 self.ax[0][1].scatter(mz_values, delta_values_ppm, 0.5)
                 self.ax[0][1].axhline(y = self.crude_correction, color = 'k', linestyle = 'dashed')
                 self.ax[0][1].text(min(mz_values), 0, f'tolerance: {self.tolerance} ppm', fontsize='xx-small', ha='left', va='top')
-                self.ax[0][1].axhline(y = 0, color = 'k', linestyle = '-')
+                self.ax[0][1].axhline(y = 0, color = 'k', linewidth = 1, linestyle = '-')
             elif i == 1:
                 mz_values = []
                 delta_values_ppm = []
@@ -613,7 +634,7 @@ class MSRunPeakFinder:
                     mz_values.append(index)
                     delta_values_ppm.append(np.median(artificial_peak_range))
                 self.ax[1][0].scatter(mz_values, delta_values_ppm, 0.5)
-                self.ax[1][0].axhline(y = 0, color = 'k', linestyle = '-')
+                self.ax[1][0].axhline(y = 0, color = 'k', linewidth = 1, linestyle = '-')
                 
                 mz_values.sort()
 
@@ -660,7 +681,7 @@ class MSRunPeakFinder:
             else:
                 continue
         self.ax[1][1].scatter(mz_values, delta_values_ppm, 0.5)
-        self.ax[1][1].axhline(y = 0, color = 'k', linestyle = '-')
+        self.ax[1][1].axhline(y = 0, color = 'k', linewidth = 1, linestyle = '-')
         self.pdf.savefig(self.fig)
 
     def write_output(self):
