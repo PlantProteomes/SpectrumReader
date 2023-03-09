@@ -9,12 +9,12 @@
 # to run the program (use terminal): python scan_ms2s.py --mzml_file ..\data\OR13_A2_20161014_CMP_Ecoli_glycerol_exp_2mg_IMAC_R2.mzML.gz
 
 # shifted files
-# to run the program (use terminal): python scan_ms2s.py --mzml_file ..\data\HFX_9850_GVA_DLD1_2_180719_subset_shifted.mzML --rows 3 --columns 5
-# to run the program (use terminal): python scan_ms2s.py --mzml_file ..\data\HFX_9850_GVA_DLD1_2_180719_shifted.mzML.gz
-# to run the program (use terminal): python scan_ms2s.py --mzml_file ..\data\QEX03_210305_PTMscan_wt_IP_63_shifted.mzML.gz
-# to run the program (use terminal): python scan_ms2s.py --mzml_file ..\data\06CPTAC_BCprospective_W_BI_20161116_BA_f17_shifted.mzML.gz
-# to run the program (use terminal): python scan_ms2s.py --mzml_file ..\data\Q20181210_06_shifted.mzML.gz
-# to run the program (use terminal): python scan_ms2s.py --mzml_file ..\data\OR13_A2_20161014_CMP_Ecoli_glycerol_exp_2mg_IMAC_R2_shifted.mzML.gz
+# to run the program (use terminal): python scan_ms2s.py --mzml_file ..\data\HFX_9850_GVA_DLD1_2_180719_subset_calibrated.mzML --rows 3 --columns 5
+# to run the program (use terminal): python scan_ms2s.py --mzml_file ..\data\HFX_9850_GVA_DLD1_2_180719_calibrated.mzML.gz
+# to run the program (use terminal): python scan_ms2s.py --mzml_file ..\data\QEX03_210305_PTMscan_wt_IP_63_calibrated.mzML.gz
+# to run the program (use terminal): python scan_ms2s.py --mzml_file ..\data\06CPTAC_BCprospective_W_BI_20161116_BA_f17_calibrated.mzML.gz
+# to run the program (use terminal): python scan_ms2s.py --mzml_file ..\data\Q20181210_06_calibrated.mzML.gz
+# to run the program (use terminal): python scan_ms2s.py --mzml_file ..\data\OR13_A2_20161014_CMP_Ecoli_glycerol_exp_2mg_IMAC_R2_calibrated.mzML.gz
 
 import os
 import argparse
@@ -608,7 +608,6 @@ class MSRunPeakFinder:
         # most intense peak within a 20 PPM range  vs the mz of the ion
         self.pdf = PdfPages(f'{self.peak_file}.calibration.pdf')
         self.fig, self.ax = plt.subplots(nrows=2, ncols=2, figsize=(8.5, 7))
-        plt.subplots_adjust(top=0.96, bottom=0.05, left=0.95, right=0.96, hspace=0.3, wspace=0.96)
         peak_mz = []
         calibration_ppm = []
         for closest_match in self.crude_xy_scatterplot:
@@ -716,34 +715,96 @@ class MSRunPeakFinder:
         self.ax[1][1].scatter(mz_values, delta_values_ppm, 0.5)
         self.ax[1][1].axhline(y = 0, color = 'k', linewidth = 1, linestyle = '-')
         self.ax[1][1].set(xlabel='m/z', ylabel='PPM')
+        self.fig.subplots_adjust(top=0.96, bottom=0.10, left=0.10, right=0.96, hspace=0.2, wspace=0.2)
         plt.tight_layout()
         self.pdf.savefig(self.fig)
         print("finished creating all delta scatterplots")
 
     def analyze_snippets(self):
-        # change to dictionary
-        if len(self.scan_snippets == 0):
+        # Send a message if the plots cannot be created
+        if len(self.scan_snippets) == 0:
             print("not enough data points to create snippet plots")
             return
         
-        acid_mz = {'IH_mz': 110.07127, 'IF_mz': 120.08078, 'IK_CO_mz': 129.10223}
-        IH_delta = []
-        IF_delta = []
-        IK_CO_delta = []
-        IH_intensity = []
-        IF_intensity = []
-        IK_CO_intensity = []
-        IH_scan_num = []
-        IF_scan_num = []
-        IK_CO_scan_num = []
+        acid_mz = {'IH': 110.07127, 'IF': 120.08078, 'IK_CO': 129.10223}
+        result_scan_num = []
+        result_delta_PPM = []
+        result_intensity = []
 
-        for index in range(len(self.scan_snippets)):
+        # Creates enough elements to store all the scan numbers, delta PPM, and intensities in one
+        # array per acid. The result_delta_PPM stores the key for the title in the output
+        # Ex: index 0 in all 3 arrays are for IH, index 1 in all 3 arrays are for IF, etc
+        for key in acid_mz:
+            result_scan_num.append([])
+            result_delta_PPM.append([key])
+            result_intensity.append([])
+
+        # Goes through each snippet
+        for snippet in self.scan_snippets:
+            closest_PPM_and_intensity = []
+            # It looks for the most intense match within the snippet and adds the PPM and intensity to the
+            # array. This will go through all the acids and add it to the result arrays so they can
+            # be plotted against each other
             for key in acid_mz:
+                closest_index = 0
+                largest_intensity = 0
                 mz = acid_mz[key]
-                if key[1] == 'H':
-                    IH_delta.append()
-            print()
+                tolerance = 5 * mz / 1e6
+                upper_bound = mz + tolerance
+                lower_bound = mz - tolerance
+                for index_snippet_mz in range(len(snippet[1])):
+                    snippet_mz = snippet[1][index_snippet_mz]
+                    if snippet_mz > lower_bound and snippet_mz < upper_bound:
+                        if snippet[2][index_snippet_mz] > largest_intensity:
+                            largest_intensity = snippet[2][index_snippet_mz]
+                            closest_index = index_snippet_mz
+                    elif snippet_mz > upper_bound:
+                        break
+                
+                # Either add the PPM and intensity or if it could not find the acid, add [0, 0]
+                # Adding [0, 0] ensures the indices of the closest_PPM_and_intensity and the results array
+                # will line up, so the values are added to the right element in the array
+                # Ex: It will make sure IK+CO is added to IK+CO element, even if IH and IF were not found
+                if largest_intensity != 0:
+                    closest_PPM_and_intensity.append([(snippet[1][closest_index] - mz) * 1e6 / mz, largest_intensity])
+                else:
+                    closest_PPM_and_intensity.append([0, 0])
 
+            # rework naming convention!
+            # Adds the scan number, delta PPM, and intensity to the respective array so it is ready to be
+            # plotted later.
+            for index in range(len(closest_PPM_and_intensity)):
+                possible_acid = closest_PPM_and_intensity[index]
+                if possible_acid[1] != 0:
+                    result_scan_num[index].append(snippet[0])
+                    result_delta_PPM[index].append(possible_acid[0])
+                    result_intensity[index].append(possible_acid[1])
+
+        # Creates the subplots for the output
+        # It will not have a good output if there are too many acids!! Will need to rework so there are
+        # not too many plots on one page
+        self.fig, self.ax = plt.subplots(nrows=len(acid_mz), ncols=2, figsize=(8.5, 11))
+        self.fig.subplots_adjust(top=0.96, bottom=0.05, left=0.12, right=0.96, hspace=0.2, wspace=0.2)
+
+        # Each acid will have its own row, one scatter plot being the scan number vs PPM, the other being
+        # the intensity vs PPM to analyze the trends
+        for row in range(len(acid_mz)):
+            for col in range(2):
+                if col == 0:
+                    # This adds additional information like the axis titles, a line at 0, and a title
+                    self.ax[row][col].plot(result_scan_num[row], result_delta_PPM[row][1:], '.',c="g", markersize=2)
+                    self.ax[row][col].axhline(y = 0, color = 'k', linewidth = 1, linestyle = '-')
+                    self.ax[row][col].set(xlabel='scan_num', ylabel='delta PPM')
+                    self.ax[row,col].set_title(f"{result_delta_PPM[row][0]} scan num vs delta PPM", fontsize="xx-small")
+                if col == 1:
+                    # This adds additional information like the axis titles, a line at 0, and a title
+                    self.ax[row][col].plot(result_intensity[row], result_delta_PPM[row][1:], '.',c="g", markersize=2)
+                    self.ax[row][col].axhline(y = 0, color = 'k', linewidth = 1, linestyle = '-')
+                    self.ax[row][col].set(xlabel='intensity', ylabel='delta PPM')
+                    self.ax[row,col].set_title(f"{result_delta_PPM[row][0]} intensity vs delta PPM", fontsize="xx-small")
+
+        # This saves the plots and adds it to the output file
+        self.pdf.savefig(self.fig)
         print("finished analyzing snippets")
 
     def write_json(self):
@@ -940,7 +1001,7 @@ def main():
     peak_finder.write_json()
     peak_finder.write_output() #
     peak_finder.plot_corrected_scatterplot()
-    # peak_finder.analyze_snippets()
+    peak_finder.analyze_snippets()
     peak_finder.plot_peaks_strength()
     # print out data, including run time, number of peaks found, etc
     peak_finder.show_stats()

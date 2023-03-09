@@ -57,11 +57,11 @@ class MyMzMLTransformer(MzMLTransformer):
         new_spectrum = super().format_spectrum(spectrum)
 
         #### Shift all the m/z values
-        new_spectrum['mz_array'] += self.ppm_shift * new_spectrum['mz_array'] / 1e6
+        new_spectrum['mz_array'] -= self.ppm_shift * new_spectrum['mz_array'] / 1e6
         if self.has_spline_correction:
             x_values = np.array([new_spectrum['mz_array']])
             y_values = interpolate.BSpline(self.t, self.c, self.k)(x_values)
-            new_spectrum['mz_array'] += y_values[0] * new_spectrum['mz_array'] / 1e6
+            new_spectrum['mz_array'] -= y_values[0] * new_spectrum['mz_array'] / 1e6
 
         #### Get the MS level
         ms_level = None
@@ -72,14 +72,14 @@ class MyMzMLTransformer(MzMLTransformer):
         #### Correct the precursor m/z values by the requested shift
         if ms_level is not None and ms_level > 1:
             precursor_mz = new_spectrum['precursor_information'][0]['mz']
-            precursor_mz += self.ppm_shift * precursor_mz / 1e6
+            precursor_mz -= self.ppm_shift * precursor_mz / 1e6
             if self.has_spline_correction:
                 if precursor_mz <= 400:
                     x_values = np.array([precursor_mz])
                 else:
                     x_values = np.array([400])
                 y_values = interpolate.BSpline(self.t, self.c, self.k)(x_values)
-                precursor_mz += y_values[0] * precursor_mz / 1e6
+                precursor_mz -= y_values[0] * precursor_mz / 1e6
             new_spectrum['precursor_information'][0]['mz'] = precursor_mz
 
         return new_spectrum
