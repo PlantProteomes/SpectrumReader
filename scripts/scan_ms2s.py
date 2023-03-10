@@ -766,7 +766,14 @@ class MSRunPeakFinder:
                 # will line up, so the values are added to the right element in the array
                 # Ex: It will make sure IK+CO is added to IK+CO element, even if IH and IF were not found
                 if largest_intensity != 0:
-                    closest_PPM_and_intensity.append([(snippet[1][closest_index] - mz) * 1e6 / mz, largest_intensity])
+                    observed_mz = snippet[1][closest_index]
+                    # Also accounts for the correction
+                    correction_mz = self.crude_correction * observed_mz / 1e6
+            
+                    if self.has_correction_spline:
+                        y_values = interpolate.BSpline(self.t, self.c, self.k)([observed_mz])
+                        correction_mz += y_values[0] * observed_mz / 1e6
+                    closest_PPM_and_intensity.append([(observed_mz - mz - correction_mz) * 1e6 / mz, largest_intensity])
                 else:
                     closest_PPM_and_intensity.append([0, 0])
 
