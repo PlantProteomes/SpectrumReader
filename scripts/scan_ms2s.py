@@ -28,7 +28,7 @@ import sys
 import csv
 import gzip
 import warnings
-import operator
+import math
 import json
 
 from scipy.optimize import OptimizeWarning
@@ -70,7 +70,7 @@ class MSRunPeakFinder:
         self.stats = { 'counter': 0, 'ms1spectra': 0, 'ms2spectra': 0 }
         self.initial_tolerance = 20
         self.proton_mass = 1.007276
-        self.isotope_mass = 1.00335
+        self.isotope_mass = 1.0034 # 1.00335
         self.crude_correction = 0
         self.has_correction_spline = False
 
@@ -727,21 +727,16 @@ class MSRunPeakFinder:
             return
         
         acid_mz = {'IH': 110.07127, 'IF': 120.08078, 'IK_CO': 129.10223}
-        result_scan_num = []
-        result_delta_PPM = []
-        result_intensity = []
+        close_matches = []
 
         # Creates enough elements to store all the scan numbers, delta PPM, and intensities in one
-        # array per acid. The result_delta_PPM stores the key for the title in the output
-        # Ex: index 0 in all 3 arrays are for IH, index 1 in all 3 arrays are for IF, etc
+        # array per acid. The first element is the acid, the rest are the stored values
         for key in acid_mz:
-            result_scan_num.append([])
-            result_delta_PPM.append([key])
-            result_intensity.append([])
+            close_matches.append([key])
 
         # Goes through each snippet
         for snippet in self.scan_snippets:
-            closest_PPM_and_intensity = []
+            closest_PPM_and_logged_intensity = []
             # It looks for the most intense match within the snippet and adds the PPM and intensity to the
             # array. This will go through all the acids and add it to the result arrays so they can
             # be plotted against each other
@@ -750,10 +745,21 @@ class MSRunPeakFinder:
                 largest_intensity = 0
                 mz = acid_mz[key]
                 tolerance = 5 * mz / 1e6
-                upper_bound = mz + tolerance
+                upper_bound = mz + tolerance # TODO: if there is a problem, it is here!
                 lower_bound = mz - tolerance
+                # snippet[0] is the scan number, snippet[1] is the range of mz and snippet[2] 
+                # is the range of respective intensities
                 for index_snippet_mz in range(len(snippet[1])):
                     snippet_mz = snippet[1][index_snippet_mz]
+
+                    # Applies calibration before the tolerance is checked
+                    correction_mz = self.crude_correction * snippet_mz / 1e6
+            
+                    if self.has_correction_spline:
+                        y_values = interpolate.BSpline(self.t, self.c, self.k)([snippet_mz])
+                        correction_mz += y_values[0] * snippet_mz / 1e6
+                    snippet_mz -= correction_mz
+
                     if snippet_mz > lower_bound and snippet_mz < upper_bound:
                         if snippet[2][index_snippet_mz] > largest_intensity:
                             largest_intensity = snippet[2][index_snippet_mz]
@@ -773,19 +779,17 @@ class MSRunPeakFinder:
                     if self.has_correction_spline:
                         y_values = interpolate.BSpline(self.t, self.c, self.k)([observed_mz])
                         correction_mz += y_values[0] * observed_mz / 1e6
-                    closest_PPM_and_intensity.append([(observed_mz - mz - correction_mz) * 1e6 / mz, largest_intensity])
+                    closest_PPM_and_logged_intensity.append([(observed_mz - mz - correction_mz) * 1e6 / mz, math.log(largest_intensity)])
                 else:
-                    closest_PPM_and_intensity.append([0, 0])
+                    closest_PPM_and_logged_intensity.append([0, 0])
 
             # rework naming convention!
             # Adds the scan number, delta PPM, and intensity to the respective array so it is ready to be
             # plotted later.
-            for index in range(len(closest_PPM_and_intensity)):
-                possible_acid = closest_PPM_and_intensity[index]
+            for index in range(len(closest_PPM_and_logged_intensity)):
+                possible_acid = closest_PPM_and_logged_intensity[index]
                 if possible_acid[1] != 0:
-                    result_scan_num[index].append(snippet[0])
-                    result_delta_PPM[index].append(possible_acid[0])
-                    result_intensity[index].append(possible_acid[1])
+                    close_matches[index].append([snippet[0], possible_acid[0], possible_acid[1]])
 
         # Creates the subplots for the output
         # It will not have a good output if there are too many acids!! Will need to rework so there are
@@ -796,19 +800,44 @@ class MSRunPeakFinder:
         # Each acid will have its own row, one scatter plot being the scan number vs PPM, the other being
         # the intensity vs PPM to analyze the trends
         for row in range(len(acid_mz)):
+            # Sorts the matches by intensity and removes bottom 10%
+            # TODO: check to find the correct amount of peaks
+            sorted_matches = close_matches[row][1:].copy()
+            sorted_matches.sort(key = lambda x: x[0]) # sorts sorted_matches by scan number
+
+            upper_scan_num = 1000
+            intense_sorted_matches = [] # only keeps the intense matches
+            sorted_matches_bin = [] # takes all matches between 1-1000, 1001-2000, etc
+            for index in range(len(sorted_matches)):
+                match = sorted_matches[index]
+                if match[0] > upper_scan_num or index == len(sorted_matches):
+                    upper_scan_num += 1000
+                    sorted_matches_bin.sort(key = lambda x:-x[2]) # sorts by negative intensity
+                    sorted_matches_bin = sorted_matches_bin[0:20] # takes top 20 most intensee
+                    for sorted_match in sorted_matches_bin:
+                        intense_sorted_matches.append(sorted_match)
+                    sorted_matches_bin = []
+                
+                sorted_matches_bin.append(match)
+
+            # Extracts arrays of scan numbers, delta PPMs, and logged intensities for plotting
+            scan_nums = [item[0] for item in intense_sorted_matches]
+            delta_PPMs = [item[1] for item in intense_sorted_matches]
+            logged_intensities = [item[2] for item in intense_sorted_matches]
+            print(f"{close_matches[row][0]}: {len(scan_nums)}")
             for col in range(2):
                 if col == 0:
                     # This adds additional information like the axis titles, a line at 0, and a title
-                    self.ax[row][col].plot(result_scan_num[row], result_delta_PPM[row][1:], '.',c="g", markersize=2)
+                    self.ax[row][col].plot(scan_nums, delta_PPMs, '.',c="g", markersize=2)
                     self.ax[row][col].axhline(y = 0, color = 'k', linewidth = 1, linestyle = '-')
                     self.ax[row][col].set(xlabel='scan_num', ylabel='delta PPM')
-                    self.ax[row,col].set_title(f"{result_delta_PPM[row][0]} scan num vs delta PPM", fontsize="xx-small")
+                    self.ax[row,col].set_title(f"{close_matches[row][0]} scan num vs delta PPM", fontsize="xx-small")
                 if col == 1:
                     # This adds additional information like the axis titles, a line at 0, and a title
-                    self.ax[row][col].plot(result_intensity[row], result_delta_PPM[row][1:], '.',c="g", markersize=2)
+                    self.ax[row][col].plot(logged_intensities, delta_PPMs, '.',c="g", markersize=2)
                     self.ax[row][col].axhline(y = 0, color = 'k', linewidth = 1, linestyle = '-')
-                    self.ax[row][col].set(xlabel='intensity', ylabel='delta PPM')
-                    self.ax[row,col].set_title(f"{result_delta_PPM[row][0]} intensity vs delta PPM", fontsize="xx-small")
+                    self.ax[row][col].set(xlabel='logged intensity', ylabel='delta PPM')
+                    self.ax[row,col].set_title(f"{close_matches[row][0]} intensity vs delta PPM", fontsize="xx-small")
 
         # This saves the plots and adds it to the output file
         self.pdf.savefig(self.fig)
@@ -919,11 +948,11 @@ class MSRunPeakFinder:
                     if count == 11 and count <= len(peak) - 1:
                         identified_ion_name += "..."
 
-                peak_fit_center = int(100000*(peak[0] + (popt[1] * peak[0] / 1e6) + crude_correction_mz + spline_correction_mz)) / 100000
+                peak_fit_center = int(100000*(peak[0] + (popt[1] * peak[0] / 1e6) - crude_correction_mz - spline_correction_mz)) / 100000
                 ax[x,y].text(-16, max(intensity_values) * 1.03, f'peak fit center: \n    {peak_fit_center}\nion m/z: \n    {ion_mz}\nion id: \n    {identified_ion_name}', fontsize='xx-small', ha='left', va='top')
                 # ax[x,y].set_title(f"Peak {peak[0]}, Amino Acid {peak[4]}", fontsize="xx-small")
             else:
-                peak_fit_center = int(100000*(peak[0] + (popt[1] * peak[0] / 1e6) + crude_correction_mz)) / 100000
+                peak_fit_center = int(100000*(peak[0] + (popt[1] * peak[0] / 1e6) - crude_correction_mz)) / 100000
                 ax[x,y].text(-16, max(intensity_values) * 1.03, f'peak fit center: \n    {peak_fit_center}', fontsize='xx-small', ha='left', va='top',)
                 # ax[x,y].set_title(f"Peak {peak[0]}", fontsize="xx-small")
 
