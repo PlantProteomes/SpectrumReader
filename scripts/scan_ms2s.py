@@ -30,6 +30,7 @@ import gzip
 import warnings
 import math
 import json
+import re
 
 from scipy.optimize import OptimizeWarning
 from scipy import interpolate
@@ -61,7 +62,7 @@ class MSRunPeakFinder:
         self.all_peaks_intensities = [] # Keeps track of all intensities
         self.triggered_peaks = []
         self.observed_peaks = [] # Keeps track of all peaks over a certain intensities, identified and unidentified
-        self.known_ions = []
+        self.known_ions = {}
         self.scan_snippets = []
         self.minimum_triggers = 50
         self.top_peaks = 0.6
@@ -185,21 +186,21 @@ class MSRunPeakFinder:
                 'S': [],
                 'P': [],
                 'V': [ '-CH2-NH3', '-NH3', '+CO-NH3-CH2' ],
-                'T': [ '+CO-NH3'],
+                'T': [ '+CO-NH3' ],
                 'C': [],
                 'L': [ '-C3H6', '-CH2' ],
                 'I': [ '-C3H6', '-CH2' ],
                 'N': [ '-NH3' ],
                 'D': [ '-H2O' ],
-                'Q': [ '-CO-NH3', '-NH3', '+CO'],
-                'K': [ '+CO-NH3', '-NH3', '+CO', '-C2H4-NH3', '+CO+H2ON2', '-NH3', '-C4H7N', '+CO+CO-C2H3N3', '+CO+H2O', '+CO+H2O-NH3'],
+                'Q': [ '-CO-NH3', '-NH3', '+CO' ],
+                'K': [ '+CO-NH3', '-NH3', '+CO', '-C2H4-NH3', '+CO+H2ON2', '-NH3', '-C4H7N', '+CO+CO-C2H3N3', '+CO+H2O', '+CO+H2O-NH3' ],
                 'E': [],
-                'M': [ '-C2H2-NH3'],
+                'M': [ '-C2H2-NH3' ],
                 'H': [ '-CH2N', '+CO-NH2', '+CO-NH3', '+CO-NH', '+CO+H2O' ],
-                'F': [ '-CH3N'],
+                'F': [ '-CH3N' ],
                 'R': [ '-C3H6N2', '-CH5N3', '-CH6N2', '-C2H4N2', '-CH2N2', '-CH3N', '-NH3', '-C4H7N', '+H2O+H2O-N3H7', '+CO+H2O' ],
                 'Y': [ '-CO-NH3', '-CH3N' ],
-                'W': [ '+CO', '-C4H6N2', '-C2H4N', '-CH3N', '-CHN', '+CO-NH3', '-NH3'],
+                'W': [ '+CO', '-C4H6N2', '-C2H4N', '-CH3N', '-CHN', '+CO-NH3', '-NH3' ],
             }
         modification_deltas = {}
 
@@ -231,19 +232,19 @@ class MSRunPeakFinder:
                 # Adds possible modifications, but only for a ions
                 if ion == 'a':
                     # Add base a ion
-                    self.known_ions.append([base_acid_mz, 'I' + acid, False])
+                    self.known_ions['I' + acid] = [base_acid_mz, False]
                     # Add base a ion's isotope
-                    self.known_ions.append([int(100000 * (base_acid_mz + self.isotope_mass)) / 100000, 'I' + acid + '+i', False])
+                    self.known_ions['I' + acid + '+i'] = [int(100000 * (base_acid_mz + self.isotope_mass)) / 100000, False]
                     # Check if there are any possible modifications, if there are, add them too
                     for modification in modification_deltas[acid[0]]:
                         acid_mz = base_acid_mz
                         acid_mz += modification_deltas[acid[0]][modification]
                         acid_mz = int(acid_mz * 100000 + 0.5) / 100000.0
-                        self.known_ions.append([acid_mz, 'I' + acid + modification, False])
+                        self.known_ions['I' + acid + modification] = [acid_mz, False]
                 # add b and y ions
                 else:
-                    self.known_ions.append([base_acid_mz, ion + '-' + acid, False])
-                    self.known_ions.append([int(100000 * (base_acid_mz + self.isotope_mass)) / 100000, ion + '-' + acid + '+i', False])
+                    self.known_ions[ion + '-' + acid] = [base_acid_mz, False]
+                    self.known_ions[ion + '-' + acid + '+i'] = [int(100000 * (base_acid_mz + self.isotope_mass)) / 100000, False]
 
         # Double nested for loops to identify pairs of amino acids (i.e. A and A)
         # First amino acid
@@ -267,7 +268,7 @@ class MSRunPeakFinder:
                     
                     # Add two amino acids together
                     pair_mz = int(100000 * (pair_mz_1 + pair_mz_2) + 0.5) / 100000
-                    self.known_ions.append([pair_mz, ion + '-' + pair_acid_1 + pair_acid_2, False])
+                    self.known_ions [ion + '-' + pair_acid_1 + pair_acid_2]  = [pair_mz, False]
 
         # Triple nested for loops to identify trios of amino acids (i.e. A and A)
         # First amino acid
@@ -301,7 +302,7 @@ class MSRunPeakFinder:
                         # Adds all 3 together
                         trio_mz = int(100000 * (trio_mz_1 + trio_mz_2 + trio_mz_3) + 0.5) / 100000
                         if trio_mz <= 400:
-                            self.known_ions.append([trio_mz, ion + '-' + trio_acid_1 + trio_acid_2 + trio_acid_3, False])
+                            self.known_ions[ion + '-' + trio_acid_1 + trio_acid_2 + trio_acid_3] = [trio_mz, False]
                         else:
                             continue
 
@@ -309,40 +310,91 @@ class MSRunPeakFinder:
         water = mass.calculate_mass(formula='H2O')
         ammonia = mass.calculate_mass(formula='NH3')
         water_ammonia = water + ammonia
-        for index in range(len(self.known_ions)):
-            self.known_ions.append([self.known_ions[index][0] - water, self.known_ions[index][1] + '-H2O', False])
-            self.known_ions.append([self.known_ions[index][0] - ammonia, self.known_ions[index][1] + '-NH3', False])
-            self.known_ions.append([self.known_ions[index][0] - water_ammonia, self.known_ions[index][1] + '-H2O-NH3', False])
-            if self.known_ions[index][1][0] == 'a' or self.known_ions[index][1][0] == 'b' or 'K' in self.known_ions[index][1]:
-                self.known_ions.append([self.known_ions[index][0] + 229.162932, self.known_ions[index][1] + '+TMT', False])
+        additional_explanations = {}
+        for key in self.known_ions: # TODO: Account for duplicates here
+            additional_explanations[self.simplify_explanation(key + '-H2O')] = [self.known_ions[key][0] - water, False]
+            additional_explanations[self.simplify_explanation(key + '-NH3')] = [self.known_ions[key][0] - ammonia, False]
+            additional_explanations[self.simplify_explanation(key + '-H2O-NH3')] = [self.known_ions[key][0] - water_ammonia, False]
+            if key[0] == 'a' or key[0] == 'b' or 'K' in key:
+                additional_explanations[key + '+TMT'] = [self.known_ions[key][0] + 229.162932, False]
+
+        for key in additional_explanations:
+            self.known_ions[key] = additional_explanations[key].copy()
 
         # Adds other known theoretical ions with the formula
-        self.known_ions.append([mass.calculate_mass(formula="C3H8N2O2") + self.proton_mass, "C3H8N2O2", False]) # ppm = 1.18
-        self.known_ions.append([mass.calculate_mass(formula="CH5N4O2") + self.proton_mass, "CH5N4O2", False]) # ppm = 2.38
-        self.known_ions.append([mass.calculate_mass(formula="C5H12N2O") + self.proton_mass, "C5H12N2O", False]) # ppm = 1.18
-        self.known_ions.append([mass.calculate_mass(formula="C4H10N2O2") + self.proton_mass, "C4H10N2O2", False]) # ppm = 1.46
-        self.known_ions.append([126.127726, "TMT126", False])
-        self.known_ions.append([127.124761, "TMT127N", False])
-        self.known_ions.append([127.131081, "TMT127C", False])
-        self.known_ions.append([128.128116, "TMT128N", False])
-        self.known_ions.append([128.134436, "TMT128C", False])
-        self.known_ions.append([129.131471, "TMT129N", False])
-        self.known_ions.append([129.137790, "TMT129C", False])
-        self.known_ions.append([130.134825, "TMT130N", False])
-        self.known_ions.append([130.141145, "TMT130C", False])
-        self.known_ions.append([131.138180, "TMT131N", False])
-        self.known_ions.append([131.1445, "TMT131C", False])
-        self.known_ions.append([132.141535, "TMT132N", False])
-        self.known_ions.append([132.147855, "TMT132C", False])
-        self.known_ions.append([133.14489, "TMT133N", False])
-        self.known_ions.append([133.15121, "TMT133C", False])
-        self.known_ions.append([134.148245, "TMT134N", False])
-        self.known_ions.append([134.154565, "TMT134C", False])
-        self.known_ions.append([135.151600, "TMT135N", False])
-        self.known_ions.append([229.162932 + self.proton_mass, "TMT6Nterm", False])
+        self.known_ions["C3H8N2O2"] = [mass.calculate_mass(formula="C3H8N2O2") + self.proton_mass, False] # ppm = 1.18
+        self.known_ions["CH5N4O2"] = [mass.calculate_mass(formula="CH5N4O2") + self.proton_mass, False] # ppm = 2.38
+        self.known_ions["C5H12N2O"] = [mass.calculate_mass(formula="C5H12N2O") + self.proton_mass, False] # ppm = 1.18
+        self.known_ions["C4H10N2O2"] = [mass.calculate_mass(formula="C4H10N2O2") + self.proton_mass, False] # ppm = 1.46
+        self.known_ions["TMT126"] = [126.127726, False]
+        self.known_ions["TMT127N"] = [127.124761, False]
+        self.known_ions["TMT127C"] = [127.131081, False]
+        self.known_ions["TMT128N"] = [128.128116, False]
+        self.known_ions["TMT128C"] = [128.134436, False]
+        self.known_ions["TMT129N"] = [129.131471, False]
+        self.known_ions["TMT129C"] = [129.137790, False]
+        self.known_ions["TMT130N"] = [130.134825, False]
+        self.known_ions["TMT130C"] = [130.141145, False]
+        self.known_ions["TMT131N"] = [131.138180, False]
+        self.known_ions["TMT131C"] = [131.1445, False]
+        self.known_ions["TMT132N"] = [132.141535, False]
+        self.known_ions["TMT132C"] = [132.147855, False]
+        self.known_ions["TMT133N"] = [133.14489, False]
+        self.known_ions["TMT133C"] = [133.15121, False]
+        self.known_ions["TMT134N"] = [134.148245, False]
+        self.known_ions["TMT134C"] = [134.154565, False]
+        self.known_ions["TMT135N"] = [135.151600, False]
+        self.known_ions["TMT6Nterm"] = [229.162932 + self.proton_mass, False]
 
-        self.known_ions.sort()
         print("finished getting explanations")
+
+    def simplify_explanation(self, explanation):
+        # This takes a string and splits it into the + and -, reducing any redundancies
+        # i.e. IE+H2O-H2O -> IE
+        condensed_acid = ""
+        match = re.match(r'([aby]-[^\+\-]+)(.+)$', explanation)
+        if match:
+            ions = match.group(1)
+            losses = match.group(2)
+        else:
+            match = re.match(r'(I[^\+\-]+)(.+$)', explanation)
+            if match:
+                ions = match.group(1)
+                losses = match.group(2)
+                
+        match = re.match(r'([\+\-][iA-Z\d]+)+$', losses)
+
+        if match:
+            additions = []
+            subtractions = []
+
+            for index in range(len(match.groups())):
+                item = match.group(index)
+                if item[0] == "+":
+                    additions.append(item[1:])
+                else:
+                    subtractions.append(item[1:])
+
+            removed = 0
+            for add_index in range(len(additions)):
+                for subtract_index in range(len(subtractions)):
+                    if additions[add_index] == subtractions[subtract_index]:
+                        additions.pop(add_index - removed)
+                        subtractions.pop(subtract_index - removed)
+                        removed += 1
+                        break
+        
+            condensed_acid = ions
+
+            for add_modification in additions:
+                condensed_acid += "+" + add_modification
+
+            for subtract_modification in subtractions:
+                condensed_acid += "-" + subtract_modification
+        else:
+            condensed_acid = explanation
+
+        return condensed_acid
 
     def determine_crude_correction(self):
         # Uses popular possible explanations so in the first run through, it looks for the most 
@@ -502,9 +554,9 @@ class MSRunPeakFinder:
     def identify_peaks(self):
         # This uses the observed peaks and sees how many of them can be identified. It accounts for any
         # corrections applicable
-        for index in range(len(self.known_ions)): # Resets identifications, in case it is the second run through
-            if self.known_ions[index][2]:
-                self.known_ions[index][2] = False
+        for key in self.known_ions: # Resets identifications, in case it is the second run through
+            if self.known_ions[key][1]:
+                self.known_ions[key][1] = False
 
         # Creates an array with a spline correction for each observed peak
         if self.has_correction_spline:
@@ -528,17 +580,17 @@ class MSRunPeakFinder:
                 peak[0] -= spline_correction_mz
 
             self.observed_peaks[index] = self.observed_peaks[index][0:2]
-            for ion_index in range(len(self.known_ions)):
-                amino_acid = self.known_ions[ion_index]
+            for key in self.known_ions:
+                amino_acid_mz = self.known_ions[key][0]
                 # Checks the tolerance based on a constant ppm, so each peak has its own mz tolerance
                 if peak[0] <= 150:
                     peak_tolerance = self.tolerance_150 * peak[0] / 1e6
                 else:
                     peak_tolerance = self.tolerance * peak[0] / 1e6
-                if peak[0] > amino_acid[0] - peak_tolerance and peak[0] < amino_acid[0] + peak_tolerance and not amino_acid[2]:
-                    identified_peak = [amino_acid[0], int(100000*(peak[0] - amino_acid[0]) + 0.5) / 100000, amino_acid[1]]
+                if peak[0] > amino_acid_mz - peak_tolerance and peak[0] < amino_acid_mz + peak_tolerance and not self.known_ions[key][1]:
+                    identified_peak = [amino_acid_mz, int(100000*(peak[0] - amino_acid_mz) + 0.5) / 100000, key]
                     identifications.append(identified_peak)
-                    self.known_ions[ion_index][2] = True
+                    self.known_ions[key][1] = True
             
             # Sorts the identifications for each peak so the closest identifications are at the front
             identifications.sort(key = lambda x: abs(x[1]))
@@ -1017,9 +1069,9 @@ def get_strength(intensity, smallest_peak_intensity):
 def main():
     peak_finder = MSRunPeakFinder()
     # find the intensity of each m/z value
-    peak_finder.aggregate_spectra()
-    peak_finder.determine_crude_correction()
-    peak_finder.plot_crude_calibrations()
+    peak_finder.aggregate_spectra()# 
+    peak_finder.determine_crude_correction()# 
+    peak_finder.plot_crude_calibrations()# 
     # create an array of all identifiable theoretical and their masses
     peak_finder.get_theoretical_ions() #
     # identify all the spectra with a certain intensity
