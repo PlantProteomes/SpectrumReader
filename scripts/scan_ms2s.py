@@ -232,19 +232,19 @@ class MSRunPeakFinder:
                 # Adds possible modifications, but only for a ions
                 if ion == 'a':
                     # Add base a ion
-                    self.known_ions['I' + acid] = [base_acid_mz, False]
+                    self.known_ions[f"I{acid}"] = [base_acid_mz, False]
                     # Add base a ion's isotope
-                    self.known_ions['I' + acid + '+i'] = [int(100000 * (base_acid_mz + self.isotope_mass)) / 100000, False]
+                    self.known_ions[f"I{acid}+i"] = [int(100000 * (base_acid_mz + self.isotope_mass)) / 100000, False]
                     # Check if there are any possible modifications, if there are, add them too
                     for modification in modification_deltas[acid[0]]:
                         acid_mz = base_acid_mz
                         acid_mz += modification_deltas[acid[0]][modification]
                         acid_mz = int(acid_mz * 100000 + 0.5) / 100000.0
-                        self.known_ions['I' + acid + modification] = [acid_mz, False]
+                        self.known_ions[f"I{acid}{modification}"] = [acid_mz, False]
                 # add b and y ions
                 else:
-                    self.known_ions[ion + '-' + acid] = [base_acid_mz, False]
-                    self.known_ions[ion + '-' + acid + '+i'] = [int(100000 * (base_acid_mz + self.isotope_mass)) / 100000, False]
+                    self.known_ions[f"{ion}({acid})"] = [base_acid_mz, False]
+                    self.known_ions[f"{ion}({acid})+i"] = [int(100000 * (base_acid_mz + self.isotope_mass)) / 100000, False]
 
         # Double nested for loops to identify pairs of amino acids (i.e. A and A)
         # First amino acid
@@ -268,7 +268,7 @@ class MSRunPeakFinder:
                     
                     # Add two amino acids together
                     pair_mz = int(100000 * (pair_mz_1 + pair_mz_2) + 0.5) / 100000
-                    self.known_ions [ion + '-' + pair_acid_1 + pair_acid_2]  = [pair_mz, False]
+                    self.known_ions [f"{ion}({pair_acid_1}{pair_acid_2})"]  = [pair_mz, False]
 
         # Triple nested for loops to identify trios of amino acids (i.e. A and A)
         # First amino acid
@@ -302,7 +302,7 @@ class MSRunPeakFinder:
                         # Adds all 3 together
                         trio_mz = int(100000 * (trio_mz_1 + trio_mz_2 + trio_mz_3) + 0.5) / 100000
                         if trio_mz <= 400:
-                            self.known_ions[ion + '-' + trio_acid_1 + trio_acid_2 + trio_acid_3] = [trio_mz, False]
+                            self.known_ions[f"{ion}({trio_acid_1}{trio_acid_2}{trio_acid_3})"] = [trio_mz, False]
                         else:
                             continue
 
@@ -352,15 +352,10 @@ class MSRunPeakFinder:
         # This takes a string and splits it into the + and -, reducing any redundancies
         # i.e. IE+H2O-H2O -> IE
         condensed_acid = ""
-        match = re.match(r'([aby]-[^\+\-]+)(.+)$', explanation)
+        match = re.match(r'([abyI][^\+\-]+)(.+)$', explanation)
         if match:
             ions = match.group(1)
             losses = match.group(2)
-        else:
-            match = re.match(r'(I[^\+\-]+)(.+$)', explanation)
-            if match:
-                ions = match.group(1)
-                losses = match.group(2)
                 
         match = re.match(r'([\+\-][iA-Z\d]+)+$', losses)
 
@@ -411,42 +406,42 @@ class MSRunPeakFinder:
             'IM': 104.05285,
             'IH': 110.07127,
             'IR-NH3': 112.08692,
-            'a-AA': 115.08659,
+            'a(AA)': 115.08659,
             'IR+H2O+H2O-N3H7': 116.0706,
             'IF': 120.08078,
-            'b-AA-NH3': 126.05495,
+            'b(AA)-NH3': 126.05495,
             'IQ+CO': 129.06585,
             'IK+CO+H2O-NH3': 130.08625,
             'IC[Carbamidomethyl]': 133.04301,
             'IY': 136.07569,
-            'a-AP': 141.10224,
-            'b-AA': 143.0815,
-            'a-AV': 143.11789,
-            'b-GP': 155.0815,
+            'a(AP)': 141.10224,
+            'b(AA)': 143.0815,
+            'a(AV)': 143.11789,
+            'b(GP)': 155.0815,
             'IK+CO+H2ON2-NH3': 158.0924,
             'IW': 159.09167,
-            'a-DP-H2O': 167.0815,
-            'b-AP': 169.09715,
-            'a-PV': 169.13354,
-            'a-PT': 171.1128,
-            'a-TV': 173.12845,
-            'y-R': 175.11895,
-            'a-LP': 183.14919,
-            'b-PS': 185.09207,
-            'b-PV': 197.12845,
-            'a-DL': 201.12337,
-            'a-AY': 207.11281,
-            'y-AH-H2O': 209.10331,
-            'a-EL': 215.13902,
-            'b-EL-H2O': 225.12337,
-            'a-APS': 228.13427,
-            'b-DL': 229.11828,
-            'y-HV-H2O': 237.1346,
-            'a-APT': 242.14992,
-            'b-DQ': 244.0928,
-            'y-KP': 244.16557,
-            'y-HV': 255.14517,
-            'y-PR': 272.17172
+            'a(DP)-H2O': 167.0815,
+            'b(AP)': 169.09715,
+            'a(PV)': 169.13354,
+            'a(PT)': 171.1128,
+            'a(TV)': 173.12845,
+            'y(R)': 175.11895,
+            'a(LP)': 183.14919,
+            'b(PS)': 185.09207,
+            'b(PV)': 197.12845,
+            'a(DL)': 201.12337,
+            'a(AY)': 207.11281,
+            'y(AH)-H2O': 209.10331,
+            'a(EL)': 215.13902,
+            'b(EL)-H2O': 225.12337,
+            'a(APS)': 228.13427,
+            'b(DL)': 229.11828,
+            'y(HV)-H2O': 237.1346,
+            'a(APT)': 242.14992,
+            'b(DQ)': 244.0928,
+            'y(KP)': 244.16557,
+            'y(HV)': 255.14517,
+            'y(PR)': 272.17172
         }
 
         self.crude_xy_scatterplot = []
@@ -778,7 +773,7 @@ class MSRunPeakFinder:
             print("not enough data points to create snippet plots")
             return
         
-        acid_mz = {'IH': 110.07127, 'IF': 120.08078, 'IK_CO': 129.10223}
+        acid_mz = {'IH': 110.07127, 'IF': 120.08078, 'IK-CO': 129.10223}
         close_matches = []
 
         # Creates enough elements to store all the scan numbers, delta PPM, and intensities in one
