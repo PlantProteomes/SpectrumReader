@@ -35,7 +35,7 @@ class CombineList:
         # Creates a dictionary with the key being the file name and the value being a list of all the
         # observed peak from the tsv file
         self.aggregated_observed_peaks = {}
-        self.all_peaks = [["mz", "intensity", "ms runs", "primary identification", "other identifications"]]
+        self.all_peaks = [["mz", "intensity", "ms runs", "percentage", "primary identification", "other identifications"]]
 
     def read_files(self):
         # Goes through each file to add all observed peaks
@@ -58,10 +58,11 @@ class CombineList:
                     # identification list. Since the identification list is a string, it will be split by
                     # commas then the mz will be used and the identification is stored. If there are other
                     # identifications, those are stored as well 
-                    if len(line_split) > 2:
+                    if len(line_split) > 3:
                         intensity = float(line_split[1])
-                        mz = round(float(line_split[2].split(", ")[0][1:]), 5) # 1 accounts for the opening bracket
-                        primary_identification = line_split[2].split(", ")[2][1:-2] # -1 accounts for the closing bracket and single quotation mark
+                        mz = round(float(line_split[3].split(", ")[0][1:]), 5) # 1 accounts for the opening bracket
+                        percent = float(line_split[2][0:-1])
+                        primary_identification = line_split[3].split(", ")[2][1:-2] # -1 accounts for the closing bracket and single quotation mark
 
                         # If there is no histidine, I end this process early and don't consider it
                         # TODO: Remove it in the future
@@ -71,15 +72,16 @@ class CombineList:
                             break
 
                         other_identification = []
-                        for index in range(len(line_split) - 3):
-                            other_identification.append(line_split[index + 3].split(", ")[2][1:-2])
-                        observed_peaks.append([mz, intensity, primary_identification, other_identification])
+                        for index in range(len(line_split) - 4):
+                            other_identification.append(line_split[index + 4].split(", ")[2][1:-2])
+                        observed_peaks.append([mz, intensity, percent, primary_identification, other_identification])
                     else:
                         mz = float(line_split[0])
                         if not has_histidine and mz > 110.1:
                             break
                         intensity = float(line_split[1])
-                        observed_peaks.append([mz, intensity, "?", "?"])
+                        percent = float(line_split[2][0:-1])
+                        observed_peaks.append([mz, intensity, percent, "?", "?"])
 
                 if has_histidine:
                     self.aggregated_observed_peaks[file_name] = observed_peaks
@@ -97,7 +99,7 @@ class CombineList:
         self.histidine_intensity = []
         for file_name in self.file_names:
             for peak in self.aggregated_observed_peaks[file_name]:
-                if len(peak) > 2 and peak[2] == "IH":
+                if len(peak) > 3 and peak[3] == "IH":
                     self.histidine_intensity.append(peak[1])
 
         print("finished finding histidines")
@@ -135,17 +137,20 @@ class CombineList:
             if len(same_peaks) == 1:
                 peak = same_peaks[0]
                 peak.insert(2, 1)
+                peak[3] = f"{peak[3]}%"
             else:
                 peak.append(len(same_peaks)) # adds number of ms runs it appears in
                 same_peaks.sort(key = lambda x: -x[1])
-                peak.append(same_peaks[0][2]) # adds primary explanation
-                peak.append(same_peaks[0][3]) # adds other explanations
+                peak.append(same_peaks[0][3]) # adds primary explanation
+                peak.append(same_peaks[0][4]) # adds other explanations
                 mzs = [item[0] for item in same_peaks]
                 mzs.sort() # sort by mz value
                 peak.insert(0, round(statistics.median(mzs), 5)) # add the median mz value
                 intensities = [item[1] for item in same_peaks]
                 intensities.sort()
                 peak.insert(1, round(statistics.median(intensities), 1)) # adds the intensity value
+                percentages = [item[2] for item in same_peaks]
+                peak.insert(3, f"{round(statistics.mean(percentages), 1)}%")
             self.all_peaks.append(peak)
 
             if len(self.aggregated_observed_peaks) == 0:
