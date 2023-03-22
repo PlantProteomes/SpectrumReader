@@ -69,7 +69,7 @@ class MSRunPeakFinder:
         self.ppm_delta = 15
         self.t0 = timeit.default_timer()
         self.stats = { 'counter': 0, 'ms1spectra': 0, 'ms2spectra': 0 }
-        self.initial_tolerance = 20
+        self.initial_tolerance = 30
         self.proton_mass = 1.007276
         self.isotope_mass = 1.0034 # 1.00335
         self.crude_correction = 0
