@@ -69,7 +69,7 @@ class MSRunPeakFinder:
         self.ppm_delta = 15
         self.t0 = timeit.default_timer()
         self.stats = { 'counter': 0, 'ms1spectra': 0, 'ms2spectra': 0 }
-        self.initial_tolerance = 100
+        self.initial_tolerance = 20
         self.proton_mass = 1.007276
         self.isotope_mass = 1.0034 # 1.00335
         self.crude_correction = 0
@@ -468,6 +468,9 @@ class MSRunPeakFinder:
         # measured mz value
         self.crude_correction = np.median(first_pass_ppms)
 
+    def increase_initial_tolerance(self):
+        self.initial_tolerance = 30
+
     def lower_minimum_triggers(self):
         # If not enough peaks were over the minimum trigger limit, it lowers the minimum triggers by 15
         self.minimum_triggers = self.minimum_triggers - 15
@@ -606,10 +609,16 @@ class MSRunPeakFinder:
         x_values = np.array(mz_values)
         y_values = interpolate.BSpline(self.t, self.c, self.k)(x_values)
 
+        removed = 0
         for index in range(len(self.refined_delta_ppm_values)):
-            mz = self.refined_mz_values[index]
-            self.refined_mz_values[index] -= (self.crude_correction + y_values[index]) * mz / 1e6
-            self.refined_delta_ppm_values[index] -= (y_values[index] + self.crude_correction)
+            if abs(self.refined_delta_ppm_values[index - removed] - y_values[index] - self.crude_correction) > 10:
+                del self.refined_mz_values[index - removed]
+                del self.refined_delta_ppm_values[index - removed]
+                removed += 1
+            else:
+                mz = self.refined_mz_values[index - removed]
+                self.refined_mz_values[index - removed] -= (self.crude_correction + y_values[index]) * mz / 1e6
+                self.refined_delta_ppm_values[index - removed] -= (y_values[index] + self.crude_correction)
 
     def keep_intense_remove_outliers(self, mz_values, delta_ppm_values):
         # Creates a new variable to store a set of refined peaks, only keeping the most intense peaks in
@@ -1005,11 +1014,13 @@ class MSRunPeakFinder:
                         identified_ion_name += "..."
 
                 peak_fit_center = int(100000*(peak[0] + (popt[1] * peak[0] / 1e6) - crude_correction_mz - spline_correction_mz)) / 100000
-                ax[x,y].text(-16, max(intensity_values) * 1.03, f'peak fit center: \n    {peak_fit_center}\nion m/z: \n    {ion_mz}\nion id: \n    {identified_ion_name}\nspectra with peak: \n    {peak[2]}', fontsize='xx-small', ha='left', va='top')
+                ax[x,y].text(-16, max(intensity_values) * 1.03, f'peak fit center: \n    {peak_fit_center}\nion m/z: \n    {ion_mz}\nion id: \n    {identified_ion_name}', fontsize='xx-small', ha='left', va='top')
+                ax[x,y].text(14, max(intensity_values) * 1.03, f'{peak[2]}\nof spectra', fontsize='xx-small', ha='right', va='top')
                 # ax[x,y].set_title(f"Peak {peak[0]}, Amino Acid {peak[4]}", fontsize="xx-small")
             else:
                 peak_fit_center = int(100000*(peak[0] + (popt[1] * peak[0] / 1e6) - crude_correction_mz)) / 100000
-                ax[x,y].text(-16, max(intensity_values) * 1.03, f'peak fit center: \n    {peak_fit_center}\nspectra with peak: \n    {peak[2]}', fontsize='xx-small', ha='left', va='top',)
+                ax[x,y].text(-16, max(intensity_values) * 1.03, f'peak fit center: \n    {peak_fit_center}', fontsize='xx-small', ha='left', va='top',)
+                ax[x,y].text(14, max(intensity_values) * 1.03, f'{peak[2]}\nof spectra', fontsize='xx-small', ha='right', va='top')
                 # ax[x,y].set_title(f"Peak {peak[0]}", fontsize="xx-small")
 
             # creates a new figure if full
@@ -1075,6 +1086,9 @@ def main():
     # find the intensity of each m/z value
     peak_finder.aggregate_spectra()# 
     peak_finder.determine_crude_correction()# 
+    if peak_finder.crude_correction >= 15:
+        peak_finder.increase_initial_tolerance()
+        peak_finder.determine_crude_correction()
     peak_finder.plot_crude_calibrations()# 
     # create an array of all identifiable theoretical and their masses
     peak_finder.get_theoretical_ions() #
