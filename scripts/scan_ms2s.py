@@ -1,21 +1,18 @@
 #!/usr/bin/env python3
 
 # must first change to scripts folder through "cd .\scripts\"
-# to run the program (use terminal): python scan_ms2s.py --mzml_file ..\data\HFX_9850_GVA_DLD1_2_180719_subset.mzML --rows 3 --columns 5
-# to run the program (use terminal): python scan_ms2s.py --mzml_file ..\data\HFX_9850_GVA_DLD1_2_180719.mzML.gz
-# to run the program (use terminal): python scan_ms2s.py --mzml_file ..\data\QEX03_210305_PTMscan_wt_IP_63.mzML.gz
-# to run the program (use terminal): python scan_ms2s.py --mzml_file ..\data\06CPTAC_BCprospective_W_BI_20161116_BA_f17.mzML.gz
-# to run the program (use terminal): python scan_ms2s.py --mzml_file ..\data\Q20181210_06.mzML.gz
-# to run the program (use terminal): python scan_ms2s.py --mzml_file ..\data\OR13_A2_20161014_CMP_Ecoli_glycerol_exp_2mg_IMAC_R2.mzML.gz
+# to run the program (use terminal): python scan_ms2s.py ..\data\HFX_9850_GVA_DLD1_2_180719_subset.mzML --rows 3 --columns 5
+# to run the program (use terminal): python scan_ms2s.py ..\data\HFX_9850_GVA_DLD1_2_180719.mzML.gz
+# to run the program (use terminal): python scan_ms2s.py ..\data\QEX03_210305_PTMscan_wt_IP_63.mzML.gz
+# to run the program (use terminal): python scan_ms2s.py ..\data\06CPTAC_BCprospective_W_BI_20161116_BA_f17.mzML.gz
+# to run the program (use terminal): python scan_ms2s.py ..\data\Q20181210_06.mzML.gz
+# to run the program (use terminal): python scan_ms2s.py ..\data\OR13_A2_20161014_CMP_Ecoli_glycerol_exp_2mg_IMAC_R2.mzML.gz
+
+# all the folders
+# to run the program (use terminal): python scan_ms2s.py ..\data\*.mzML*
 
 # shifted files
-# to run the program (use terminal): python scan_ms2s.py --mzml_file ..\data\HFX_9850_GVA_DLD1_2_180719_subset_calibrated.mzML --rows 3 --columns 5
-# to run the program (use terminal): python scan_ms2s.py --mzml_file ..\data\HFX_9850_GVA_DLD1_2_180719_calibrated.mzML.gz
-# to run the program (use terminal): python scan_ms2s.py --mzml_file ..\data\QEX03_210305_PTMscan_wt_IP_63_calibrated.mzML.gz
-# to run the program (use terminal): python scan_ms2s.py --mzml_file ..\data\06CPTAC_BCprospective_W_BI_20161116_BA_f17_calibrated.mzML.gz
-# to run the program (use terminal): python scan_ms2s.py --mzml_file ..\data\Q20181210_06_calibrated.mzML.gz
-# to run the program (use terminal): python scan_ms2s.py --mzml_file ..\data\OR13_A2_20161014_CMP_Ecoli_glycerol_exp_2mg_IMAC_R2_calibrated.mzML.gz
-
+# to run the program (use terminal): python scan_ms2s.py ..\data\HFX_9850_GVA_DLD1_2_180719_subset_calibrated.mzML
 import os
 import argparse
 import os.path
@@ -31,6 +28,7 @@ import warnings
 import math
 import json
 import re
+import multiprocessing
 
 from scipy.optimize import OptimizeWarning
 from scipy import interpolate
@@ -44,16 +42,13 @@ warnings.simplefilter("ignore", OptimizeWarning)
 
 class MSRunPeakFinder:
 
-    def __init__(self):
-
-        argparser = argparse.ArgumentParser(description='An example program that reads an mzML file sequentially')
-        argparser.add_argument('--mzml_file', action='store', help='Name of the mzML file to read')
-        argparser.add_argument('--rows', action='store', type=int, help='Number of rows for graphs')
-        argparser.add_argument('--columns', action='store', type=int, help='Number of columns for output')
-        argparser.add_argument('--tolerance', action='store', type=float, help='Tolerance for identifying peaks in ppm')
-        argparser.add_argument('--correction_factor', action='store', help='Correction Factor for every peak in ppm')
-
-        params = argparser.parse_args()
+    def __init__(self, file, tolerance, rows, columns):
+        # Declares all of the variables from parameters
+        self.tolerance = tolerance
+        self.tolerance_150 = 10
+        self.plot_output_rows = rows
+        self.plot_output_columns = columns
+        self.file_name = file
 
         # Declares all of the variables
         self.by_count = np.zeros((4000000,), dtype=int)
@@ -75,34 +70,6 @@ class MSRunPeakFinder:
         self.crude_correction = 0
         self.has_correction_spline = False
 
-        # For pdf graph output
-        if params.rows is None or params.rows <= 0:
-            self.plot_output_rows = 5
-        else:
-            self.plot_output_rows = params.rows
-        # If params.columns is None or params.columns <= 0:
-        self.plot_output_columns = 3
-        # else:
-            # self.plot_output_columns = params.columns
-        if params.tolerance is None or params.tolerance <= 0:
-            self.tolerance = 5
-            self.tolerance_150 = 10
-        else:
-            self.tolerance = params.tolerance
-            self.tolerance_150 = 10
-
-        # Verify that there is a valid file to read
-        if params.mzml_file is None or params.mzml_file == "":
-            print('ERROR: Parameter --mzml_file must be provided. See --help for more information')
-            return
-
-        # Tries to open the params file specified. If it fails, an error is printed
-        if not os.path.isfile(params.mzml_file):
-            print(f"ERROR: File '{params.mzml_file}' not found or not a file")
-            return
-
-        self.file_name = params.mzml_file
-
         if self.file_name.endswith('.gz'):
             self.infile = gzip.open(self.file_name)
             self.peak_file = self.file_name[0:len(self.file_name) - 8]
@@ -110,7 +77,41 @@ class MSRunPeakFinder:
             self.infile = open(self.file_name, 'rb')
             self.peak_file = self.file_name[0:len(self.file_name) - 5]
 
+    def process_file(self):
+        # find the intensity of each m/z value
+        self.aggregate_spectra() # 
+        self.determine_crude_correction() # 
+        if self.crude_correction >= 15:
+            self.increase_initial_tolerance()
+            self.determine_crude_correction()
+        self.plot_crude_calibrations() # 
+        # create an array of all identifiable theoretical and their masses
+        self.get_theoretical_ions() #
+        # identify all the spectra with a certain intensity
+        self.find_initial_triggers() #
+        self.refine_triggered_peaks() # 
+        if len(self.observed_peaks) < 200: # if there aren't enough peaks, lower the minimum trigger and redo everything
+            self.lower_minimum_triggers()
+            self.plot_crude_calibrations() # automatically clears the plots
+            self.find_initial_triggers()
+            self.refine_triggered_peaks()
+        self.identify_peaks() #
+        # save the identified peaks to a file
+        self.delta_scatterplots() #
+        self.identify_peaks()
+        self.find_peak_percentage()
+
+        # following is code to write outputs - consider putting this in its own method
+        self.write_json()
+        self.write_output() #
+        self.plot_corrected_scatterplot()
+        self.analyze_snippets()
+        self.plot_peaks_strength()
+        # print out data, including run time, number of peaks found, etc
+        self.show_stats()
+
     def aggregate_spectra(self):
+        print("starting to aggregate spectra")
 
         with mzml.read(self.infile) as reader:
             for spectrum in reader:
@@ -161,9 +162,10 @@ class MSRunPeakFinder:
                     print(f"  {self.stats['counter']}")
 
         # print(self.scan_snippets)
-        print("finished aggregating spectra")
 
     def get_theoretical_ions(self):
+        print("starting to get explanations")
+
         # Populates an array of arrays with a list of theoretical ions with the name, mass, and a boolean
         # value. The boolean value tracks if the theoretical ion has already been identified, which prevents
         # duplicate identifications
@@ -346,8 +348,6 @@ class MSRunPeakFinder:
         self.known_ions["TMT135N"] = [135.151600, False]
         self.known_ions["TMT6Nterm"] = [229.162932 + self.proton_mass, False]
 
-        print("finished getting explanations")
-
     def simplify_explanation(self, explanation):
         # This takes a string and splits it into the + and -, reducing any redundancies
         # i.e. IE+H2O-H2O -> IE
@@ -476,6 +476,8 @@ class MSRunPeakFinder:
         self.minimum_triggers = self.minimum_triggers - 15
 
     def find_initial_triggers(self):
+        print("starting search for initial triggers")
+
         # Scans through peaks to find all peaks with over the minimum triggers value
         # If it is over the minimum triggers value (which compares it to the total strength of the peak),
         # it will add it to triggered peaks
@@ -495,10 +497,10 @@ class MSRunPeakFinder:
                     self.triggered_peaks.append(previous_peak)
                 counted = False
                 previous_peak = [0, 0]
-        
-        print("finished finding initial triggers")
 
     def refine_triggered_peaks(self):
+        print("starting to refine triggered peaks")
+
         # Refines the peaks by using a gaussian fit on each triggered peak. If the peaks fit centers
         # are within 5 PPM, then the two peaks are considered the same peak. This removes duplicates
         for peak in self.triggered_peaks:
@@ -520,8 +522,6 @@ class MSRunPeakFinder:
                             self.observed_peaks.append(peak_and_intensity)
                     else:
                         self.observed_peaks.append(peak_and_intensity)
-
-        print("finished refining triggered peaks")
             
     def get_peak_fit_center(self, peak):
         # This is a function that can calculate the peak fit center (center of the applied gaussian fit)
@@ -550,6 +550,7 @@ class MSRunPeakFinder:
         return [peak_mz, round(popt[0], 1)]
 
     def identify_peaks(self):
+        print("starting to identify peaks")
         # This uses the observed peaks and sees how many of them can be identified. It accounts for any
         # corrections applicable
         for key in self.known_ions: # Resets identifications, in case it is the second run through
@@ -600,8 +601,6 @@ class MSRunPeakFinder:
         if self.has_correction_spline:
             self.update_refined()
 
-        print("finished identifying peaks")
-
     def update_refined(self):
         mz_values = []
         for peak in self.refined_mz_values:
@@ -621,6 +620,7 @@ class MSRunPeakFinder:
                 self.refined_delta_ppm_values[index - removed] -= (y_values[index] + self.crude_correction)
 
     def keep_intense_remove_outliers(self, mz_values, delta_ppm_values):
+        print("starting to remove outliers")
         # Creates a new variable to store a set of refined peaks, only keeping the most intense peaks in
         # a bin and removes the outliers (top/bottom 10%) in the bin
         bin_size = 25 # Uses a bin size of 25 to take outliers and top intense peaks
@@ -665,9 +665,8 @@ class MSRunPeakFinder:
             self.refined_mz_values.append(key)
             self.refined_delta_ppm_values.append(xy[key] + self.crude_correction)
 
-        print("finished removing outliers")
-
     def plot_crude_calibrations(self):
+        print("starting to plot scatterplots")
         # Plots the top left graph, which is the PPM (difference between theoretical ion masses and the
         # most intense peak within a 20 PPM range  vs the mz of the ion
         self.pdf = PdfPages(f'{self.peak_file}.calibration.pdf')
@@ -747,10 +746,8 @@ class MSRunPeakFinder:
                     x_regular = np.arange(mz_values[0], mz_values[-1])
                     y_values = interpolate.BSpline(self.t, self.c, self.k)(x_regular)
                     self.ax[1][0].plot(x_regular, y_values, 'b')
-                    # self.ax[1,0].set_title(f"t: {self.t}, c: {self.c}, k: {self.k}", fontsize="xx-small")
 
                 plt.tight_layout()
-        print("finished creating delta scatterplot")
         plt.close()
 
     def plot_corrected_scatterplot(self):
@@ -763,9 +760,9 @@ class MSRunPeakFinder:
         self.fig.subplots_adjust(top=0.96, bottom=0.10, left=0.10, right=0.96, hspace=0.2, wspace=0.2)
         plt.tight_layout()
         self.pdf.savefig(self.fig)
-        print("finished creating all delta scatterplots")
 
     def analyze_snippets(self):
+        print("starting to analyze snippets")
         # Send a message if the plots cannot be created
         if len(self.scan_snippets) == 0:
             print("not enough data points to create snippet plots")
@@ -885,9 +882,9 @@ class MSRunPeakFinder:
 
         # This saves the plots and adds it to the output file
         self.pdf.savefig(self.fig)
-        print("finished analyzing snippets")
 
     def find_peak_percentage(self):
+        print("starting to find percentages")
         for index in range(len(self.observed_peaks)):
             peak = self.observed_peaks[index]
             lower_mz = int(peak[0] * 10000 - 50000 * peak[0] / 1e6 + 0.5)
@@ -900,9 +897,9 @@ class MSRunPeakFinder:
                 spectra_with_peak += self.by_count[lower_mz + mz]
 
             self.observed_peaks[index].insert(2, f"{round(spectra_with_peak * 100 / self.stats['ms2spectra'], 1)}%")
-        print("finished finding percentages")
 
     def write_json(self):
+        print("starting to write json file")
         # This writes out a json file with the crude correction value, the t, c, and k values for the
         # spline fit
         # https://www.geeksforgeeks.org/reading-and-writing-json-to-a-file-in-python/
@@ -920,9 +917,8 @@ class MSRunPeakFinder:
         with open(f"{self.peak_file}.calibration.json", "w") as outfile:
             outfile.write(json_object)
 
-        print("finished writing json file")
-
     def plot_peaks_strength(self):
+        print("starting to plot individual peaks")
         # Prints out individual peak plots, with 15 PPM above and below each observed peak to see the
         # intensity of the mz values around each observed peak
         # There are 15 plots per page
@@ -1039,9 +1035,8 @@ class MSRunPeakFinder:
         self.pdf.close()
         plt.close()
 
-        print("finished plotting peaks")
-
     def write_output(self):
+        print("starting to write tsv file")
         # Writes out all observed peaks in a TSV file, including the measured mz value from the mass 
         # spectrometer, the intensity, and all the identifications
         # Each identification has the theoretical mass, the delta in mz, and the name of the theoretical ion
@@ -1049,8 +1044,6 @@ class MSRunPeakFinder:
         # with open('common_peaks.tsv', 'w') as file:
             writer = csv.writer(file, delimiter='\t', lineterminator='\n')
             writer.writerows(self.observed_peaks)
-
-        print("finished writing tsv file")
 
     def show_stats(self):
         # Prints out the stats and how long it took to run the file
@@ -1063,6 +1056,7 @@ class MSRunPeakFinder:
         print(f"INFO: Processed {self.stats['counter']/(t1-self.t0)} spectra per second")
 
     # Gaussian function used for curve fitting
+
 def gaussian_function(x,a,x0,sigma):
     # a = amplitude
     # x0 = center point of the gaussian
@@ -1080,37 +1074,39 @@ def get_strength(intensity, smallest_peak_intensity):
     else:
         return 4
 
+def process_job(job_parameters):
+    peak_finder = MSRunPeakFinder(job_parameters["file"], job_parameters["tolerance"], job_parameters["rows"], job_parameters["columns"])
+    print(f"working on {job_parameters['file']}")
+    peak_finder.process_file()
+
 # put main at the end of the program, define identify peaks method first
 def main():
-    peak_finder = MSRunPeakFinder()
-    # find the intensity of each m/z value
-    peak_finder.aggregate_spectra()# 
-    peak_finder.determine_crude_correction()# 
-    if peak_finder.crude_correction >= 15:
-        peak_finder.increase_initial_tolerance()
-        peak_finder.determine_crude_correction()
-    peak_finder.plot_crude_calibrations()# 
-    # create an array of all identifiable theoretical and their masses
-    peak_finder.get_theoretical_ions() #
-    # identify all the spectra with a certain intensity
-    peak_finder.find_initial_triggers() #
-    peak_finder.refine_triggered_peaks() # 
-    if len(peak_finder.observed_peaks) < 200: # if there aren't enough peaks, lower the minimum trigger and redo everything
-        peak_finder.lower_minimum_triggers()
-        peak_finder.plot_crude_calibrations() # automatically clears the plots
-        peak_finder.find_initial_triggers()
-        peak_finder.refine_triggered_peaks()
-    peak_finder.identify_peaks() #
-    # save the identified peaks to a file
-    peak_finder.delta_scatterplots() #
-    peak_finder.identify_peaks()
-    peak_finder.write_json()
-    peak_finder.find_peak_percentage()
-    peak_finder.write_output() #
-    peak_finder.plot_corrected_scatterplot()
-    peak_finder.analyze_snippets()
-    peak_finder.plot_peaks_strength()
-    # print out data, including run time, number of peaks found, etc
-    peak_finder.show_stats()
+    argparser = argparse.ArgumentParser(description='An example program that reads an mzML file sequentially')
+    argparser.add_argument('--rows', action='store', default=5, type=int, help='Number of rows for graphs')
+    argparser.add_argument('--columns', action='store', default=3, type=int, help='Number of columns for output')
+    argparser.add_argument('--tolerance', action='store', default=5, type=float, help='Tolerance for identifying peaks in ppm')
+    argparser.add_argument('--n_threads', action='store', type=int, help='Set the number of files to process in parallel (defaults to number of cores)')
+    argparser.add_argument('files', type=str, nargs='+', help='Filenames of one or more mzML files to read')
+
+    params = argparser.parse_args()
+
+    for file in params.files:
+        if not os.path.isfile(file):
+            print(f"ERROR: File '{file}' not found or not a file")
+            return
+        
+    jobs = []
+    for file in params.files:
+        jobs.append({"file": file, "tolerance": params.tolerance, "rows": params.rows, "columns": params.columns})
+
+    #### Process the jobs in parallel
+    n_threads = params.n_threads or multiprocessing.cpu_count()
+    print(f"Processing files with n_threads={n_threads} (one mzML per thread)", end='', flush=True)
+    pool = multiprocessing.Pool(processes=n_threads)
+    results = pool.map_async(process_job, jobs)
+    #results = pool.map(process_job, jobs)
+    pool.close()
+    pool.join()
+    print("")
 
 if __name__ == "__main__": main()
