@@ -18,7 +18,7 @@ import argparse
 import os.path
 import timeit
 import matplotlib.pyplot as plt
-import spectrum_utils.spectrum as sus
+# import spectrum_utils.spectrum as sus
 import spectrum_utils.plot as sup
 import numpy as np
 import sys
@@ -68,6 +68,7 @@ class MSRunPeakFinder:
         self.proton_mass = 1.007276
         self.isotope_mass = 1.0034 # 1.00335
         self.crude_correction = 0
+        self.after_400_calibration = 0
         self.has_correction_spline = False
         self.has_second_spline = False
 
@@ -106,6 +107,7 @@ class MSRunPeakFinder:
         except:
             print("Error with creating the second spline")
         self.plot_corrected_scatterplot()
+        self.plot_all_corrections()
 
         # following is code to write outputs - consider putting this in its own method
         self.analyze_snippets()
@@ -709,6 +711,10 @@ class MSRunPeakFinder:
                 self.ax[0][1].text(min(mz_values), 0, f'tolerance: {self.tolerance} ppm', fontsize='xx-small', ha='left', va='top')
                 self.ax[0][1].axhline(y = 0, color = 'k', linewidth = 1, linestyle = '-')
                 self.ax[0][1].set(xlabel='m/z', ylabel='PPM')
+
+                self.ax[2][1].scatter(self.refined_mz_values, self.refined_delta_ppm_values, 0.5)
+                self.ax[2][1].axhline(y = 0, color = 'k', linewidth = 1, linestyle = '-')
+                self.ax[2][1].set(xlabel='m/z', ylabel='PPM')
                 plt.tight_layout()
             elif i == 1:
                 mz_values = []
@@ -729,6 +735,7 @@ class MSRunPeakFinder:
                 num_of_artificial_peaks = max(100, len(artificial_peak_range))
                 index_increment = (500 - index) / num_of_artificial_peaks
                 artificial_peak_intensity = np.median(artificial_peak_range)
+                self.after_400_calibration = np.median(artificial_peak_range)
                 while index < 500:
                     index += index_increment
                     mz_values.append(index)
@@ -767,14 +774,15 @@ class MSRunPeakFinder:
             if peak[0] >= 300 and peak[0] <= 400:
                 artificial_peak_range.append(peak[1]) 
 
-        index = max(mz_values)
-        num_of_artificial_peaks = max(100, len(artificial_peak_range))
-        index_increment = (500 - index) / num_of_artificial_peaks
-        artificial_peak_intensity = np.median(artificial_peak_range)
-        while index < 500:
-            index += index_increment
-            mz_values.append(index)
-            delta_values_ppm.append(artificial_peak_intensity)
+        self.after_400_calibration += np.median(artificial_peak_range)
+        # index = max(mz_values)
+        # num_of_artificial_peaks = max(100, len(artificial_peak_range))
+        # index_increment = (500 - index) / num_of_artificial_peaks
+        # artificial_peak_intensity = np.median(artificial_peak_range)
+        # while index < 500:
+            # index += index_increment
+            # mz_values.append(index)
+            # delta_values_ppm.append(artificial_peak_intensity)
 
         # create the spline
         x_new = np.linspace(0, 1, 5)[1:-1] # 5 = 3 knots + 2
@@ -798,6 +806,17 @@ class MSRunPeakFinder:
         self.ax[2][0].axhline(y = 0, color = 'k', linewidth = 1, linestyle = '-')
         self.ax[2][0].set(xlabel='m/z', ylabel='PPM')
 
+    def plot_all_corrections(self):
+        x_values = np.arange(self.refined_mz_values[0], self.refined_mz_values[-1])
+        
+        y_values = interpolate.BSpline(self.t, self.c, self.k)(x_values)
+        if self.has_second_spline:
+            y_values_2 = interpolate.BSpline(self.t2, self.c2, self.k2)(x_values)
+            for index in range(len(y_values)):
+                y_values[index] += y_values_2[index] + self.crude_correction
+        
+        self.ax[2][1].plot(x_values, y_values, 'b')
+        self.ax[2][1].axhline(xmin = 400, xmax = 1000, y = self.after_400_calibration, linewidth = 1, color = 'b')
         self.fig.subplots_adjust(top=0.96, bottom=0.10, left=0.10, right=0.96, hspace=0.2, wspace=0.2)
         plt.tight_layout()
         self.pdf.savefig(self.fig)
@@ -946,6 +965,7 @@ class MSRunPeakFinder:
         # https://www.geeksforgeeks.org/reading-and-writing-json-to-a-file-in-python/
         correction_values = {
             "crude correction": self.crude_correction,
+            "after_400_calibration": self.after_400_calibration
         }
 
         if self.has_correction_spline:

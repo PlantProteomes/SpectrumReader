@@ -22,11 +22,7 @@ import sys
 import os
 import argparse
 import os.path
-import timeit
-import re
 import json
-import numpy
-import pickle
 import gzip
 import numpy as np
 
@@ -43,18 +39,23 @@ class MyMzMLTransformer(MzMLTransformer):
         super().__init__(input_stream, output_stream, transform=transform, transform_description=transform_description,
                  sort_by_scan_time=sort_by_scan_time)
 
+        self.has_spline_correction = False
+        self.has_second_spline = False
         if ppm_shift is not None:
             self.ppm_shift = float(ppm_shift)
-            self.has_spline_correction = False
         else:
             self.ppm_shift = float(correction_values['crude correction'])
-            self.has_spline_correction = True
-            self.t = correction_values['t1']
-            self.c = correction_values['c1']
-            self.k = int(correction_values['k1'])
-            self.t2 = correction_values['t2']
-            self.c2 = correction_values['c2']
-            self.k2 = int(correction_values['k2'])
+            self.after_400_calibration = correction_values['after_400_calibration']
+            if len(correction_values >= 5):
+                self.has_spline_correction = True
+                self.t = correction_values['t1']
+                self.c = correction_values['c1']
+                self.k = int(correction_values['k1'])
+                if len(correction_values >= 8):
+                    self.has_second_spline = True
+                    self.t2 = correction_values['t2']
+                    self.c2 = correction_values['c2']
+                    self.k2 = int(correction_values['k2'])
 
     def format_spectrum(self, spectrum):
         new_spectrum = super().format_spectrum(spectrum)
@@ -79,14 +80,15 @@ class MyMzMLTransformer(MzMLTransformer):
             if self.has_spline_correction:
                 if precursor_mz <= 400:
                     x_values = np.array([precursor_mz])
+                    y_values = interpolate.BSpline(self.t, self.c, self.k)(x_values)
+                    if self.has_second_spline:
+                        y_values_2 = interpolate.BSpline(self.t2, self.c2, self.k2)(x_values)
+                        for index in range(len(y_values)):
+                            y_values[index] += y_values_2[index]
+                    precursor_mz -= y_values[0] * precursor_mz / 1e6
                 else:
-                    x_values = np.array([400])
-                y_values = interpolate.BSpline(self.t, self.c, self.k)(x_values)
-                y_values_2 = interpolate.BSpline(self.t2, self.c2, self.k2)(x_values)
-                for index in range(len(y_values)):
-                    y_values[index] += y_values_2[index]
-
-                precursor_mz -= y_values[0] * precursor_mz / 1e6
+                    precursor_mz -= self.after_400_calibration * precursor_mz / 1e6
+                    
             new_spectrum['precursor_information'][0]['mz'] = precursor_mz
 
         return new_spectrum
