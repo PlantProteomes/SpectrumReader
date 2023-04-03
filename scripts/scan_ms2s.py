@@ -69,6 +69,7 @@ class MSRunPeakFinder:
         self.isotope_mass = 1.0034 # 1.00335
         self.crude_correction = 0
         self.has_correction_spline = False
+        self.has_second_spline = False
 
         if self.file_name.endswith('.gz'):
             self.infile = gzip.open(self.file_name)
@@ -100,13 +101,17 @@ class MSRunPeakFinder:
         self.delta_scatterplots() #
         self.identify_peaks()
         self.find_peak_percentage()
+        try:
+            self.find_second_spline()    
+        except:
+            print("Error with creating the second spline")
+        self.plot_corrected_scatterplot()
 
         # following is code to write outputs - consider putting this in its own method
-        self.write_json()
-        self.write_output() #
-        self.plot_corrected_scatterplot()
         self.analyze_snippets()
         self.plot_peaks_strength()
+        self.write_json()
+        self.write_output() #
         # print out data, including run time, number of peaks found, etc
         self.show_stats()
 
@@ -564,6 +569,10 @@ class MSRunPeakFinder:
                 mz_values.append(peak[0])
             x_values = np.array(mz_values)
             y_values = interpolate.BSpline(self.t, self.c, self.k)(x_values)
+            if self.has_second_spline:
+                y_values_2 = interpolate.BSpline(self.t2, self.c2, self.k2)(x_values)
+                for index in range(len(y_values)):
+                    y_values[index] += y_values_2[index]
         
         # Goes through and applies all corrections, then see if the peak can be identified
         for index in range(len(self.observed_peaks)):
@@ -595,29 +604,23 @@ class MSRunPeakFinder:
             for identification in identifications:
                 self.observed_peaks[index].append(identification)
 
-            # Checks if this is the second round of identifications. If it is, it checks if the peak is in
-            # the refined peaks list. If it is, it changes the delta ppm for that peak to be the most
-            # updated identification and delta ppm
-        if self.has_correction_spline:
-            self.update_refined()
-
-    def update_refined(self):
+    def update_refined(self, crude_correction, t, c, k):
         mz_values = []
         for peak in self.refined_mz_values:
             mz_values.append(peak)
         x_values = np.array(mz_values)
-        y_values = interpolate.BSpline(self.t, self.c, self.k)(x_values)
+        y_values = interpolate.BSpline(t, c, k)(x_values)
 
         removed = 0
         for index in range(len(self.refined_delta_ppm_values)):
-            if abs(self.refined_delta_ppm_values[index - removed] - y_values[index] - self.crude_correction) > 10:
+            if abs(self.refined_delta_ppm_values[index - removed] - y_values[index] - crude_correction) > 10:
                 del self.refined_mz_values[index - removed]
                 del self.refined_delta_ppm_values[index - removed]
                 removed += 1
             else:
                 mz = self.refined_mz_values[index - removed]
-                self.refined_mz_values[index - removed] -= (self.crude_correction + y_values[index]) * mz / 1e6
-                self.refined_delta_ppm_values[index - removed] -= (y_values[index] + self.crude_correction)
+                self.refined_mz_values[index - removed] -= (crude_correction + y_values[index]) * mz / 1e6
+                self.refined_delta_ppm_values[index - removed] -= (y_values[index] + crude_correction)
 
     def keep_intense_remove_outliers(self, mz_values, delta_ppm_values):
         print("starting to remove outliers")
@@ -663,14 +666,14 @@ class MSRunPeakFinder:
         self.refined_delta_ppm_values = []
         for key in xy:
             self.refined_mz_values.append(key)
-            self.refined_delta_ppm_values.append(xy[key] + self.crude_correction)
+            self.refined_delta_ppm_values.append(xy[key])
 
     def plot_crude_calibrations(self):
         print("starting to plot scatterplots")
         # Plots the top left graph, which is the PPM (difference between theoretical ion masses and the
         # most intense peak within a 20 PPM range  vs the mz of the ion
         self.pdf = PdfPages(f'{self.peak_file}.calibration.pdf')
-        self.fig, self.ax = plt.subplots(nrows=2, ncols=2, figsize=(8.5, 7))
+        self.fig, self.ax = plt.subplots(nrows=3, ncols=2, figsize=(8.5, 11))
         peak_mz = []
         calibration_ppm = []
         for closest_match in self.crude_xy_scatterplot:
@@ -695,7 +698,7 @@ class MSRunPeakFinder:
                 for peak in self.observed_peaks:
                     if len(peak) >= 3:
                         mz_values.append([peak[0], peak[1]])
-                        delta_values_ppm.append((peak[2][1] * 1e6 / peak[2][0]))
+                        delta_values_ppm.append(((peak[2][1]) * 1e6 / peak[2][0]) + self.crude_correction)
                     else:
                         continue
                 self.keep_intense_remove_outliers(mz_values, delta_values_ppm)
@@ -746,17 +749,55 @@ class MSRunPeakFinder:
                     x_regular = np.arange(mz_values[0], mz_values[-1])
                     y_values = interpolate.BSpline(self.t, self.c, self.k)(x_regular)
                     self.ax[1][0].plot(x_regular, y_values, 'b')
-
+                    # self.ax[1,0].set_title(f"t: {self.t}, c: {self.c}, k: {self.k}", fontsize="xx-small")
+                    self.update_refined(self.crude_correction, self.t, self.c, self.k)
                 plt.tight_layout()
         plt.close()
 
-    def plot_corrected_scatterplot(self):
-        # This plots the bottom right graph, with the spline correction and crude correction applied
-        # Most of the points should be around the 0 horizontal line, which indicates the corrections
-        # were successful        
-        self.ax[1][1].scatter(self.refined_mz_values, self.refined_delta_ppm_values, 0.5)
+    def find_second_spline(self):
+        # This calculates the coefficients for the second spline fit and plots the delta scatterplot
+        # of just the first spline fit applied, with the second spline fit overlayed
+        mz_values = self.refined_mz_values.copy()
+        delta_values_ppm = self.refined_delta_ppm_values.copy()
+
+        # extend out the line for the spline
+        artificial_peak_range = []
+        for index in range(len(mz_values)):
+            peak = [mz_values[index], delta_values_ppm[index]]
+            if peak[0] >= 300 and peak[0] <= 400:
+                artificial_peak_range.append(peak[1]) 
+
+        index = max(mz_values)
+        num_of_artificial_peaks = max(100, len(artificial_peak_range))
+        index_increment = (500 - index) / num_of_artificial_peaks
+        artificial_peak_intensity = np.median(artificial_peak_range)
+        while index < 500:
+            index += index_increment
+            mz_values.append(index)
+            delta_values_ppm.append(artificial_peak_intensity)
+
+        # create the spline
+        x_new = np.linspace(0, 1, 5)[1:-1] # 5 = 3 knots + 2
+        x_new.sort()
+        q_knots = np.quantile(mz_values, x_new)
+        self.t2, self.c2, self.k2 = interpolate.splrep(mz_values, delta_values_ppm, t=q_knots, s=3)
+        self.has_second_spline = True
+        x_regular = np.arange(mz_values[0], mz_values[-1])
+        y_values = interpolate.BSpline(self.t2, self.c2, self.k2)(x_regular)
+        self.ax[1][1].scatter(mz_values, delta_values_ppm, 0.5)
+        self.ax[1][1].plot(x_regular, y_values, 'g')
         self.ax[1][1].axhline(y = 0, color = 'k', linewidth = 1, linestyle = '-')
         self.ax[1][1].set(xlabel='m/z', ylabel='PPM')
+        self.update_refined(0, self.t2, self.c2, self.k2)
+
+    def plot_corrected_scatterplot(self):
+        # This plots the fifth graph, with both spline corrections and the crude correction applied
+        # Most of the points should be around the 0 horizontal line, which indicates the corrections
+        # were successful        
+        self.ax[2][0].scatter(self.refined_mz_values, self.refined_delta_ppm_values, 0.5)
+        self.ax[2][0].axhline(y = 0, color = 'k', linewidth = 1, linestyle = '-')
+        self.ax[2][0].set(xlabel='m/z', ylabel='PPM')
+
         self.fig.subplots_adjust(top=0.96, bottom=0.10, left=0.10, right=0.96, hspace=0.2, wspace=0.2)
         plt.tight_layout()
         self.pdf.savefig(self.fig)
@@ -905,10 +946,17 @@ class MSRunPeakFinder:
         # https://www.geeksforgeeks.org/reading-and-writing-json-to-a-file-in-python/
         correction_values = {
             "crude correction": self.crude_correction,
-            "t": self.t.tolist(),
-            "c": self.c.tolist(),
-            "k": self.k
         }
+
+        if self.has_correction_spline:
+            correction_values["t1"] = self.t.tolist(),
+            correction_values["c1"] = self.c.tolist(),
+            correction_values["k1"] = self.k,
+
+        if self.has_second_spline:
+            correction_values["t2"] = self.t2.tolist(),
+            correction_values["c2"] = self.c2.tolist(),
+            correction_values["k2"] = self.k2,
 
         # Serializing json
         json_object = json.dumps(correction_values, indent=4)
@@ -931,6 +979,10 @@ class MSRunPeakFinder:
             mz_values = [peak[0] for peak in self.observed_peaks]
             x_values = np.array(mz_values)
             y_values = interpolate.BSpline(self.t, self.c, self.k)(x_values)
+            if self.has_second_spline:
+                y_values_2 = interpolate.BSpline(self.t2, self.c2, self.k2)(x_values)
+                for index in range(len(y_values)):
+                    y_values[index] += y_values_2[index]
 
         # Takes the most 300 most intense peaks to print out
         if len(self.observed_peaks) > 300:
@@ -949,7 +1001,7 @@ class MSRunPeakFinder:
 
             for range_index in range(mz_delta * 2 + 1):
                 # change it to be 0
-                add_index = int((peak[0]) * 10000 + range_index - mz_delta - 1)
+                add_index = int((peak[0]) * 10000 + range_index - mz_delta)
                 # mz_values.append(add_index / 10000 - peak[0])
                 ppm = (add_index / 10000 - peak[0]) * 1e6 / peak[0]
                 intensity_values.append(self.by_strength[add_index])
@@ -960,6 +1012,7 @@ class MSRunPeakFinder:
             ax[x,y].locator_params(axis='x', nbins=5)
             # ax[x,y].set_xticks([-0.0015, -0.0007, 0, 0.0007, 0.0015])
             ax[x,y].tick_params(axis='y', labelsize='xx-small')
+            ax[x,y].set_xlim(-15, 15)
 
             # add gaussian fitting
             n = len(ppm_values)
@@ -993,29 +1046,31 @@ class MSRunPeakFinder:
                 count = 3
                 identified_ion_name = ''
                 ion_mz = peak[3][0]
-                plotted_identification = [peak[3][2], peak[3][1]]
+                plotted_identification = [peak[3][2], peak[3][1], 1]
+                ax[x][y].text(-line_x, max(intensity_values), f'{plotted_identification[2]}', fontsize='xx-small', ha='left', va='top')
                 while count <= len(peak) - 1:
-                    if count <= 10:
-                        identified_ion_name += peak[count][2] + '\n    '
+                    corrected = False
                     if peak[count][1] != plotted_identification[1]:
-                        # TODO
-                        ax[x][y].text(-line_x, max(intensity_values), f'{plotted_identification[0]}', fontsize='xx-small', ha='left', va='top')
                         line_x = (peak[count][1]) * 1e6 / peak[0]
                         ax[x,y].axvline(x=-line_x, color='black', lw=1, linestyle='--')
-                        plotted_identification = [peak[count][2], peak[count][1]]
-                    if count == len(peak) - 1 and plotted_identification[0] != peak[3][2]:
-                        ax[x][y].text(-line_x, max(intensity_values), f'{plotted_identification[0]}', fontsize='xx-small', ha='left', va='top')
+                        plotted_identification = [peak[count][2], peak[count][1], plotted_identification[2] + 1]
+                        identified_ion_name += f"{plotted_identification[2]}) "
+                        corrected = True
+                    if count <= 10:
+                        identified_ion_name += peak[count][2] + '\n    '
+                    if count == len(peak) - 1 and plotted_identification[0] != peak[3][2] and not corrected:
+                        ax[x][y].text(-line_x, max(intensity_values), f'{plotted_identification[2] + 1}', fontsize='xx-small', ha='left', va='top')
                     count += 1
                     if count == 11 and count <= len(peak) - 1:
                         identified_ion_name += "..."
 
                 peak_fit_center = int(100000*(peak[0] + (popt[1] * peak[0] / 1e6) - crude_correction_mz - spline_correction_mz)) / 100000
-                ax[x,y].text(-16, max(intensity_values) * 1.03, f'peak fit center: \n    {peak_fit_center}\nion m/z: \n    {ion_mz}\nion id: \n    {identified_ion_name}', fontsize='xx-small', ha='left', va='top')
+                ax[x,y].text(-14, max(intensity_values) * 1.03, f'peak fit center: \n    {peak_fit_center}\nion m/z: \n    {ion_mz}\nion id: \n    {identified_ion_name}', fontsize='xx-small', ha='left', va='top')
                 ax[x,y].text(14, max(intensity_values) * 1.03, f'{peak[2]}\nof spectra', fontsize='xx-small', ha='right', va='top')
                 # ax[x,y].set_title(f"Peak {peak[0]}, Amino Acid {peak[4]}", fontsize="xx-small")
             else:
                 peak_fit_center = int(100000*(peak[0] + (popt[1] * peak[0] / 1e6) - crude_correction_mz)) / 100000
-                ax[x,y].text(-16, max(intensity_values) * 1.03, f'peak fit center: \n    {peak_fit_center}', fontsize='xx-small', ha='left', va='top',)
+                ax[x,y].text(-14, max(intensity_values) * 1.03, f'peak fit center: \n    {peak_fit_center}', fontsize='xx-small', ha='left', va='top',)
                 ax[x,y].text(14, max(intensity_values) * 1.03, f'{peak[2]}\nof spectra', fontsize='xx-small', ha='right', va='top')
                 # ax[x,y].set_title(f"Peak {peak[0]}", fontsize="xx-small")
 
@@ -1094,19 +1149,27 @@ def main():
         if not os.path.isfile(file):
             print(f"ERROR: File '{file}' not found or not a file")
             return
+        if file[-4:] != "mzML" and file[-7:] != "mzML.gz":
+            print(file[-4:])
+            print(file[-7:])
+            print(f"ERROR: File '{file}' is not an mzML nor a mzML.gz")
+            return
         
     jobs = []
     for file in params.files:
         jobs.append({"file": file, "tolerance": params.tolerance, "rows": params.rows, "columns": params.columns})
 
-    #### Process the jobs in parallel
-    n_threads = params.n_threads or multiprocessing.cpu_count()
-    print(f"Processing files with n_threads={n_threads} (one mzML per thread)", end='', flush=True)
-    pool = multiprocessing.Pool(processes=n_threads)
-    results = pool.map_async(process_job, jobs)
-    #results = pool.map(process_job, jobs)
-    pool.close()
-    pool.join()
-    print("")
+    if len(jobs) == 1:
+        process_job(jobs[0])
+    else:
+        #### Process the jobs in parallel
+        n_threads = params.n_threads or multiprocessing.cpu_count()
+        print(f"Processing files with n_threads={n_threads} (one mzML per thread)", end='', flush=True)
+        pool = multiprocessing.Pool(processes=n_threads)
+        results = pool.map_async(process_job, jobs)
+        #results = pool.map(process_job, jobs)
+        pool.close()
+        pool.join()
+        print("")
 
 if __name__ == "__main__": main()

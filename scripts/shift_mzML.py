@@ -49,9 +49,12 @@ class MyMzMLTransformer(MzMLTransformer):
         else:
             self.ppm_shift = float(correction_values['crude correction'])
             self.has_spline_correction = True
-            self.t = correction_values['t']
-            self.c = correction_values['c']
-            self.k = int(correction_values['k'])
+            self.t = correction_values['t1']
+            self.c = correction_values['c1']
+            self.k = int(correction_values['k1'])
+            self.t2 = correction_values['t2']
+            self.c2 = correction_values['c2']
+            self.k2 = int(correction_values['k2'])
 
     def format_spectrum(self, spectrum):
         new_spectrum = super().format_spectrum(spectrum)
@@ -79,6 +82,10 @@ class MyMzMLTransformer(MzMLTransformer):
                 else:
                     x_values = np.array([400])
                 y_values = interpolate.BSpline(self.t, self.c, self.k)(x_values)
+                y_values_2 = interpolate.BSpline(self.t2, self.c2, self.k2)(x_values)
+                for index in range(len(y_values)):
+                    y_values[index] += y_values_2[index]
+
                 precursor_mz -= y_values[0] * precursor_mz / 1e6
             new_spectrum['precursor_information'][0]['mz'] = precursor_mz
 
