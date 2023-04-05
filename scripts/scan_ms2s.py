@@ -736,7 +736,8 @@ class MSRunPeakFinder:
                 index_increment = (500 - index) / num_of_artificial_peaks
                 artificial_peak_intensity = np.median(artificial_peak_range)
                 self.after_400_calibration = np.median(artificial_peak_range)
-                while index < 500:
+                while index < 500: # extending the line so the spline fit is created with the artificial
+                # peak plots
                     index += index_increment
                     mz_values.append(index)
                     delta_values_ppm.append(artificial_peak_intensity)
@@ -810,13 +811,16 @@ class MSRunPeakFinder:
         x_values = np.arange(self.refined_mz_values[0], self.refined_mz_values[-1])
         
         y_values = interpolate.BSpline(self.t, self.c, self.k)(x_values)
+        for index in range(len(y_values)):
+            y_values[index] += self.crude_correction
         if self.has_second_spline:
             y_values_2 = interpolate.BSpline(self.t2, self.c2, self.k2)(x_values)
             for index in range(len(y_values)):
-                y_values[index] += y_values_2[index] + self.crude_correction
+                y_values[index] += y_values_2[index]
         
-        self.ax[2][1].plot(x_values, y_values, 'b')
-        self.ax[2][1].axhline(xmin = 400, xmax = 1000, y = self.after_400_calibration, linewidth = 1, color = 'b')
+        self.ax[2][1].plot(x_values, y_values, 'g')
+        total_after_400_correction = self.after_400_calibration + self.crude_correction
+        self.ax[2][1].plot([400, 1000], [total_after_400_correction, total_after_400_correction], linewidth = 1, color = 'g')
         self.fig.subplots_adjust(top=0.96, bottom=0.10, left=0.10, right=0.96, hspace=0.2, wspace=0.2)
         plt.tight_layout()
         self.pdf.savefig(self.fig)
