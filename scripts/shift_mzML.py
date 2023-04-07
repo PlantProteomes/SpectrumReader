@@ -46,12 +46,12 @@ class MyMzMLTransformer(MzMLTransformer):
         else:
             self.ppm_shift = float(correction_values['crude correction'])
             self.after_400_calibration = correction_values['after_400_calibration']
-            if len(correction_values >= 5):
+            if len(correction_values) >= 5:
                 self.has_spline_correction = True
                 self.t = correction_values['t1']
                 self.c = correction_values['c1']
                 self.k = int(correction_values['k1'])
-                if len(correction_values >= 8):
+                if len(correction_values) >= 8:
                     self.has_second_spline = True
                     self.t2 = correction_values['t2']
                     self.c2 = correction_values['c2']

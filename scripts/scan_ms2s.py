@@ -18,7 +18,7 @@ import argparse
 import os.path
 import timeit
 import matplotlib.pyplot as plt
-# import spectrum_utils.spectrum as sus
+import spectrum_utils.spectrum as sus
 import spectrum_utils.plot as sup
 import numpy as np
 import sys
@@ -634,11 +634,13 @@ class MSRunPeakFinder:
         removable_index = []
         upper_bound = mz_values[0][0] + bin_size
         for index in range(len(mz_values)):
+            xy_range.append([mz_values[index][0], mz_values[index][1], delta_ppm_values[index]])
             xy[mz_values[index][0]] = delta_ppm_values[index]
             if mz_values[index][0] > upper_bound or index == len(mz_values) - 1:
                 xy_range.sort(key = lambda x: -1 * x[1])
-                top_peak = int(self.top_peaks * len(mz_values) + 0.5) + 1
-                xy_range = xy_range[0:top_peak]
+                if len(xy_range) != 1:
+                    top_peak = int(self.top_peaks * len(mz_values) + 0.5) + 1
+                    xy_range = xy_range[0:top_peak]
 
                 xy_range.sort(key = lambda x: x[2])
                 length = len(xy_range)
@@ -658,7 +660,6 @@ class MSRunPeakFinder:
                         removable_index.append(tuple[0])
                 upper_bound += bin_size
                 xy_range = []
-            xy_range.append([mz_values[index][0], mz_values[index][1], delta_ppm_values[index]])
         
         for key in removable_index:
             xy.pop(key)
@@ -736,11 +737,6 @@ class MSRunPeakFinder:
                 index_increment = (500 - index) / num_of_artificial_peaks
                 artificial_peak_intensity = np.median(artificial_peak_range)
                 self.after_400_calibration = np.median(artificial_peak_range)
-                while index < 500: # extending the line so the spline fit is created with the artificial
-                # peak plots
-                    index += index_increment
-                    mz_values.append(index)
-                    delta_values_ppm.append(artificial_peak_intensity)
                 self.ax[1][0].scatter(mz_values, delta_values_ppm, 0.5)
                 self.ax[1][0].axhline(y = 0, color = 'k', linewidth = 1, linestyle = '-')
                 self.ax[1][0].set(xlabel='m/z', ylabel='PPM')
@@ -749,16 +745,34 @@ class MSRunPeakFinder:
                     print("There are too little data points to create a spline fit.")
                     self.ax[1,0].set_title("There are too little data points to create a spline fit", fontsize="xx-small")
                 else:
-                    x_new = np.linspace(0, 1, 5)[1:-1] # 5 = 3 knots + 2
-                    x_new.sort()
-                    q_knots = np.quantile(mz_values, x_new)
-                    self.t, self.c, self.k = interpolate.splrep(mz_values, delta_values_ppm, t=q_knots, s=3)
-                    self.has_correction_spline = True
-                    x_regular = np.arange(mz_values[0], mz_values[-1])
-                    y_values = interpolate.BSpline(self.t, self.c, self.k)(x_regular)
-                    self.ax[1][0].plot(x_regular, y_values, 'b')
-                    # self.ax[1,0].set_title(f"t: {self.t}, c: {self.c}, k: {self.k}", fontsize="xx-small")
-                    self.update_refined(self.crude_correction, self.t, self.c, self.k)
+                    try:
+                        x_new = np.linspace(0, 1, 5)[1:-1] # 5 = 3 knots + 2
+                        x_new.sort()
+                        q_knots = np.quantile(mz_values, x_new)
+                        self.t, self.c, self.k = interpolate.splrep(mz_values, delta_values_ppm, t=q_knots, s=3)
+                        self.has_correction_spline = True
+                        x_regular = np.arange(mz_values[0], mz_values[-1])
+                        y_values = interpolate.BSpline(self.t, self.c, self.k)(x_regular)
+                        self.ax[1][0].plot(x_regular, y_values, 'b')
+                        # self.ax[1,0].set_title(f"t: {self.t}, c: {self.c}, k: {self.k}", fontsize="xx-small")
+                        self.update_refined(self.crude_correction, self.t, self.c, self.k)
+                    except:
+                        while index < 500: # extending the line so the spline fit is created with the artificial
+                        # peak plots
+                            index += index_increment
+                            mz_values.append(index)
+                            delta_values_ppm.append(artificial_peak_intensity)
+
+                        x_new = np.linspace(0, 1, 5)[1:-1] # 5 = 3 knots + 2
+                        x_new.sort()
+                        q_knots = np.quantile(mz_values, x_new)
+                        self.t, self.c, self.k = interpolate.splrep(mz_values, delta_values_ppm, t=q_knots, s=3)
+                        self.has_correction_spline = True
+                        x_regular = np.arange(mz_values[0], mz_values[-1])
+                        y_values = interpolate.BSpline(self.t, self.c, self.k)(x_regular)
+                        self.ax[1][0].plot(x_regular, y_values, 'b')
+                        # self.ax[1,0].set_title(f"t: {self.t}, c: {self.c}, k: {self.k}", fontsize="xx-small")
+                        self.update_refined(self.crude_correction, self.t, self.c, self.k)
                 plt.tight_layout()
         plt.close()
 
@@ -786,7 +800,7 @@ class MSRunPeakFinder:
             # delta_values_ppm.append(artificial_peak_intensity)
 
         # create the spline
-        x_new = np.linspace(0, 1, 5)[1:-1] # 5 = 3 knots + 2
+        x_new = np.linspace(0, 1, 7)[1:-1] # 7 = 5 knots + 2
         x_new.sort()
         q_knots = np.quantile(mz_values, x_new)
         self.t2, self.c2, self.k2 = interpolate.splrep(mz_values, delta_values_ppm, t=q_knots, s=3)
@@ -820,7 +834,7 @@ class MSRunPeakFinder:
         
         self.ax[2][1].plot(x_values, y_values, 'g')
         total_after_400_correction = self.after_400_calibration + self.crude_correction
-        self.ax[2][1].plot([400, 1000], [total_after_400_correction, total_after_400_correction], linewidth = 1, color = 'g')
+        self.ax[2][1].plot([400, 450], [total_after_400_correction, total_after_400_correction], linewidth = 1, color = 'g')
         self.fig.subplots_adjust(top=0.96, bottom=0.10, left=0.10, right=0.96, hspace=0.2, wspace=0.2)
         plt.tight_layout()
         self.pdf.savefig(self.fig)
@@ -973,14 +987,14 @@ class MSRunPeakFinder:
         }
 
         if self.has_correction_spline:
-            correction_values["t1"] = self.t.tolist(),
-            correction_values["c1"] = self.c.tolist(),
-            correction_values["k1"] = self.k,
+            correction_values["t1"] = self.t.tolist()
+            correction_values["c1"] = self.c.tolist()
+            correction_values["k1"] = self.k
 
         if self.has_second_spline:
-            correction_values["t2"] = self.t2.tolist(),
-            correction_values["c2"] = self.c2.tolist(),
-            correction_values["k2"] = self.k2,
+            correction_values["t2"] = self.t2.tolist()
+            correction_values["c2"] = self.c2.tolist()
+            correction_values["k2"] = self.k2
 
         # Serializing json
         json_object = json.dumps(correction_values, indent=4)
