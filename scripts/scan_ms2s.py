@@ -8,7 +8,7 @@
 # to run the program (use terminal): python scan_ms2s.py ..\data\Q20181210_06.mzML.gz
 # to run the program (use terminal): python scan_ms2s.py ..\data\OR13_A2_20161014_CMP_Ecoli_glycerol_exp_2mg_IMAC_R2.mzML.gz
 
-# all the folders
+# all the files
 # to run the program (use terminal): python scan_ms2s.py ..\data\*.mzML*
 
 # shifted files

@@ -41,6 +41,7 @@ class MyMzMLTransformer(MzMLTransformer):
 
         self.has_spline_correction = False
         self.has_second_spline = False
+        self.correction_cache = {}
         if ppm_shift is not None:
             self.ppm_shift = float(ppm_shift)
         else:
@@ -61,11 +62,8 @@ class MyMzMLTransformer(MzMLTransformer):
         new_spectrum = super().format_spectrum(spectrum)
 
         #### Shift all the m/z values
-        new_spectrum['mz_array'] -= self.ppm_shift * new_spectrum['mz_array'] / 1e6
-        if self.has_spline_correction:
-            x_values = np.array([new_spectrum['mz_array']])
-            y_values = interpolate.BSpline(self.t, self.c, self.k)(x_values)
-            new_spectrum['mz_array'] -= y_values[0] * new_spectrum['mz_array'] / 1e6
+        vfunc = np.vectorize(self.correct_mz)
+        new_spectrum['mz_array'] = vfunc(new_spectrum['mz_array'])
 
         #### Get the MS level
         ms_level = None
@@ -76,22 +74,30 @@ class MyMzMLTransformer(MzMLTransformer):
         #### Correct the precursor m/z values by the requested shift
         if ms_level is not None and ms_level > 1:
             precursor_mz = new_spectrum['precursor_information'][0]['mz']
-            precursor_mz -= self.ppm_shift * precursor_mz / 1e6
+            new_spectrum['precursor_information'][0]['mz'] = self.correct_mz(precursor_mz)
+
+        return new_spectrum
+
+    def correct_mz(self, input_mz):
+        int_input_mz = int(input_mz)
+        if int_input_mz in self.correction_cache:
+            return self.correction_cache[int_input_mz]
+        else:
+            input_mz -= self.ppm_shift * input_mz / 1e6
             if self.has_spline_correction:
-                if precursor_mz <= 400:
-                    x_values = np.array([precursor_mz])
+                if input_mz <= 400:
+                    x_values = np.array([input_mz])
                     y_values = interpolate.BSpline(self.t, self.c, self.k)(x_values)
                     if self.has_second_spline:
                         y_values_2 = interpolate.BSpline(self.t2, self.c2, self.k2)(x_values)
                         for index in range(len(y_values)):
                             y_values[index] += y_values_2[index]
-                    precursor_mz -= y_values[0] * precursor_mz / 1e6
+                    input_mz -= y_values[0] * input_mz / 1e6
                 else:
-                    precursor_mz -= self.after_400_calibration * precursor_mz / 1e6
+                    input_mz -= self.after_400_calibration * input_mz / 1e6
+            # self.correction_cache[int_input_mz] = input_mz
+            return input_mz
                     
-            new_spectrum['precursor_information'][0]['mz'] = precursor_mz
-
-        return new_spectrum
 
 def main():
 
