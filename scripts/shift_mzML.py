@@ -81,9 +81,9 @@ class MyMzMLTransformer(MzMLTransformer):
     def correct_mz(self, input_mz):
         int_input_mz = int(input_mz)
         if int_input_mz in self.correction_cache:
-            return self.correction_cache[int_input_mz]
+            return input_mz + self.correction_cache[int_input_mz]
         else:
-            input_mz -= self.ppm_shift * input_mz / 1e6
+            total_correction_offset = -1 * self.ppm_shift * input_mz / 1e6
             if self.has_spline_correction:
                 if input_mz <= 400:
                     x_values = np.array([input_mz])
@@ -92,11 +92,11 @@ class MyMzMLTransformer(MzMLTransformer):
                         y_values_2 = interpolate.BSpline(self.t2, self.c2, self.k2)(x_values)
                         for index in range(len(y_values)):
                             y_values[index] += y_values_2[index]
-                    input_mz -= y_values[0] * input_mz / 1e6
+                    total_correction_offset -= y_values[0] * input_mz / 1e6
                 else:
-                    input_mz -= self.after_400_calibration * input_mz / 1e6
-            # self.correction_cache[int_input_mz] = input_mz
-            return input_mz
+                    total_correction_offset -= self.after_400_calibration * input_mz / 1e6
+            self.correction_cache[int_input_mz] = total_correction_offset
+            return input_mz + total_correction_offset
                     
 
 def main():
