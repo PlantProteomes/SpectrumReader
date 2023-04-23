@@ -747,24 +747,24 @@ class MSRunPeakFinder:
                     print("There are too little data points to create a spline fit.")
                     self.ax[1,0].set_title("There are too little data points to create a spline fit", fontsize="xx-small")
                 else:
-                    # try: # Tries to apply a spline fit without the extension line
-                        # x_new = np.linspace(0, 1, 5)[1:-1] # 5 = 3 knots + 2
-                        # x_new.sort()
-                        # q_knots = np.quantile(mz_values, x_new)
-                        # self.t, self.c, self.k = interpolate.splrep(mz_values, delta_values_ppm, t=q_knots, s=3)
-                        # self.has_correction_spline = True
-                        # x_regular = np.arange(mz_values[0], mz_values[-1])
-                        # y_values = interpolate.BSpline(self.t, self.c, self.k)(x_regular)
-                        # self.ax[1][0].plot(x_regular, y_values, 'b')
-                        # self.ax[1,0].set_title(f"t: {self.t}, c: {self.c}, k: {self.k}", fontsize="xx-small")
-                        # self.update_refined(self.crude_correction, self.t, self.c, self.k)
-                    # except: # If the spline was not fit, add an extension line to fit the spline
-                        # print("spline fit without extension line failed, extension line applied")
-                    while index < 500: # extending the line so the spline fit is created with the artificial
-                    # peak plots
-                        index += index_increment
-                        mz_values.append(index)
-                        delta_values_ppm.append(artificial_peak_intensity)
+                    try: # Tries to apply a spline fit without the extension line
+                        x_new = np.linspace(0, 1, 5)[1:-1] # 5 = 3 knots + 2
+                        x_new.sort()
+                        q_knots = np.quantile(mz_values, x_new)
+                        self.t, self.c, self.k = interpolate.splrep(mz_values, delta_values_ppm, t=q_knots, s=3)
+                        self.has_correction_spline = True
+                        x_regular = np.arange(mz_values[0], mz_values[-1])
+                        y_values = interpolate.BSpline(self.t, self.c, self.k)(x_regular)
+                        self.ax[1][0].plot(x_regular, y_values, 'b')
+                        self.ax[1,0].set_title(f"t: {self.t}, c: {self.c}, k: {self.k}", fontsize="xx-small")
+                        self.update_refined(self.crude_correction, self.t, self.c, self.k)
+                    except: # If the spline was not fit, add an extension line to fit the spline
+                        print("spline fit without extension line failed, extension line applied")
+                        while index < 500: # extending the line so the spline fit is created with the artificial
+                        # peak plots
+                            index += index_increment
+                            mz_values.append(index)
+                            delta_values_ppm.append(artificial_peak_intensity)
 
                     x_new = np.linspace(0, 1, 5)[1:-1] # 5 = 3 knots + 2
                     x_new.sort()
@@ -794,16 +794,7 @@ class MSRunPeakFinder:
                 artificial_peak_range.append(peak[1]) 
 
         self.after_400_calibration += np.median(artificial_peak_range)
-        # Adding the artificial points to create an extension line
-        # index = max(mz_values)
-        # num_of_artificial_peaks = max(100, len(artificial_peak_range))
-        # index_increment = (500 - index) / num_of_artificial_peaks
-        # artificial_peak_intensity = np.median(artificial_peak_range)
-        # while index < 500:
-            # index += index_increment
-            # mz_values.append(index)
-            # delta_values_ppm.append(artificial_peak_intensity)
-
+        
         # create the spline
         try:
             x_new = np.linspace(0, 1, 7)[1:-1] # 7 = 5 knots + 2
@@ -813,13 +804,36 @@ class MSRunPeakFinder:
             self.has_second_spline = True
             x_regular = np.arange(mz_values[0], mz_values[-1])
             y_values = interpolate.BSpline(self.t2, self.c2, self.k2)(x_regular)
-            self.ax[1][1].scatter(mz_values, delta_values_ppm, 0.5)
             self.ax[1][1].plot(x_regular, y_values, 'g')
+        except:
+            try:
+                print("adding artificial line on second spline fit")
+                # Adding the artificial points to create an extension line
+                index = max(mz_values)
+                num_of_artificial_peaks = max(100, len(artificial_peak_range))
+                index_increment = (500 - index) / num_of_artificial_peaks
+                artificial_peak_intensity = np.median(artificial_peak_range)
+                while index < 500:
+                    index += index_increment
+                    mz_values.append(index)
+                    delta_values_ppm.append(artificial_peak_intensity)
+
+                # Plotting spline fit
+                x_new = np.linspace(0, 1, 7)[1:-1] # 7 = 5 knots + 2
+                x_new.sort()
+                q_knots = np.quantile(mz_values, x_new)
+                self.t2, self.c2, self.k2 = interpolate.splrep(mz_values, delta_values_ppm, t=q_knots, s=3)
+                self.has_second_spline = True
+                x_regular = np.arange(mz_values[0], mz_values[-1])
+                y_values = interpolate.BSpline(self.t2, self.c2, self.k2)(x_regular)
+                self.ax[1][1].plot(x_regular, y_values, 'g')
+            except:
+                print("the second spline fit could not be applied")
+        finally:
+            self.ax[1][1].scatter(mz_values, delta_values_ppm, 0.5)
             self.ax[1][1].axhline(y = 0, color = 'k', linewidth = 1, linestyle = '-')
             self.ax[1][1].set(xlabel='m/z', ylabel='PPM')
             self.update_refined(0, self.t2, self.c2, self.k2)
-        except:
-            print("the second spline fit could not be applied")
 
     def plot_corrected_scatterplot(self):
         # This plots the fifth graph, with both spline corrections and the crude correction applied
