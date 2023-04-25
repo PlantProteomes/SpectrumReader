@@ -721,6 +721,7 @@ class MSRunPeakFinder:
                 self.ax[2][1].set(xlabel='m/z', ylabel='PPM')
                 plt.tight_layout()
             elif i == 1:
+                # Calculates the artificial peak point for the after 400 calibration constant
                 mz_values = []
                 delta_values_ppm = []
                 artificial_peak_range = []
@@ -732,8 +733,6 @@ class MSRunPeakFinder:
                     if peak[0] >= 300 and peak[0] <= 400:
                         artificial_peak_range.append(peak[1] - self.crude_correction) 
                 
-                # Adds artificial peaks above 500 with the median between 300 and 400 so the spline 
-                # fit will flatten out, making the correction applicable for points above 400
                 mz_values.sort()
                 index = mz_values[-1]
                 num_of_artificial_peaks = max(100, len(artificial_peak_range))
@@ -742,6 +741,9 @@ class MSRunPeakFinder:
                 self.after_400_calibration = np.median(artificial_peak_range)
                 self.ax[1][0].axhline(y = 0, color = 'k', linewidth = 1, linestyle = '-')
                 self.ax[1][0].set(xlabel='m/z', ylabel='PPM')
+
+                # Adds artificial peaks above 500 with the median between 300 and 400 so the spline 
+                # fit will flatten out, making the correction applicable for points above 400 if necessary
 
                 if len(mz_values) <= 5:
                     print("There are too little data points to create a spline fit.")
@@ -755,24 +757,21 @@ class MSRunPeakFinder:
                         self.has_correction_spline = True
                         x_regular = np.arange(mz_values[0], mz_values[-1])
                         y_values = interpolate.BSpline(self.t, self.c, self.k)(x_regular)
-                        self.ax[1][0].plot(x_regular, y_values, 'b')
-                        self.ax[1,0].set_title(f"t: {self.t}, c: {self.c}, k: {self.k}", fontsize="xx-small")
-                        self.update_refined(self.crude_correction, self.t, self.c, self.k)
                     except: # If the spline was not fit, add an extension line to fit the spline
-                        print("spline fit without extension line failed, extension line applied")
+                        print("spline fit 1 without extension line failed, extension line applied")
                         while index < 500: # extending the line so the spline fit is created with the artificial
                         # peak plots
                             index += index_increment
                             mz_values.append(index)
                             delta_values_ppm.append(artificial_peak_intensity)
 
-                    x_new = np.linspace(0, 1, 5)[1:-1] # 5 = 3 knots + 2
-                    x_new.sort()
-                    q_knots = np.quantile(mz_values, x_new)
-                    self.t, self.c, self.k = interpolate.splrep(mz_values, delta_values_ppm, t=q_knots, s=3)
-                    self.has_correction_spline = True
-                    x_regular = np.arange(mz_values[0], mz_values[-1])
-                    y_values = interpolate.BSpline(self.t, self.c, self.k)(x_regular)
+                        x_new = np.linspace(0, 1, 5)[1:-1] # 5 = 3 knots + 2
+                        x_new.sort()
+                        q_knots = np.quantile(mz_values, x_new)
+                        self.t, self.c, self.k = interpolate.splrep(mz_values, delta_values_ppm, t=q_knots, s=3)
+                        self.has_correction_spline = True
+                        x_regular = np.arange(mz_values[0], mz_values[-1])
+                        y_values = interpolate.BSpline(self.t, self.c, self.k)(x_regular)
                     self.ax[1][0].plot(x_regular, y_values, 'b')
                     # self.ax[1,0].set_title(f"t: {self.t}, c: {self.c}, k: {self.k}", fontsize="xx-small")
                     self.update_refined(self.crude_correction, self.t, self.c, self.k)
