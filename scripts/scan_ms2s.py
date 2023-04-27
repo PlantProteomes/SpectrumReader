@@ -83,15 +83,22 @@ class MSRunPeakFinder:
             self.peak_file = self.file_name[0:len(self.file_name) - 5]
 
     def process_file(self):
+        last_time = self.t0
         # find the intensity of each m/z value
         self.aggregate_spectra() # 
+        print(str(timeit.default_timer() - last_time) + "seconds to aggregate all spectra")
+        last_time = timeit.default_timer()
         self.determine_crude_correction() # 
         if self.crude_correction >= 15:
             self.increase_initial_tolerance()
             self.determine_crude_correction()
+        print(str(timeit.default_timer() - last_time) + "seconds to determine crude calibration")
+        last_time = timeit.default_timer()
         self.plot_crude_calibrations() # 
         # create an array of all identifiable theoretical and their masses
         self.get_theoretical_ions() #
+        print(str(timeit.default_timer() - last_time) + "seconds to aggregate all spectra")
+        last_time = timeit.default_timer()
         # identify all the spectra with a certain intensity
         self.find_initial_triggers() #
         self.refine_triggered_peaks() # 
@@ -100,7 +107,11 @@ class MSRunPeakFinder:
             self.plot_crude_calibrations() # automatically clears the plots
             self.find_initial_triggers()
             self.refine_triggered_peaks()
+        print(str(timeit.default_timer() - last_time) + "seconds to find and refine peaks")
+        last_time = timeit.default_timer()
         self.identify_peaks() #
+        print(str(timeit.default_timer() - last_time) + "seconds to identify peaks")
+        last_time = timeit.default_timer()
         # save the identified peaks to a file
         self.delta_scatterplots() #
         self.identify_peaks()
@@ -111,10 +122,16 @@ class MSRunPeakFinder:
             print("Error with creating the second spline")
         self.plot_corrected_scatterplot()
         self.plot_all_corrections()
+        print(str(timeit.default_timer() - last_time) + "seconds to plot all summary plots")
+        last_time = timeit.default_timer()
 
         # following is code to write outputs - consider putting this in its own method
         self.analyze_snippets()
+        print(str(timeit.default_timer() - last_time) + "seconds to plot snippet plots")
+        last_time = timeit.default_timer()
         self.plot_peaks_strength()
+        print(str(timeit.default_timer() - last_time) + "seconds to plot individual peaks")
+        last_time = timeit.default_timer()
         self.write_json()
         self.write_output() #
         # print out data, including run time, number of peaks found, etc
@@ -827,6 +844,7 @@ class MSRunPeakFinder:
                 y_values = interpolate.BSpline(self.t2, self.c2, self.k2)(x_regular)
                 self.ax[1][1].plot(x_regular, y_values, 'g')
             except:
+                self.ax[1][1].text(max(mz_values), max(delta_values_ppm), 'second spline fit could not be applied', fontsize='xx-small', ha='right', va='top')
                 print("the second spline fit could not be applied")
         finally:
             self.ax[1][1].scatter(mz_values, delta_values_ppm, 0.5)

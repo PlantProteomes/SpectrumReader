@@ -19,7 +19,7 @@ class CombineList:
         params = argparser.parse_args()
 
         # Creates an array of all the file names
-        self.file_names = params.tsv_files.split(", ")
+        self.file_names = params.tsv_files.split(" ")
 
         # Confirms all file names will work
         for file in self.file_names:
