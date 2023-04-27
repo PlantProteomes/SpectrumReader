@@ -23,8 +23,8 @@ class CombineList:
             if not os.path.isfile(file):
                 print(f"ERROR: File '{file}' not found or not a file")
                 return
-            if file[-4:] != "mzML" and file[-7:] != "mzML.gz":
-                print(f"ERROR: File '{file}' is not an mzML nor a mzML.gz")
+            if file[-3:] != "tsv":
+                print(f"ERROR: File '{file}' is not a tsv")
                 return
         
         self.file_names = params.tsv_files
