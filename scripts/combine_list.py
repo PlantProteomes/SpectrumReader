@@ -14,23 +14,20 @@ class CombineList:
     def __init__(self):
         # Takes in all the tsv file names in a string format separated by commas
         argparser = argparse.ArgumentParser(description='An example program that reads an mzML file sequentially')
-        argparser.add_argument('--tsv_files', action='store', type=str, help='Name of the mzML file to read')
+        argparser.add_argument('tsv_files', type=str, nargs='+', help='Filenames of one or more tsv files to read')
         
         params = argparser.parse_args()
 
-        # Creates an array of all the file names
-        self.file_names = params.tsv_files.split(" ")
-
-        # Confirms all file names will work
-        for file in self.file_names:
-            if file is None or file == "":
-                print('ERROR: Parameter --mzml_file must be provided. See --help for more information')
-                return
-
-            # Tries to open the params file specified. If it fails, an error is printed
+        # Creates an array of all the file names for file in params.files:
+        for file in params.tsv_files:
             if not os.path.isfile(file):
                 print(f"ERROR: File '{file}' not found or not a file")
                 return
+            if file[-4:] != "mzML" and file[-7:] != "mzML.gz":
+                print(f"ERROR: File '{file}' is not an mzML nor a mzML.gz")
+                return
+        
+        self.file_names = params.tsv_files
             
         # Creates a dictionary with the key being the file name and the value being a list of all the
         # observed peak from the tsv file
