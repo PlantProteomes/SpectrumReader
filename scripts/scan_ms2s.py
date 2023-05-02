@@ -347,9 +347,6 @@ class MSRunPeakFinder:
         for key in additional_explanations:
             self.known_ions[key] = additional_explanations[key].copy()
 
-        for key in self.known_ions:
-            self.known_ions[key][0] = round(self.known_ions[key][0], 5)
-
         # Adds other known theoretical ions with the formula
         additional_ions = {
             "C3H9N2O2": [mass.calculate_mass(formula="C3H8N2O2") + self.proton_mass, False], # ppm = 1.18
@@ -422,6 +419,12 @@ class MSRunPeakFinder:
             "TMT135N": [135.151600, False],
             "TMT6Nterm": [229.162932 + self.proton_mass, False]
         }
+
+        for key in additional_ions:
+            self.known_ions[key] = additional_ions[key]
+
+        for key in self.known_ions:
+            self.known_ions[key][0] = round(self.known_ions[key][0], 5)
 
     def simplify_explanation(self, explanation):
         # This takes a string and splits it into the + and -, reducing any redundancies
