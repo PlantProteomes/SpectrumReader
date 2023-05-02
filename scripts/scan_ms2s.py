@@ -351,29 +351,77 @@ class MSRunPeakFinder:
             self.known_ions[key][0] = round(self.known_ions[key][0], 5)
 
         # Adds other known theoretical ions with the formula
-        self.known_ions["C3H8N2O2"] = [mass.calculate_mass(formula="C3H8N2O2") + self.proton_mass, False] # ppm = 1.18
-        self.known_ions["CH5N4O2"] = [mass.calculate_mass(formula="CH5N4O2") + self.proton_mass, False] # ppm = 2.38
-        self.known_ions["C5H12N2O"] = [mass.calculate_mass(formula="C5H12N2O") + self.proton_mass, False] # ppm = 1.18
-        self.known_ions["C4H10N2O2"] = [mass.calculate_mass(formula="C4H10N2O2") + self.proton_mass, False] # ppm = 1.46
-        self.known_ions["TMT126"] = [126.127726, False]
-        self.known_ions["TMT127N"] = [127.124761, False]
-        self.known_ions["TMT127C"] = [127.131081, False]
-        self.known_ions["TMT128N"] = [128.128116, False]
-        self.known_ions["TMT128C"] = [128.134436, False]
-        self.known_ions["TMT129N"] = [129.131471, False]
-        self.known_ions["TMT129C"] = [129.137790, False]
-        self.known_ions["TMT130N"] = [130.134825, False]
-        self.known_ions["TMT130C"] = [130.141145, False]
-        self.known_ions["TMT131N"] = [131.138180, False]
-        self.known_ions["TMT131C"] = [131.1445, False]
-        self.known_ions["TMT132N"] = [132.141535, False]
-        self.known_ions["TMT132C"] = [132.147855, False]
-        self.known_ions["TMT133N"] = [133.14489, False]
-        self.known_ions["TMT133C"] = [133.15121, False]
-        self.known_ions["TMT134N"] = [134.148245, False]
-        self.known_ions["TMT134C"] = [134.154565, False]
-        self.known_ions["TMT135N"] = [135.151600, False]
-        self.known_ions["TMT6Nterm"] = [229.162932 + self.proton_mass, False]
+        additional_ions = {
+            "C3H9N2O2": [mass.calculate_mass(formula="C3H8N2O2") + self.proton_mass, False], # ppm = 1.18
+            "CH6N4O2": [mass.calculate_mass(formula="CH5N4O2") + self.proton_mass, False], # ppm = 2.38
+            "C5H13N2O": [mass.calculate_mass(formula="C5H12N2O") + self.proton_mass, False], # ppm = 1.18
+            "C4H11N2O2": [mass.calculate_mass(formula="C4H10N2O2") + self.proton_mass, False], # ppm = 1.46
+            "C2H9N3O4": [mass.calculate_mass(formula="C2H9N3O4") + self.proton_mass, False],
+            "C2H5N10": [mass.calculate_mass(formula="C2H5N10") + self.proton_mass, False],
+            "C5H12N3O2": [mass.calculate_mass(formula="C5H12N3O2") + self.proton_mass, False],
+            "C5H12N3O": [mass.calculate_mass(formula="C5H12N3O") + self.proton_mass, False],
+            "C6H11N4O": [mass.calculate_mass(formula="C6H11N4O") + self.proton_mass, False],
+            "C10H10N": [mass.calculate_mass(formula="C10H10N") + self.proton_mass, False],
+            "C4H10N3O2": [mass.calculate_mass(formula="C4H10N3O2") + self.proton_mass, False],
+            "C11H7N2O": [mass.calculate_mass(formula="C11H7N2O") + self.proton_mass, False],
+            "C8H16NO": [mass.calculate_mass(formula="C8H16NO") + self.proton_mass, False],
+            "C6H9O4": [mass.calculate_mass(formula="C6H9O4") + self.proton_mass, False],
+            "C11H15": [mass.calculate_mass(formula="C11H15") + self.proton_mass, False],
+            "C5H5N7": [mass.calculate_mass(formula="C5H5N7") + self.proton_mass, False],
+            "C7H14N3O": [mass.calculate_mass(formula="C7H14N3O") + self.proton_mass, False],
+            "C9H15": [mass.calculate_mass(formula="C9H15") + self.proton_mass, False],
+            "C6H16N5O": [mass.calculate_mass(formula="C6H16N5O") + self.proton_mass, False],
+            "C5H10N3O": [mass.calculate_mass(formula="C5H10N3O") + self.proton_mass, False],
+            "C6H15N2O": [mass.calculate_mass(formula="C6H15N2O") + self.proton_mass, False],
+            "C5H13N3O2": [mass.calculate_mass(formula="C5H13N3O2") + self.proton_mass, False],
+            "C10H8NO2": [mass.calculate_mass(formula="C10H8NO2") + self.proton_mass, False],
+            "C7H14NO": [mass.calculate_mass(formula="C7H14NO") + self.proton_mass, False],
+            "C6H13O3": [mass.calculate_mass(formula="C6H13O3") + self.proton_mass, False],
+            "C4H8N3O": [mass.calculate_mass(formula="C4H8N3O") + self.proton_mass, False],
+            "C8H7O4": [mass.calculate_mass(formula="C8H7O4") + self.proton_mass, False],
+            "C11H9N2O": [mass.calculate_mass(formula="C11H9N2O") + self.proton_mass, False],
+            "C11H14NO2": [mass.calculate_mass(formula="C11H14NO2") + self.proton_mass, False],
+            "C9H9O5": [mass.calculate_mass(formula="C9H9O5") + self.proton_mass, False],
+            "C6H7O3": [mass.calculate_mass(formula="C6H7O3") + self.proton_mass, False],
+            "C9H7O4": [mass.calculate_mass(formula="C9H7O4") + self.proton_mass, False],
+            "C10H16N3": [mass.calculate_mass(formula="C10H16N3") + self.proton_mass, False],
+            "C9H14N3": [mass.calculate_mass(formula="C9H14N3") + self.proton_mass, False],
+            "C8H11O": [mass.calculate_mass(formula="C8H11O") + self.proton_mass, False],
+            "C7H11O4": [mass.calculate_mass(formula="C7H11O4") + self.proton_mass, False],
+            "C7H5O2": [mass.calculate_mass(formula="C7H5O2") + self.proton_mass, False],
+            "C3HO7": [mass.calculate_mass(formula="C3HO7") + self.proton_mass, False],
+            "C5H12N3": [mass.calculate_mass(formula="C5H12N3") + self.proton_mass, False],
+            "C5H12NO": [mass.calculate_mass(formula="C5H12NO") + self.proton_mass, False],
+            "C9H12O4": [mass.calculate_mass(formula="C9H12O4") + self.proton_mass, False],
+            "C8H13": [mass.calculate_mass(formula="C8H13") + self.proton_mass, False],
+            "C6H13N2": [mass.calculate_mass(formula="C6H13N2") + self.proton_mass, False],
+            "C7H12N": [mass.calculate_mass(formula="C7H12N") + self.proton_mass, False],
+            "C3H3N6": [mass.calculate_mass(formula="C3H3N6") + self.proton_mass, False],
+            "C7H13O2": [mass.calculate_mass(formula="C7H13O2") + self.proton_mass, False],
+            "C4H5O3": [mass.calculate_mass(formula="C4H5O3") + self.proton_mass, False],
+            "C6H14N": [mass.calculate_mass(formula="C6H14N") + self.proton_mass, False],
+            "C4H10NO2": [mass.calculate_mass(formula="C4H10NO2") + self.proton_mass, False],
+            "C12H6N2": [mass.calculate_mass(formula="C12H6N2") + self.proton_mass, False],
+            "TMT126": [126.127726, False],
+            "TMT127N": [127.124761, False],
+            "TMT127C": [127.131081, False],
+            "TMT128N": [128.128116, False],
+            "TMT128C": [128.134436, False],
+            "TMT129N": [129.131471, False],
+            "TMT129C": [129.137790, False],
+            "TMT130N": [130.134825, False],
+            "TMT130C": [130.141145, False],
+            "TMT131N": [131.138180, False],
+            "TMT131C": [131.1445, False],
+            "TMT132N": [132.141535, False],
+            "TMT132C": [132.147855, False],
+            "TMT133N": [133.14489, False],
+            "TMT133C": [133.15121, False],
+            "TMT134N": [134.148245, False],
+            "TMT134C": [134.154565, False],
+            "TMT135N": [135.151600, False],
+            "TMT6Nterm": [229.162932 + self.proton_mass, False]
+        }
 
     def simplify_explanation(self, explanation):
         # This takes a string and splits it into the + and -, reducing any redundancies
