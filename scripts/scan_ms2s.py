@@ -355,7 +355,7 @@ class MSRunPeakFinder:
             "C3H9N2O2",
             "CH6N4O2",
             "C5H13N2O",
-            "C4H11N2O2",
+            "C4H11N2O2", # after this is plasma hardcoded
             "C2H9N3O4",
             "C2H5N10",
             "C5H12N3O2",
@@ -401,11 +401,36 @@ class MSRunPeakFinder:
             "C4H5O3",
             "C6H14N",
             "C4H10NO2",
-            "C12H6N2",
+            "C12H6N2", # after this is Q2018 hardcoded
+            'C5H11',
+            'CH5N4',
+            'C4H9O',
+            'C3H7O2',
+            'C2H7N2O',
+            'C5H12N',
+            'C4H7O2',
+            'C4H9O2',
+            'H6N6',
+            'C5H2NO',
+            'C3HNO3',
+            'C6H7O2',
+            'C6H9O3',
+            'C6H11O3',
+            'C8H9O2',
+            'C8H5O3',
+            'C8H11O3',
+            'C5H11O6',
+            'C6H2N5O2',
+            'C8H17O4',
+            'C6H4N5O3',
+            'C6H4N5O4',
+            'C6H6N5O4',
+            'C4N11O2'
         ]
 
         for formula in additional_explanations:
             self.known_ions[formula] = [mass.calculate_mass(formula=f"{formula}") - self.electron_mass, False]
+            # print(self.known_ions[formula])
 
         self.known_ions["TMT126"] = [126.127726, False]
         self.known_ions["TMT127N"] = [127.124761, False]
@@ -1227,10 +1252,27 @@ class MSRunPeakFinder:
         # Writes out all observed peaks in a TSV file, including the measured mz value from the mass 
         # spectrometer, the intensity, and all the identifications
         # Each identification has the theoretical mass, the delta in mz, and the name of the theoretical ion
+
+        output_peaks = self.observed_peaks.copy()
+
+        if self.has_correction_spline:
+            mz_values = [peak[0] for peak in output_peaks]
+            x_values = np.array(mz_values)
+            y_values = interpolate.BSpline(self.t, self.c, self.k)(x_values)
+            if self.has_second_spline:
+                y_values_2 = interpolate.BSpline(self.t2, self.c2, self.k2)(x_values)
+                for index in range(len(y_values)):
+                    y_values[index] += y_values_2[index]
+
+        for index in range(len(output_peaks)):
+            peak_mz = output_peaks[index][0]
+            correction = (y_values[index] + self.crude_correction) * peak_mz / 1e6
+            output_peaks[index].insert(1, round(peak_mz - correction, 5))
+
         with open(f'{self.peak_file}.tsv', 'w') as file:
         # with open('common_peaks.tsv', 'w') as file:
             writer = csv.writer(file, delimiter='\t', lineterminator='\n')
-            writer.writerows(self.observed_peaks)
+            writer.writerows(output_peaks)
 
     def show_stats(self):
         # Prints out the stats and how long it took to run the file
@@ -1278,7 +1320,11 @@ def main():
     params = argparser.parse_args()
 
     for file in params.files:
-        if not os.path.isfile(file):
+        file_stats = os.stat(file)
+        if file_stats.st_size == 0:
+            print(f"ERROR: File '{file}' has a size of 0")
+            return
+        if not os.path.isfile(file): # add something that can glob the asterisks
             print(f"ERROR: File '{file}' not found or not a file")
             return
         if file[-4:] != "mzML" and file[-7:] != "mzML.gz":
