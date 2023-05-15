@@ -1,3 +1,4 @@
+uncorrected m/z	corrected m/z	intensity	percentage	primary identification	other identifications
 56.05034	56.04954	100.0	0.2%	[56.04948, 9.586e-05, 'IK-C2H4-NH3']	[56.04948, 9.586e-05, 'IQ-CO-NH3']	[56.04948, 9.586e-05, 'IR-C2H4N2-NH3']	[56.04948, 9.586e-05, 'IT-H2O']
 60.04522	60.04442	252.5	0.6%	[60.04439, 6.233e-05, 'IS']
 69.03425	69.03349	427.1	0.6%	[69.03349, 6.08e-06, 'IV+CO-NH3-CH2']

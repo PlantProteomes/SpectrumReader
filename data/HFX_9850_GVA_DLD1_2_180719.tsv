@@ -1,3 +1,4 @@
+uncorrected m/z	corrected m/z	intensity	percentage	primary identification	other identifications
 100.07628	100.07568	542.6	1.6%	[100.07569, -1.333e-05, 'b(V)']	[100.07569, -1.333e-05, 'y(V)-H2O']
 101.07154	101.07094	42404.6	80.2%	[101.07094, 3.66e-06, 'IQ']	[101.07094, 3.66e-06, 'a(AG)']
 101.10789	101.10729	2136.3	10.8%	[101.10732, -2.609e-05, 'IK']

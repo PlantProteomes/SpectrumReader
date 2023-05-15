@@ -45,10 +45,12 @@ class CombineList:
             # Splits the file into separate lines. In this case, each line is a new observed peak
             with open(file_name) as file:
                 lines = [line.rstrip() for line in file]
+                lines = lines[1:] # Removes header from tsv file
                 # Splits each observed peak by tabs, which includes mz and intensity and if applicable,
                 # the identifications
                 for observed_peak in lines:
                     line_split = [i for i in observed_peak.split("\t")]
+                    line_split = line_split[1:] # Removes the uncorrected m/z value
                     # Adds the relevant information (mz, intensity, identifications) to the observed peak
                     # list. The first two elements are the mz and intensity for unknown ions
                     # For known ions, the intensity is the second element whereas the mz is from the first

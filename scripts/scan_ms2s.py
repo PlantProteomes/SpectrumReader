@@ -7,9 +7,6 @@
 # to run the program (use terminal): python scan_ms2s.py ..\data\06CPTAC_BCprospective_W_BI_20161116_BA_f17.mzML.gz
 # to run the program (use terminal): python scan_ms2s.py ..\data\Q20181210_06.mzML.gz
 # to run the program (use terminal): python scan_ms2s.py ..\data\OR13_A2_20161014_CMP_Ecoli_glycerol_exp_2mg_IMAC_R2.mzML.gz
-# to run the program (use terminal): python scan_ms2s.py ..\data\201230_Plasma_30ug_45min_P0_R2.mzML
-# to run the program (use terminal): python scan_ms2s.py ..\data\Plamsa_03401_RA1_30min_Top10_86ms_RP01_R1.mzML
-# to run the program (use terminal): python scan_ms2s.py ..\data\Plamsa_03401_RA2_30min_Top10_86ms_RP16_R1.mzML
 
 # all the files
 # to run the program (use terminal): python scan_ms2s.py ..\data\*.mzML*
@@ -127,8 +124,8 @@ class MSRunPeakFinder:
         last_time = timeit.default_timer()
 
         # following is code to write outputs - consider putting this in its own method
-        self.analyze_snippets()
-        print(str(timeit.default_timer() - last_time) + " seconds to plot snippet plots")
+        # self.analyze_snippets() # skipping analyzing snippets for now, to add back, uncomment 158
+        # print(str(timeit.default_timer() - last_time) + " seconds to plot snippet plots")
         last_time = timeit.default_timer()
         self.plot_peaks_strength()
         print(str(timeit.default_timer() - last_time) + " seconds to plot individual peaks")
@@ -155,25 +152,25 @@ class MSRunPeakFinder:
                 elif spectrum['ms level'] == 2:
                     self.stats['ms2spectra'] += 1
                     self.smallest_peak_intensity = sys.maxsize
-                    lower_index = sys.maxsize
-                    upper_index = 0
+                    # lower_index = sys.maxsize # 158, 159, 162-165, 175-176 are for snippets
+                    # upper_index = 0
                     for index in range(len(spectrum['m/z array'])):
                         peak_mz = spectrum['m/z array'][index]
-                        if peak_mz > 110:
-                            lower_index = min(lower_index, index)
-                            if peak_mz < 130:
-                                upper_index = max(upper_index, index)
+                        # if peak_mz > 110:
+                            # lower_index = min(lower_index, index)
+                            # if peak_mz < 130:
+                                # upper_index = max(upper_index, index)
                         if peak_mz > 400:
                             break
                         else:
                             intensity = spectrum['intensity array'][index]
                             self.all_peaks_intensities.append(intensity)
                             self.by_count[int(10000 * peak_mz + 0.5)] += 1
-                            # self.by_intensity[int(10000 * peak_mz + 0.5)] += intensity
+                            self.by_intensity[int(10000 * peak_mz + 0.5)] += intensity
                             self.smallest_peak_intensity = min(self.smallest_peak_intensity, intensity)
 
-                    if upper_index != 0 and upper_index > lower_index:
-                        self.scan_snippets.append([self.stats['counter'], spectrum['m/z array'][lower_index:upper_index], spectrum['intensity array'][lower_index:upper_index]])
+                    # if upper_index != 0 and upper_index > lower_index:
+                        # self.scan_snippets.append([self.stats['counter'], spectrum['m/z array'][lower_index:upper_index], spectrum['intensity array'][lower_index:upper_index]])
 
                     # Compare the intensity to the smallest intensity, returning the strength of the intensity
                     # on a scale from 1-4
@@ -1269,6 +1266,7 @@ class MSRunPeakFinder:
             correction = (y_values[index] + self.crude_correction) * peak_mz / 1e6
             output_peaks[index].insert(1, round(peak_mz - correction, 5))
 
+        output_peaks.insert(0, ['uncorrected m/z', 'corrected m/z', 'intensity', 'percentage', 'primary identification', 'other identifications'])
         with open(f'{self.peak_file}.tsv', 'w') as file:
         # with open('common_peaks.tsv', 'w') as file:
             writer = csv.writer(file, delimiter='\t', lineterminator='\n')
