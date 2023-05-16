@@ -62,7 +62,7 @@ class CombineList:
                     if len(line_split) > 3:
                         if file_name == "combined_list.tsv":
                             primary_identification = line_split[4]
-                            mz = round(float(line_split[0], 5))
+                            mz = round(float(line_split[0]), 5)
                         else:
                             primary_identification = line_split[3].split(", ")[2][1:-2] # -1 accounts for the closing bracket and single quotation mark
                             mz = round(float(line_split[3].split(", ")[0][1:]), 5) # 1 accounts for the opening bracket
