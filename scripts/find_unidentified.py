@@ -51,7 +51,8 @@ class CombineList:
                 # the identifications
                 for observed_peak in lines:
                     line_split = [i for i in observed_peak.split("\t")]
-                    line_split = line_split[1:] # Removes the uncorrected m/z value
+                    if file_name != "combined_list.tsv":
+                        line_split = line_split[1:] # Removes the uncorrected m/z value
                     # Adds the relevant information (mz, intensity, identifications) to the observed peak
                     # list. The first two elements are the mz and intensity for unknown ions
                     # For known ions, the intensity is the second element whereas the mz is from the first
@@ -59,12 +60,15 @@ class CombineList:
                     # commas then the mz will be used and the identification is stored. If there are other
                     # identifications, those are stored as well 
                     if len(line_split) > 3:
-                        primary_identification = line_split[3].split(", ")[2][1:-2] # -1 accounts for the closing bracket and single quotation mark
+                        if file_name == "combined_list.tsv":
+                            primary_identification = line_split[4]
+                            mz = round(float(line_split[0], 5))
+                        else:
+                            primary_identification = line_split[3].split(", ")[2][1:-2] # -1 accounts for the closing bracket and single quotation mark
+                            mz = round(float(line_split[3].split(", ")[0][1:]), 5) # 1 accounts for the opening bracket
                         # If it is a formula, then add it to the list. Otherwise, no need to add it to the list
                         if primary_identification[0] != 'I' and primary_identification[0] != "a" and primary_identification[0] != "b"  and primary_identification[0] != "y":
                             intensity = float(line_split[1])
-                            mz = round(float(line_split[3].split(", ")[0][1:]), 5) # 1 accounts for the opening bracket
-
                             unidentified_peaks.append([mz, intensity, "", primary_identification])
                     else:
                         mz = float(line_split[0])
