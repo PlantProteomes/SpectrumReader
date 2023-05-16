@@ -21,7 +21,7 @@ class CombineList:
         # Creates an array of all the file names for file in params.files:
         for file in params.tsv_files:
             if not os.path.isfile(file):
-                print(f"ERROR: File '{file}' not found or not a file")
+                print(f"ERROR: File '{file}' not founds or not a file")
                 return
             if file[-3:] != "tsv":
                 print(f"ERROR: File '{file}' is not a tsv")
@@ -59,6 +59,7 @@ class CombineList:
                     # identifications, those are stored as well 
                     if len(line_split) > 3:
                         intensity = float(line_split[1])
+                        print(line_split[3].split(", ")[0][1:])
                         mz = round(float(line_split[3].split(", ")[0][1:]), 5) # 1 accounts for the opening bracket
                         percent = float(line_split[2][0:-1])
                         primary_identification = line_split[3].split(", ")[2][1:-2] # -1 accounts for the closing bracket and single quotation mark
