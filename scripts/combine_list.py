@@ -44,6 +44,7 @@ class CombineList:
             has_histidine = False
             # Splits the file into separate lines. In this case, each line is a new observed peak
             with open(file_name) as file:
+                print(file_name)
                 lines = [line.rstrip() for line in file]
                 lines = lines[1:] # Removes header from tsv file
                 # Splits each observed peak by tabs, which includes mz and intensity and if applicable,
@@ -59,7 +60,6 @@ class CombineList:
                     # identifications, those are stored as well 
                     if len(line_split) > 3:
                         intensity = float(line_split[1])
-                        print(line_split[3].split(", ")[0][1:])
                         mz = round(float(line_split[3].split(", ")[0][1:]), 5) # 1 accounts for the opening bracket
                         percent = float(line_split[2][0:-1])
                         primary_identification = line_split[3].split(", ")[2][1:-2] # -1 accounts for the closing bracket and single quotation mark
