@@ -1064,13 +1064,13 @@ class MSRunPeakFinder:
                     self.ax[row][col].plot(scan_nums, delta_PPMs, '.',c="g", markersize=2)
                     self.ax[row][col].axhline(y = 0, color = 'k', linewidth = 1, linestyle = '-')
                     self.ax[row][col].set(xlabel='scan_num', ylabel='delta PPM')
-                    self.ax[row,col].set_title(f"{close_matches[row][0]} scan num vs delta PPM", fontsize="xx-small")
+                    # self.ax[row,col].set_title(f"{close_matches[row][0]} scan num vs delta PPM", fontsize="xx-small")
                 if col == 1:
                     # This adds additional information like the axis titles, a line at 0, and a title
                     self.ax[row][col].plot(logged_intensities, delta_PPMs, '.',c="g", markersize=2)
                     self.ax[row][col].axhline(y = 0, color = 'k', linewidth = 1, linestyle = '-')
                     self.ax[row][col].set(xlabel='logged intensity', ylabel='delta PPM')
-                    self.ax[row,col].set_title(f"{close_matches[row][0]} intensity vs delta PPM", fontsize="xx-small")
+                    # self.ax[row,col].set_title(f"{close_matches[row][0]} intensity vs delta PPM", fontsize="xx-small")
 
         # This saves the plots and adds it to the output file
         self.pdf.savefig(self.fig)
