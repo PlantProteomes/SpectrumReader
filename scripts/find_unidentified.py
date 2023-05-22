@@ -14,7 +14,7 @@ import os
 import os.path
 import statistics
 
-class CombineList:
+class UnidentifiedPeakFinder:
     
     def __init__(self):
         # Takes in all the tsv file names in a string format separated by commas
@@ -81,7 +81,8 @@ class CombineList:
 
     def rewrite_tsvs(self):
         for key in self.aggregated_unidentified_peaks:
-            with open(f'{key}_unidentified.tsv', 'w') as file:
+            output_file_name = key[0:-4]
+            with open(f'{output_file_name}_unidentified.tsv', 'w') as file:
                 writer = csv.writer(file, delimiter='\t', lineterminator='\n')
                 writer.writerows(self.aggregated_unidentified_peaks[key])
 

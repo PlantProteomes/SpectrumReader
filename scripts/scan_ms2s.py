@@ -112,6 +112,7 @@ class MSRunPeakFinder:
         last_time = timeit.default_timer()
         # save the identified peaks to a file
         self.delta_scatterplots() #
+        self.find_first_spline()
         self.identify_peaks()
         self.find_peak_percentage()
         try:
@@ -124,8 +125,8 @@ class MSRunPeakFinder:
         last_time = timeit.default_timer()
 
         # following is code to write outputs - consider putting this in its own method
-        # self.analyze_snippets() # skipping analyzing snippets for now, to add back, uncomment 158
-        # print(str(timeit.default_timer() - last_time) + " seconds to plot snippet plots")
+        self.analyze_snippets() # skipping analyzing snippets for now, to add back, uncomment 158
+        print(str(timeit.default_timer() - last_time) + " seconds to plot snippet plots")
         last_time = timeit.default_timer()
         self.plot_peaks_strength()
         print(str(timeit.default_timer() - last_time) + " seconds to plot individual peaks")
@@ -152,14 +153,14 @@ class MSRunPeakFinder:
                 elif spectrum['ms level'] == 2:
                     self.stats['ms2spectra'] += 1
                     self.smallest_peak_intensity = sys.maxsize
-                    # lower_index = sys.maxsize # 158, 159, 162-165, 175-176 are for snippets
-                    # upper_index = 0
+                    lower_index = sys.maxsize # 158, 159, 162-165, 175-176 are for snippets
+                    upper_index = 0
                     for index in range(len(spectrum['m/z array'])):
                         peak_mz = spectrum['m/z array'][index]
-                        # if peak_mz > 110:
-                            # lower_index = min(lower_index, index)
-                            # if peak_mz < 130:
-                                # upper_index = max(upper_index, index)
+                        if peak_mz > 110:
+                            lower_index = min(lower_index, index)
+                            if peak_mz < 130:
+                                upper_index = max(upper_index, index)
                         if peak_mz > 400:
                             break
                         else:
@@ -169,8 +170,8 @@ class MSRunPeakFinder:
                             self.by_intensity[int(10000 * peak_mz + 0.5)] += intensity
                             self.smallest_peak_intensity = min(self.smallest_peak_intensity, intensity)
 
-                    # if upper_index != 0 and upper_index > lower_index:
-                        # self.scan_snippets.append([self.stats['counter'], spectrum['m/z array'][lower_index:upper_index], spectrum['intensity array'][lower_index:upper_index]])
+                    if upper_index != 0 and upper_index > lower_index:
+                        self.scan_snippets.append([self.stats['counter'], spectrum['m/z array'][lower_index:upper_index], spectrum['intensity array'][lower_index:upper_index]])
 
                     # Compare the intensity to the smallest intensity, returning the strength of the intensity
                     # on a scale from 1-4
@@ -787,90 +788,87 @@ class MSRunPeakFinder:
         plt.tight_layout()
 
     def delta_scatterplots(self):
-        # Plots the top right and bottom left graph, with the refined list of peaks (keep intense and remove
-        # outliers) and the delta PPMs
-        # The top right has no corrections applied
-        # The bottom left has the crude correction applied
-        for i in range(2):
-            if i == 0:
-                mz_values = []
-                delta_values_ppm = []
-                for peak in self.observed_peaks:
-                    if len(peak) >= 3:
-                        mz_values.append([peak[0], peak[1]])
-                        delta_values_ppm.append(((peak[2][1]) * 1e6 / peak[2][0]) + self.crude_correction)
-                    else:
-                        continue
-                self.keep_intense_remove_outliers(mz_values, delta_values_ppm)
-                self.ax[0,1].set_title(f"crude_correction: {self.crude_correction}", fontsize="xx-small")
-                self.ax[0][1].scatter(self.refined_mz_values, self.refined_delta_ppm_values, 0.5)
-                self.ax[0][1].axhline(y = self.crude_correction, color = 'k', linestyle = 'dashed')
-                mz_values = [peak[0] for peak in mz_values]
-                self.ax[0][1].text(min(mz_values), 0, f'tolerance: {self.tolerance} ppm', fontsize='xx-small', ha='left', va='top')
-                self.ax[0][1].axhline(y = 0, color = 'k', linewidth = 1, linestyle = '-')
-                self.ax[0][1].set(xlabel='m/z', ylabel='PPM')
+        # Plots the identified peaks PPM vs the m/z without any corrections applied. The crude calibration
+        # is plotted as a dashed line
+        mz_values = []
+        delta_values_ppm = []
+        for peak in self.observed_peaks:
+            if len(peak) >= 3:
+                mz_values.append([peak[0], peak[1]])
+                delta_values_ppm.append(((peak[2][1]) * 1e6 / peak[2][0]) + self.crude_correction)
+            else:
+                continue
+        self.keep_intense_remove_outliers(mz_values, delta_values_ppm)
+        self.ax[0,1].set_title(f"crude_correction: {self.crude_correction}", fontsize="xx-small")
+        self.ax[0][1].scatter(self.refined_mz_values, self.refined_delta_ppm_values, 0.5)
+        self.ax[0][1].axhline(y = self.crude_correction, color = 'k', linestyle = 'dashed')
+        mz_values = [peak[0] for peak in mz_values]
+        self.ax[0][1].text(min(mz_values), 0, f'tolerance: {self.tolerance} ppm', fontsize='xx-small', ha='left', va='top')
+        self.ax[0][1].axhline(y = 0, color = 'k', linewidth = 1, linestyle = '-')
+        self.ax[0][1].set(xlabel='m/z', ylabel='PPM')
 
-                self.ax[2][1].scatter(self.refined_mz_values, self.refined_delta_ppm_values, 0.5)
-                self.ax[2][1].axhline(y = 0, color = 'k', linewidth = 1, linestyle = '-')
-                self.ax[2][1].set(xlabel='m/z', ylabel='PPM')
-                plt.tight_layout()
-            elif i == 1:
-                # Calculates the artificial peak point for the after 400 calibration constant
-                mz_values = []
-                delta_values_ppm = []
-                artificial_peak_range = []
-                for index in range(len(self.refined_mz_values)):
-                    peak = [self.refined_mz_values[index], self.refined_delta_ppm_values[index]]
-                    crude_correction_mz = self.crude_correction * peak[0] / 1e6
-                    mz_values.append(peak[0] + crude_correction_mz)
-                    delta_values_ppm.append(peak[1] - self.crude_correction)
-                    if peak[0] >= 300 and peak[0] <= 400:
-                        artificial_peak_range.append(peak[1] - self.crude_correction) 
-                
-                mz_values.sort()
-                index = mz_values[-1]
-                num_of_artificial_peaks = max(100, len(artificial_peak_range))
-                index_increment = (500 - index) / num_of_artificial_peaks
-                artificial_peak_intensity = np.median(artificial_peak_range)
-                self.after_400_calibration = np.median(artificial_peak_range)
-                self.ax[1][0].axhline(y = 0, color = 'k', linewidth = 1, linestyle = '-')
-                self.ax[1][0].set(xlabel='m/z', ylabel='PPM')
+        self.ax[2][1].scatter(self.refined_mz_values, self.refined_delta_ppm_values, 0.5)
+        self.ax[2][1].axhline(y = 0, color = 'k', linewidth = 1, linestyle = '-')
+        self.ax[2][1].set(xlabel='m/z', ylabel='PPM')
+        plt.tight_layout()
 
-                # Adds artificial peaks above 500 with the median between 300 and 400 so the spline 
-                # fit will flatten out, making the correction applicable for points above 400 if necessary
+    def find_first_spline(self):
+        # Calculates the artificial peak point for the after 400 calibration constant
+        mz_values = []
+        delta_values_ppm = []
+        artificial_peak_range = []
+        for index in range(len(self.refined_mz_values)):
+            peak = [self.refined_mz_values[index], self.refined_delta_ppm_values[index]]
+            crude_correction_mz = self.crude_correction * peak[0] / 1e6
+            mz_values.append(peak[0] + crude_correction_mz)
+            delta_values_ppm.append(peak[1] - self.crude_correction)
+            if peak[0] >= 300 and peak[0] <= 400:
+                artificial_peak_range.append(peak[1] - self.crude_correction) 
+        
+        mz_values.sort()
+        index = mz_values[-1]
+        num_of_artificial_peaks = max(100, len(artificial_peak_range))
+        index_increment = (500 - index) / num_of_artificial_peaks
+        artificial_peak_intensity = np.median(artificial_peak_range)
+        self.after_400_calibration = np.median(artificial_peak_range)
+        self.ax[1][0].axhline(y = 0, color = 'k', linewidth = 1, linestyle = '-')
+        self.ax[1][0].set(xlabel='m/z', ylabel='PPM')
 
-                if len(mz_values) <= 5:
-                    print("There are too little data points to create a spline fit.")
-                    self.ax[1,0].set_title("There are too little data points to create a spline fit", fontsize="xx-small")
-                else:
-                    try: # Tries to apply a spline fit without the extension line
-                        x_new = np.linspace(0, 1, 5)[1:-1] # 5 = 3 knots + 2
-                        x_new.sort()
-                        q_knots = np.quantile(mz_values, x_new)
-                        self.t, self.c, self.k = interpolate.splrep(mz_values, delta_values_ppm, t=q_knots, s=3)
-                        self.has_correction_spline = True
-                        x_regular = np.arange(mz_values[0], mz_values[-1])
-                        y_values = interpolate.BSpline(self.t, self.c, self.k)(x_regular)
-                    except: # If the spline was not fit, add an extension line to fit the spline
-                        print("spline fit 1 without extension line failed, extension line applied")
-                        while index < 500: # extending the line so the spline fit is created with the artificial
-                        # peak plots
-                            index += index_increment
-                            mz_values.append(index)
-                            delta_values_ppm.append(artificial_peak_intensity)
+        # Adds artificial peaks above 500 with the median between 300 and 400 so the spline 
+        # fit will flatten out, making the correction applicable for points above 400 if necessary
 
-                        x_new = np.linspace(0, 1, 5)[1:-1] # 5 = 3 knots + 2
-                        x_new.sort()
-                        q_knots = np.quantile(mz_values, x_new)
-                        self.t, self.c, self.k = interpolate.splrep(mz_values, delta_values_ppm, t=q_knots, s=3)
-                        self.has_correction_spline = True
-                        x_regular = np.arange(mz_values[0], mz_values[-1])
-                        y_values = interpolate.BSpline(self.t, self.c, self.k)(x_regular)
-                    self.ax[1][0].plot(x_regular, y_values, 'b')
-                    # self.ax[1,0].set_title(f"t: {self.t}, c: {self.c}, k: {self.k}", fontsize="xx-small")
-                    self.update_refined(self.crude_correction, self.t, self.c, self.k)
-                self.ax[1][0].scatter(mz_values, delta_values_ppm, 0.5)
-                plt.tight_layout()
+        if len(mz_values) <= 5:
+            print("There are too little data points to create a spline fit.")
+            self.ax[1,0].set_title("There are too little data points to create a spline fit", fontsize="xx-small")
+        else:
+            try: # Tries to apply a spline fit without the extension line
+                x_new = np.linspace(0, 1, 5)[1:-1] # 5 = 3 knots + 2
+                x_new.sort()
+                q_knots = np.quantile(mz_values, x_new)
+                self.t, self.c, self.k = interpolate.splrep(mz_values, delta_values_ppm, t=q_knots, s=3)
+                self.has_correction_spline = True
+                x_regular = np.arange(mz_values[0], mz_values[-1])
+                y_values = interpolate.BSpline(self.t, self.c, self.k)(x_regular)
+            except: # If the spline was not fit, add an extension line to fit the spline
+                print("spline fit 1 without extension line failed, extension line applied")
+                while index < 500: # extending the line so the spline fit is created with the artificial
+                # peak plots
+                    index += index_increment
+                    mz_values.append(index)
+                    delta_values_ppm.append(artificial_peak_intensity)
+
+                x_new = np.linspace(0, 1, 5)[1:-1] # 5 = 3 knots + 2
+                x_new.sort()
+                q_knots = np.quantile(mz_values, x_new)
+                self.t, self.c, self.k = interpolate.splrep(mz_values, delta_values_ppm, t=q_knots, s=3)
+                self.has_correction_spline = True
+                x_regular = np.arange(mz_values[0], mz_values[-1])
+                y_values = interpolate.BSpline(self.t, self.c, self.k)(x_regular)
+            self.ax[1][0].plot(x_regular, y_values, 'b')
+            # self.ax[1,0].set_title(f"t: {self.t}, c: {self.c}, k: {self.k}", fontsize="xx-small")
+            self.update_refined(self.crude_correction, self.t, self.c, self.k)
+        self.ax[1][0].scatter(mz_values, delta_values_ppm, 0.5)
+        plt.tight_layout()
         plt.close()
 
     def find_second_spline(self):
