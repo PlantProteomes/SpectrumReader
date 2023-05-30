@@ -13,6 +13,7 @@
 
 # shifted files
 # to run the program (use terminal): python scan_ms2s.py ..\data\HFX_9850_GVA_DLD1_2_180719_subset_calibrated.mzML
+# to run the program (use terminal): python scan_ms2s.py ..\data\OR13_A2_20161014_CMP_Ecoli_glycerol_exp_2mg_IMAC_R2_calibrated.mzML
 import os
 import argparse
 import os.path
@@ -266,6 +267,7 @@ class MSRunPeakFinder:
                         acid_mz = base_acid_mz
                         acid_mz += modification_deltas[acid[0]][modification]
                         self.known_ions[f"I{acid}{modification}"] = [acid_mz, False]
+                        self.known_ions[f"I{acid}{modification}+i"] = [acid_mz + self.isotope_mass, False]
                 # add b and y ions
                 else:
                     self.known_ions[f"{ion}({acid})"] = [base_acid_mz, False]
