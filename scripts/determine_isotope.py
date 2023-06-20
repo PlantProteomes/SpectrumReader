@@ -22,7 +22,8 @@ class isotopeFinder:
         self.proton_mass = 1.007276
 
     def find_isotopes(self):
-        self.monoisotope_mass = round(mass.calculate_mass(formula=self.chemical_formula) - mass.calculate_mass(formula="CO") + self.proton_mass, 5)
+        # self.monoisotope_mass = round(mass.calculate_mass(formula=self.chemical_formula) - mass.calculate_mass(formula="CO") + self.proton_mass, 5)
+        self.monoisotope_mass = round(mass.calculate_mass(formula=self.chemical_formula) + self.proton_mass, 5)
         self.isotope_masses = {}
         for isotope in self.isotopic_elements:
             self.isotope_masses[f"{isotope}{int(round(self.isotopic_elements[isotope][1][0], 0))}"] = round(self.isotopic_elements[isotope][1][0] - self.isotopic_elements[isotope][0][0], 5)
@@ -31,19 +32,19 @@ class isotopeFinder:
         self.table = [[self.monoisotope_mass, 0, "monoisotope", 1.0]]
         for isotope in self.isotope_masses:
             isotope_element = isotope[0]
-            if isotope_element == "C" or isotope_element == "O":
-                lost_elements = 1
-            else:
-                lost_elements = 0
+            # if isotope_element == "C" or isotope_element == "O":
+                # lost_elements = 1
+            # else:
+                # lost_elements = 0
             isotope_proportion = self.isotopic_elements[isotope_element][1][1]
             index = self.chemical_formula.index(isotope_element)
             if index == len(self.chemical_formula) - 1:
-                num_of_element = 1 - lost_elements
+                num_of_element = 1 # - lost_elements
             else:
                 if self.chemical_formula[index + 1].isnumeric():
-                    num_of_element = int(self.chemical_formula[index + 1]) - lost_elements
+                    num_of_element = int(self.chemical_formula[index + 1])# - lost_elements
                 else:
-                    num_of_element = 1 - lost_elements
+                    num_of_element = 1 # - lost_elements
             if num_of_element == 0:
                 continue
             else:
@@ -51,8 +52,11 @@ class isotopeFinder:
 
     def write_table(self):
         table = self.table.copy()
+        carbon_isotope = table[1][0]
+        for index in range(len(table)): # adds the delta ppm to the carbon isotope
+            table[index].insert(3, (table[index][0] - carbon_isotope) * 1e6 / table[index][0])
         table.sort(key=lambda x:x[0])
-        table.insert(0, ["m/z", "delta from monoisotope", "isotope", "intensity"])
+        table.insert(0, ["m/z", "delta from monoisotope", "isotope", "delta from carbon isotope", "intensity"])
         with open('isotopes.tsv', 'w') as file:
             writer = csv.writer(file, delimiter='\t', lineterminator='\n')
             writer.writerows(table)

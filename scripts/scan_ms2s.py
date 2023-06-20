@@ -87,16 +87,16 @@ class MSRunPeakFinder:
         self.aggregate_spectra() # 
         print(str(timeit.default_timer() - last_time) + " seconds to aggregate all spectra")
         last_time = timeit.default_timer()
-        self.determine_crude_correction() # 
+        self.determine_crude_correction_optimized() # 
         if self.crude_correction >= 15:
             self.increase_initial_tolerance()
-            self.determine_crude_correction()
+            self.determine_crude_correction_optimized()
         print(str(timeit.default_timer() - last_time) + " seconds to determine crude calibration")
         last_time = timeit.default_timer()
         self.plot_crude_calibrations() # 
         # create an array of all identifiable theoretical and their masses
         self.get_theoretical_ions() #
-        print(str(timeit.default_timer() - last_time) + " seconds to aggregate all spectra")
+        print(str(timeit.default_timer() - last_time) + " seconds to find all theoretical ions")
         last_time = timeit.default_timer()
         # identify all the spectra with a certain intensity
         self.find_initial_triggers() #
@@ -212,23 +212,23 @@ class MSRunPeakFinder:
         aa_immonium_losses = {
                 'G': [],
                 'A': [],
-                'S': [],
+                'S': [ '+CO+NH3' ], # added +CO+NH3
                 'P': [],
                 'V': [ '-CH2-NH3', '-NH3', '+CO-NH3-CH2' ],
-                'T': [ '+CO-NH3' ],
+                'T': [ '+CO-NH3', '+CO+NH3' ],
                 'C': [],
                 'L': [ '-C3H6', '-CH2' ],
                 'I': [ '-C3H6', '-CH2' ],
                 'N': [ '-NH3' ],
                 'D': [ '-H2O' ],
-                'Q': [ '-CO-NH3', '-NH3', '+CO' ],
+                'Q': [ '-CO-NH3', '-NH3', '+CO'],
                 'K': [ '+CO-NH3', '-NH3', '+CO', '-C2H4-NH3', '+CO+H2ON2', '-NH3', '-C4H7N', '+CO+CO-C2H3N3', '+CO+H2O', '+CO+H2O-NH3' ],
                 'E': [],
                 'M': [ '-C2H2-NH3' ],
                 'H': [ '-CH2N', '+CO-NH2', '+CO-NH3', '+CO-NH', '+CO+H2O' ],
                 'F': [ '-CH3N' ],
                 'R': [ '-C3H6N2', '-CH5N3', '-CH6N2', '-C2H4N2', '-CH2N2', '-CH3N', '-NH3', '-C4H7N', '+H2O+H2O-N3H7', '+CO+H2O' ],
-                'Y': [ '-CO-NH3', '-CH3N' ],
+                'Y': [ '-CO-NH3', '-CH3N', '+CO+NH3' ], # added +CO+NH3
                 'W': [ '+CO', '-C4H6N2', '-C2H4N', '-CH3N', '-CHN', '+CO-NH3', '-NH3' ],
             }
         modification_deltas = {}
@@ -297,6 +297,10 @@ class MSRunPeakFinder:
                     pair_mz = pair_mz_1 + pair_mz_2
                     self.known_ions [f"{ion}({pair_acid_1}{pair_acid_2})"]  = [pair_mz, False]
 
+                    # considers doubly charged ions
+                    pair_mz = (pair_mz + self.proton_mass) / 2
+                    self.known_ions [f"{ion}({pair_acid_1}{pair_acid_2})^2"]  = [pair_mz, False]
+
         # Triple nested for loops to identify trios of amino acids (i.e. A and A)
         # First amino acid
         for identifier_index_1 in range(len(amino_acids)):
@@ -330,8 +334,11 @@ class MSRunPeakFinder:
                         trio_mz = trio_mz_1 + trio_mz_2 + trio_mz_3
                         if trio_mz <= 400:
                             self.known_ions[f"{ion}({trio_acid_1}{trio_acid_2}{trio_acid_3})"] = [trio_mz, False]
-                        else:
-                            continue
+
+                        # considers doubly charged ions
+                        trio_mz = (trio_mz + self.proton_mass) / 2
+                        if trio_mz <= 400:
+                            self.known_ions[f"{ion}({trio_acid_1}{trio_acid_2}{trio_acid_3})^2"] = [trio_mz, False]
 
         # Consider water and ammonia losses. This does not account for duplicates yet!!
         water = mass.calculate_mass(formula='H2O')
@@ -339,11 +346,22 @@ class MSRunPeakFinder:
         water_ammonia = water + ammonia
         additional_explanations = {}
         for key in self.known_ions:
-            additional_explanations[self.simplify_explanation(key + '-H2O')] = [self.known_ions[key][0] - water, False]
-            additional_explanations[self.simplify_explanation(key + '-NH3')] = [self.known_ions[key][0] - ammonia, False]
-            additional_explanations[self.simplify_explanation(key + '-H2O-NH3')] = [self.known_ions[key][0] - water_ammonia, False]
-            if key[0] == 'a' or key[0] == 'b' or 'K' in key:
-                additional_explanations[key + '+TMT'] = [self.known_ions[key][0] + 229.162932, False]
+            if key.endswith('+i'):
+                truncated_key = key[0:-2]
+                additional_explanations[self.simplify_explanation(truncated_key + '-H2O') + "+i"] = [self.known_ions[key][0] - water, False]
+                additional_explanations[self.simplify_explanation(truncated_key + '-NH3') + "+i"] = [self.known_ions[key][0] - ammonia, False]
+                additional_explanations[self.simplify_explanation(truncated_key + '-H2O-NH3') + "+i"] = [self.known_ions[key][0] - water_ammonia, False]
+            elif key.endswith('^2'):
+                truncated_key = key[0:-2]
+                additional_explanations[self.simplify_explanation(truncated_key + '-H2O') + "^2"] = [self.known_ions[key][0] - (water / 2), False]
+                additional_explanations[self.simplify_explanation(truncated_key + '-NH3') + "^2"] = [self.known_ions[key][0] - (ammonia / 2), False]
+                additional_explanations[self.simplify_explanation(truncated_key + '-H2O-NH3') + "^2"] = [self.known_ions[key][0] - (water_ammonia / 2), False]
+            else:
+                additional_explanations[self.simplify_explanation(key + '-H2O')] = [self.known_ions[key][0] - water, False]
+                additional_explanations[self.simplify_explanation(key + '-NH3')] = [self.known_ions[key][0] - ammonia, False]
+                additional_explanations[self.simplify_explanation(key + '-H2O-NH3')] = [self.known_ions[key][0] - water_ammonia, False]
+                if key[0] == 'a' or key[0] == 'b' or 'K' in key:
+                    additional_explanations[key + '+TMT'] = [self.known_ions[key][0] + 229.162932, False]
 
         for key in additional_explanations:
             self.known_ions[key] = additional_explanations[key].copy()
@@ -464,23 +482,22 @@ class MSRunPeakFinder:
             ions = match.group(1)
             losses = match.group(2)
                 
-        match = re.match(r'([\+\-][iA-Z\d]+)+$', losses)
+        match = re.findall(r'([+-][A-Z\d]+)', losses)
 
         if match:
             additions = []
             subtractions = []
 
-            for index in range(len(match.groups())):
-                item = match.group(index)
-                if item[0] == "+":
-                    additions.append(item[1:])
+            for modification in match:
+                if modification[0] == "+":
+                    additions.append(modification[1:])
                 else:
-                    subtractions.append(item[1:])
+                    subtractions.append(modification[1:])
 
             removed = 0
             for add_index in range(len(additions)):
                 for subtract_index in range(len(subtractions)):
-                    if additions[add_index] == subtractions[subtract_index]:
+                    if additions[add_index - removed] == subtractions[subtract_index - removed]:
                         additions.pop(add_index - removed)
                         subtractions.pop(subtract_index - removed)
                         removed += 1
@@ -570,6 +587,86 @@ class MSRunPeakFinder:
             if best_match[0] != 0:
                 self.crude_xy_scatterplot.append(best_match)
                 first_pass_ppms.append(best_match[2])
+
+        # Crude correction is the median of all the delta values between the theoretical mz and
+        # measured mz value
+        self.crude_correction = np.median(first_pass_ppms)
+
+    def determine_crude_correction_optimized(self):
+        # Uses popular possible explanations so in the first run through, it looks for the most 
+        # intense peak within 20 PPM of each popular possible explanation. Then, it calculates the
+        # delta between the theoretical mass with the measured mass, to calculate a crude correction
+        first_pass_peaks = {
+            'IP': 70.06512,
+            'IV': 72.08078,
+            'IQ-NH3': 84.04439,
+            'IK-NH3': 84.08077,
+            'IL': 86.09643,
+            'IQ': 101.07094,
+            'IE': 102.05495,
+            'IM': 104.05285,
+            'IH': 110.07127,
+            'IR-NH3': 112.08692,
+            'a(AA)': 115.08659,
+            'IR+H2O+H2O-N3H7': 116.0706,
+            'IF': 120.08078,
+            'b(AA)-NH3': 126.05495,
+            'IQ+CO': 129.06585,
+            'IK+CO+H2O-NH3': 130.08625,
+            'IC[Carbamidomethyl]': 133.04301,
+            'IY': 136.07569,
+            'a(AP)': 141.10224,
+            'b(AA)': 143.0815,
+            'a(AV)': 143.11789,
+            'b(GP)': 155.0815,
+            'IK+CO+H2ON2-NH3': 158.0924,
+            'IW': 159.09167,
+            'a(DP)-H2O': 167.0815,
+            'b(AP)': 169.09715,
+            'a(PV)': 169.13354,
+            'a(PT)': 171.1128,
+            'a(TV)': 173.12845,
+            'y(R)': 175.11895,
+            'a(LP)': 183.14919,
+            'b(PS)': 185.09207,
+            'b(PV)': 197.12845,
+            'a(DL)': 201.12337,
+            'a(AY)': 207.11281,
+            'y(AH)-H2O': 209.10331,
+            'a(EL)': 215.13902,
+            'b(EL)-H2O': 225.12337,
+            'a(APS)': 228.13427,
+            'b(DL)': 229.11828,
+            'y(HV)-H2O': 237.1346,
+            'a(APT)': 242.14992,
+            'b(DQ)': 244.0928,
+            'y(KP)': 244.16557,
+            'y(HV)': 255.14517,
+            'y(PR)': 272.17172
+        }
+
+        self.crude_xy_scatterplot = []
+        first_pass_ppms = []
+        for key in first_pass_peaks:
+            start_time = timeit.default_timer()
+            peak_mz = first_pass_peaks[key]
+            delta = self.initial_tolerance * first_pass_peaks[key] / 1e6
+            lower_bound = peak_mz - delta
+            upper_bound = peak_mz + delta
+            best_match = [0, 0, 0]
+            for i in range(int(len(self.by_count) - lower_bound - 0.5)):
+                i += int(lower_bound - 0.5)
+                mz = i / 10000
+                if mz > upper_bound:
+                    break
+                elif mz > lower_bound:
+                    if self.by_count[i] > best_match[1]:
+                        best_match = [mz, self.by_count[i], (mz - peak_mz) * 1e6 / peak_mz]
+            
+            if best_match[0] != 0:
+                self.crude_xy_scatterplot.append(best_match)
+                first_pass_ppms.append(best_match[2])
+            print(f"time to identify {key}: {start_time - timeit.default_timer()}")
 
         # Crude correction is the median of all the delta values between the theoretical mz and
         # measured mz value
@@ -801,11 +898,12 @@ class MSRunPeakFinder:
             else:
                 continue
         self.keep_intense_remove_outliers(mz_values, delta_values_ppm)
-        self.ax[0,1].set_title(f"crude_correction: {self.crude_correction}", fontsize="xx-small")
+        # self.ax[0,1].set_title(f"crude_correction: {self.crude_correction}", fontsize="xx-small")
         self.ax[0][1].scatter(self.refined_mz_values, self.refined_delta_ppm_values, 0.5)
         self.ax[0][1].axhline(y = self.crude_correction, color = 'k', linestyle = 'dashed')
         mz_values = [peak[0] for peak in mz_values]
         self.ax[0][1].text(min(mz_values), 0, f'tolerance: {self.tolerance} ppm', fontsize='xx-small', ha='left', va='top')
+        self.ax[0][1].text(315, self.crude_correction, f'crude_correction: {round(self.crude_correction, 2)} ppm', fontsize='xx-small', ha='right', va='top')
         self.ax[0][1].axhline(y = 0, color = 'k', linewidth = 1, linestyle = '-')
         self.ax[0][1].set(xlabel='m/z', ylabel='PPM')
 
@@ -1121,6 +1219,9 @@ class MSRunPeakFinder:
 
     def plot_peaks_strength(self):
         print("starting to plot individual peaks")
+        # track_time = True
+        # track_pdf_save_time = True
+        # start_time = timeit.default_timer()
         # Prints out individual peak plots, with 15 PPM above and below each observed peak to see the
         # intensity of the mz values around each observed peak
         # There are 15 plots per page
@@ -1128,6 +1229,8 @@ class MSRunPeakFinder:
         x = 0
         y = 0
         fig, ax = plt.subplots(self.plot_output_rows, self.plot_output_columns, figsize=(8.5,11))
+        # print(f"time to create figure: {timeit.default_timer() - start_time}")
+        # start_time = timeit.default_timer()
 
         if self.has_correction_spline:
             mz_values = [peak[0] for peak in self.observed_peaks]
@@ -1138,11 +1241,17 @@ class MSRunPeakFinder:
                 for index in range(len(y_values)):
                     y_values[index] += y_values_2[index]
 
+        # print(f"time to create splines: {timeit.default_timer() - start_time}")
+        # start_time = timeit.default_timer()
+
         # Takes the most 300 most intense peaks to print out
         if len(self.observed_peaks) > 300:
             self.observed_peaks.sort(key = lambda x: -1 * x[1])
             self.observed_peaks = self.observed_peaks[0:300]
             self.observed_peaks.sort(key = lambda x: x[0])
+
+        # print(f"time to find top 300 intense peaks: {timeit.default_timer() - start_time}")
+        # start_time = timeit.default_timer()
 
         for index in range(len(self.observed_peaks)):
             peak = self.observed_peaks[index]
@@ -1152,6 +1261,9 @@ class MSRunPeakFinder:
             ppm_values = []
             crude_correction_mz = self.crude_correction * peak[0] / 1e6
             mz_delta = int((self.ppm_delta / 1e6) * (peak[0] + crude_correction_mz) * 10000)
+            # if track_time:
+                # print(f"time to create arrays: {timeit.default_timer() - start_time}")
+                # start_time = timeit.default_timer()
 
             for range_index in range(mz_delta * 2 + 1):
                 # change it to be 0
@@ -1161,12 +1273,20 @@ class MSRunPeakFinder:
                 intensity_values.append(self.by_strength[add_index])
                 ppm_values.append(ppm)
 
+            # if track_time:
+                # print(f"time to find 15 ppm above an below: {timeit.default_timer() - start_time}")
+                # start_time = timeit.default_timer()
+
             ax[x,y].step(ppm_values, intensity_values, where='mid')
             ax[x,y].tick_params(axis='x', labelsize='xx-small')
             ax[x,y].locator_params(axis='x', nbins=5)
             # ax[x,y].set_xticks([-0.0015, -0.0007, 0, 0.0007, 0.0015])
             ax[x,y].tick_params(axis='y', labelsize='xx-small')
             ax[x,y].set_xlim(-15, 15)
+
+            # if track_time:
+                # print(f"time to plot 15 ppm and set axis: {timeit.default_timer() - start_time}")
+                # start_time = timeit.default_timer()
 
             # add gaussian fitting
             n = len(ppm_values)
@@ -1177,6 +1297,9 @@ class MSRunPeakFinder:
             #if 1:
                 popt,pcov = curve_fit(gaussian_function,ppm_values,intensity_values,p0=[intensity_values[center],ppm_values[center],binsize])
                 ax[x,y].plot(ppm_values,gaussian_function(ppm_values, *popt),'r:')
+                # if track_time:
+                    # print(f"time to fit a gaussian: {timeit.default_timer() - start_time}")
+                    # start_time = timeit.default_timer()
             except:
                 # either skip it or show it, for now just skip it
                 y += 1
@@ -1185,38 +1308,40 @@ class MSRunPeakFinder:
                     x += 1
                     x %= self.plot_output_rows
                     if x == 0:
+                        # if track_pdf_save_time:
+                            # start_time = timeit.default_timer()
                         self.pdf.savefig(fig)
                         plt.close('all')
                         fig, ax = plt.subplots(self.plot_output_rows, self.plot_output_columns,figsize=(8.5,11))
+                        # if track_pdf_save_time:
+                            # print(f"time to save pdf: {timeit.default_timer() - start_time}")
+                            # track_pdf_save_time = False
                 continue
-
+            
+            # if track_time:
+                # start_time = timeit.default_timer()
             if len(peak) >= 4:
                 if self.has_correction_spline:
                     spline_correction_mz = y_values[index] * peak[0] / 1e6
                 else:
                     spline_correction_mz = 0
-                line_x = (peak[3][1]) * 1e6 / peak[0]
-                ax[x,y].axvline(x=-line_x, color='black', lw=1, linestyle='--')
-                count = 3
                 identified_ion_name = ''
                 ion_mz = peak[3][0]
-                plotted_identification = [peak[3][2], peak[3][1], 1]
-                ax[x][y].text(-line_x, max(intensity_values), f'{plotted_identification[2]}', fontsize='xx-small', ha='left', va='top')
+                count = 3
+                plotted_identification = [0, 0, 0]
                 while count <= len(peak) - 1:
-                    corrected = False
                     if peak[count][1] != plotted_identification[1]:
                         line_x = (peak[count][1]) * 1e6 / peak[0]
-                        ax[x,y].axvline(x=-line_x, color='black', lw=1, linestyle='--')
                         plotted_identification = [peak[count][2], peak[count][1], plotted_identification[2] + 1]
+                        ax[x,y].axvline(x=-line_x, color='black', lw=1, linestyle='--')
+                        ax[x][y].text(-line_x, max(intensity_values), f'{plotted_identification[2]}', fontsize='xx-small', ha='left', va='top')
                         identified_ion_name += f"{plotted_identification[2]}) "
-                        corrected = True
-                    if count <= 10:
                         identified_ion_name += peak[count][2] + '\n    '
-                    if count == len(peak) - 1 and plotted_identification[0] != peak[3][2] and not corrected:
-                        ax[x][y].text(-line_x, max(intensity_values), f'{plotted_identification[2] + 1}', fontsize='xx-small', ha='left', va='top')
+                    elif count <= 10:
+                        identified_ion_name += peak[count][2] + '\n    '
                     count += 1
-                    if count == 11 and count <= len(peak) - 1:
-                        identified_ion_name += "..."
+                if len(peak) > 11:
+                    identified_ion_name += "..."
 
                 peak_fit_center = int(100000*(peak[0] + (popt[1] * peak[0] / 1e6) - crude_correction_mz - spline_correction_mz)) / 100000
                 ax[x,y].text(-14, max(intensity_values) * 1.03, f'peak fit center: \n    {peak_fit_center}\nion m/z: \n    {ion_mz}\nion id: \n    {identified_ion_name}', fontsize='xx-small', ha='left', va='top')
@@ -1227,7 +1352,9 @@ class MSRunPeakFinder:
                 ax[x,y].text(-14, max(intensity_values) * 1.03, f'peak fit center: \n    {peak_fit_center}', fontsize='xx-small', ha='left', va='top',)
                 ax[x,y].text(14, max(intensity_values) * 1.03, f'{peak[2]}\nof spectra', fontsize='xx-small', ha='right', va='top')
                 # ax[x,y].set_title(f"Peak {peak[0]}", fontsize="xx-small")
-
+            # if track_time:
+                # print(f"time to add text: {timeit.default_timer() - start_time}")
+                # track_time = False
             # creates a new figure if full
             y += 1
             y %= self.plot_output_columns
@@ -1235,9 +1362,14 @@ class MSRunPeakFinder:
                 x += 1
                 x %= self.plot_output_rows
                 if x == 0:
+                    # if track_pdf_save_time:
+                        # start_time = timeit.default_timer()
                     self.pdf.savefig(fig)
                     plt.close('all')
                     fig, ax = plt.subplots(self.plot_output_rows, self.plot_output_columns,figsize=(8.5,11))
+                    # if track_pdf_save_time:
+                        # print(f"time to save pdf: {timeit.default_timer() - start_time}")
+                        # track_pdf_save_time = False
         
         if x != 0:
             self.pdf.savefig(fig) # maybe get rid of fig parameter in here

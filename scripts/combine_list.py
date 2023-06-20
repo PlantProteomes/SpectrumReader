@@ -86,7 +86,13 @@ class CombineList:
                 if has_histidine:
                     self.aggregated_observed_peaks[file_name] = observed_peaks
                     lines = lines[0].split("\t")
-                    self.smallest_mz.append(float(lines[0]))
+                    self.smallest_mz.append(float(lines[1]) - 0.01) # if there are multiple peaks that are
+                    # the same, the median will be taken for the combined_list plot. if there are two peaks,
+                    # the average is taken. if this is the case for the very first peak, comparing the
+                    # peak to the minimum of each file will not work, as the median value will now be
+                    # less than one but greater than the other. subtracting 0.01 will ensure taking the median
+                    # will not affect the accuracy of how many ms runs the peak may exist in, but is small enough
+                    # that it will not affect any other calculations
                 else:
                     print(f"removed {file_name} since it did not find a histidine")
                     removed += 1
@@ -146,7 +152,7 @@ class CombineList:
                     theoretical_mz = float(peak[3][1])
                     peak[3] = peak[3][0]
                     peak.insert(3, theoretical_mz) # adds the theoretical m/z value
-                    peak.insert(4, round((theoretical_mz - mz) / mz * 1e6, 5)) # adds delta PPM
+                    peak.insert(4, round((theoretical_mz - mz) / mz * 1e6, 2)) # adds delta PPM
                 else: # accounts for if peak is "?"
                     peak.insert(3, "?") # adds the theoretical m/z value
                     peak.insert(4, "?") # adds delta PPM
@@ -161,7 +167,7 @@ class CombineList:
                 if len(same_peaks[0][3]) > 1: # accounts for if peak is not "?"
                     theoretical_mz = float(same_peaks[0][3][1]) # takes the most intense peak to use for data
                     peak.append(theoretical_mz) # adds the theoretical m/z value
-                    peak.append(round((theoretical_mz - median_mz) / median_mz * 1e6, 5)) # adds delta PPM
+                    peak.append(round((theoretical_mz - median_mz) / median_mz * 1e6, 2)) # adds delta PPM
                     peak.append(same_peaks[0][3][0]) # adds primary explanation
                 else: # accounts for if peak is "?"
                     peak.append("?")
