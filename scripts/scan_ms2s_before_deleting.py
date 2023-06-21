@@ -965,6 +965,167 @@ class MSRunPeakFinder:
 
         print("finished plotting peaks")
 
+
+    def plot_peaks_strength_with_times(self):
+        print("starting to plot individual peaks")
+        # track_time = True
+        # track_pdf_save_time = True
+        # start_time = timeit.default_timer()
+        # Prints out individual peak plots, with 15 PPM above and below each observed peak to see the
+        # intensity of the mz values around each observed peak
+        # There are 15 plots per page
+
+        x = 0
+        y = 0
+        fig, ax = plt.subplots(self.plot_output_rows, self.plot_output_columns, figsize=(8.5,11))
+        # print(f"time to create figure: {timeit.default_timer() - start_time}")
+        # start_time = timeit.default_timer()
+
+        if self.has_correction_spline:
+            mz_values = [peak[0] for peak in self.observed_peaks]
+            x_values = np.array(mz_values)
+            y_values = interpolate.BSpline(self.t, self.c, self.k)(x_values)
+            if self.has_second_spline:
+                y_values_2 = interpolate.BSpline(self.t2, self.c2, self.k2)(x_values)
+                for index in range(len(y_values)):
+                    y_values[index] += y_values_2[index]
+
+        # print(f"time to create splines: {timeit.default_timer() - start_time}")
+        # start_time = timeit.default_timer()
+
+        # Takes the most 300 most intense peaks to print out
+        if len(self.observed_peaks) > 300:
+            self.observed_peaks.sort(key = lambda x: -1 * x[1])
+            self.observed_peaks = self.observed_peaks[0:300]
+            self.observed_peaks.sort(key = lambda x: x[0])
+
+        # print(f"time to find top 300 intense peaks: {timeit.default_timer() - start_time}")
+        # start_time = timeit.default_timer()
+
+        for index in range(len(self.observed_peaks)):
+            peak = self.observed_peaks[index]
+            fig.subplots_adjust(top=0.98, bottom=0.05, left=0.12, right=0.98, hspace=0.2, wspace=0.38)
+            # mz_values = []
+            intensity_values = []
+            ppm_values = []
+            crude_correction_mz = self.crude_correction * peak[0] / 1e6
+            mz_delta = int((self.ppm_delta / 1e6) * (peak[0] + crude_correction_mz) * 10000)
+            # if track_time:
+                # print(f"time to create arrays: {timeit.default_timer() - start_time}")
+                # start_time = timeit.default_timer()
+
+            for range_index in range(mz_delta * 2 + 1):
+                # change it to be 0
+                add_index = int((peak[0]) * 10000 + range_index - mz_delta)
+                # mz_values.append(add_index / 10000 - peak[0])
+                ppm = (add_index / 10000 - peak[0]) * 1e6 / peak[0]
+                intensity_values.append(self.by_strength[add_index])
+                ppm_values.append(ppm)
+
+            # if track_time:
+                # print(f"time to find 15 ppm above an below: {timeit.default_timer() - start_time}")
+                # start_time = timeit.default_timer()
+
+            ax[x,y].step(ppm_values, intensity_values, where='mid')
+            ax[x,y].tick_params(axis='x', labelsize='xx-small')
+            ax[x,y].locator_params(axis='x', nbins=5)
+            # ax[x,y].set_xticks([-0.0015, -0.0007, 0, 0.0007, 0.0015])
+            ax[x,y].tick_params(axis='y', labelsize='xx-small')
+            ax[x,y].set_xlim(-15, 15)
+
+            # if track_time:
+                # print(f"time to plot 15 ppm and set axis: {timeit.default_timer() - start_time}")
+                # start_time = timeit.default_timer()
+
+            # add gaussian fitting
+            n = len(ppm_values)
+            center = int(n/2)
+            binsize = ppm_values[center]-ppm_values[center-1]
+
+            try:
+            #if 1:
+                popt,pcov = curve_fit(gaussian_function,ppm_values,intensity_values,p0=[intensity_values[center],ppm_values[center],binsize])
+                ax[x,y].plot(ppm_values,gaussian_function(ppm_values, *popt),'r:')
+                # if track_time:
+                    # print(f"time to fit a gaussian: {timeit.default_timer() - start_time}")
+                    # start_time = timeit.default_timer()
+            except:
+                # either skip it or show it, for now just skip it
+                y += 1
+                y %= self.plot_output_columns
+                if y == 0:
+                    x += 1
+                    x %= self.plot_output_rows
+                    if x == 0:
+                        # if track_pdf_save_time:
+                            # start_time = timeit.default_timer()
+                        self.pdf.savefig(fig)
+                        plt.close('all')
+                        fig, ax = plt.subplots(self.plot_output_rows, self.plot_output_columns,figsize=(8.5,11))
+                        # if track_pdf_save_time:
+                            # print(f"time to save pdf: {timeit.default_timer() - start_time}")
+                            # track_pdf_save_time = False
+                continue
+            
+            # if track_time:
+                # start_time = timeit.default_timer()
+            if len(peak) >= 4:
+                if self.has_correction_spline:
+                    spline_correction_mz = y_values[index] * peak[0] / 1e6
+                else:
+                    spline_correction_mz = 0
+                identified_ion_name = ''
+                ion_mz = peak[3][0]
+                count = 3
+                plotted_identification = [0, 0, 0]
+                while count <= len(peak) - 1:
+                    if peak[count][1] != plotted_identification[1]:
+                        line_x = (peak[count][1]) * 1e6 / peak[0]
+                        plotted_identification = [peak[count][2], peak[count][1], plotted_identification[2] + 1]
+                        ax[x,y].axvline(x=-line_x, color='black', lw=1, linestyle='--')
+                        ax[x][y].text(-line_x, max(intensity_values), f'{plotted_identification[2]}', fontsize='xx-small', ha='left', va='top')
+                        identified_ion_name += f"{plotted_identification[2]}) "
+                        identified_ion_name += peak[count][2] + '\n    '
+                    elif count <= 10:
+                        identified_ion_name += peak[count][2] + '\n    '
+                    count += 1
+                if len(peak) > 11:
+                    identified_ion_name += "..."
+
+                peak_fit_center = int(100000*(peak[0] + (popt[1] * peak[0] / 1e6) - crude_correction_mz - spline_correction_mz)) / 100000
+                ax[x,y].text(-14, max(intensity_values) * 1.03, f'peak fit center: \n    {peak_fit_center}\nion m/z: \n    {ion_mz}\nion id: \n    {identified_ion_name}', fontsize='xx-small', ha='left', va='top')
+                ax[x,y].text(14, max(intensity_values) * 1.03, f'{peak[2]}\nof spectra', fontsize='xx-small', ha='right', va='top')
+                # ax[x,y].set_title(f"Peak {peak[0]}, Amino Acid {peak[4]}", fontsize="xx-small")
+            else:
+                peak_fit_center = int(100000*(peak[0] + (popt[1] * peak[0] / 1e6) - crude_correction_mz)) / 100000
+                ax[x,y].text(-14, max(intensity_values) * 1.03, f'peak fit center: \n    {peak_fit_center}', fontsize='xx-small', ha='left', va='top',)
+                ax[x,y].text(14, max(intensity_values) * 1.03, f'{peak[2]}\nof spectra', fontsize='xx-small', ha='right', va='top')
+                # ax[x,y].set_title(f"Peak {peak[0]}", fontsize="xx-small")
+            # if track_time:
+                # print(f"time to add text: {timeit.default_timer() - start_time}")
+                # track_time = False
+            # creates a new figure if full
+            y += 1
+            y %= self.plot_output_columns
+            if y == 0:
+                x += 1
+                x %= self.plot_output_rows
+                if x == 0:
+                    # if track_pdf_save_time:
+                        # start_time = timeit.default_timer()
+                    self.pdf.savefig(fig)
+                    plt.close('all')
+                    fig, ax = plt.subplots(self.plot_output_rows, self.plot_output_columns,figsize=(8.5,11))
+                    # if track_pdf_save_time:
+                        # print(f"time to save pdf: {timeit.default_timer() - start_time}")
+                        # track_pdf_save_time = False
+        
+        if x != 0:
+            self.pdf.savefig(fig) # maybe get rid of fig parameter in here
+        self.pdf.close()
+        plt.close()
+
+
     def write_output(self):
         # Writes out all observed peaks in a TSV file, including the measured mz value from the mass 
         # spectrometer, the intensity, and all the identifications
