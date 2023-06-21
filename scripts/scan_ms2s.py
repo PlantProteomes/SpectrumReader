@@ -43,13 +43,15 @@ warnings.simplefilter("ignore", OptimizeWarning)
 
 class MSRunPeakFinder:
 
-    def __init__(self, file, tolerance, rows, columns):
+    def __init__(self, file, tolerance, rows, columns, make_pdf, find_snippets):
         # Declares all of the variables from parameters
         self.tolerance = tolerance
         self.tolerance_150 = 10
         self.plot_output_rows = rows
         self.plot_output_columns = columns
         self.file_name = file
+        self.make_pdf = make_pdf
+        self.find_snippets = find_snippets and make_pdf
 
         # Declares all of the variables
         self.by_count = np.zeros((4000000,), dtype=int)
@@ -93,7 +95,8 @@ class MSRunPeakFinder:
             self.determine_crude_correction()
         print(str(timeit.default_timer() - last_time) + " seconds to determine crude calibration")
         last_time = timeit.default_timer()
-        self.plot_crude_calibrations() # 
+        if self.make_pdf:
+            self.plot_crude_calibrations() # 
         # create an array of all identifiable theoretical and their masses
         self.get_theoretical_ions() #
         print(str(timeit.default_timer() - last_time) + " seconds to find all theoretical ions")
@@ -108,14 +111,14 @@ class MSRunPeakFinder:
             self.refine_triggered_peaks()
         print(str(timeit.default_timer() - last_time) + " seconds to find and refine peaks")
         last_time = timeit.default_timer()
-        self.identify_peaks_optimized() #
+        self.identify_peaks() #
         print(str(timeit.default_timer() - last_time) + " seconds to identify peaks")
         last_time = timeit.default_timer()
         # save the identified peaks to a file
         self.delta_scatterplots() #
         self.find_first_spline()
         last_time = timeit.default_timer()
-        self.identify_peaks_optimized()
+        self.identify_peaks()
         print(str(timeit.default_timer() - last_time) + " seconds to identify peaks")
         last_time = timeit.default_timer()
         self.find_peak_percentage()
@@ -123,18 +126,21 @@ class MSRunPeakFinder:
             self.find_second_spline()    
         except:
             print("Error with creating the second spline")
-        self.plot_corrected_scatterplot()
-        self.plot_all_corrections()
-        print(str(timeit.default_timer() - last_time) + " seconds to plot all summary plots")
-        last_time = timeit.default_timer()
+        if self.make_pdf:
+            self.plot_corrected_scatterplot()
+            self.plot_all_corrections()
+            print(str(timeit.default_timer() - last_time) + " seconds to plot all summary plots")
+            last_time = timeit.default_timer()
 
         # following is code to write outputs - consider putting this in its own method
-        self.analyze_snippets() # skipping analyzing snippets for now, to add back, uncomment 158
-        print(str(timeit.default_timer() - last_time) + " seconds to plot snippet plots")
-        last_time = timeit.default_timer()
-        self.plot_peaks_strength()
-        print(str(timeit.default_timer() - last_time) + " seconds to plot individual peaks")
-        last_time = timeit.default_timer()
+        if self.find_snippets:
+            self.analyze_snippets() # skipping analyzing snippets for now, to add back, uncomment 158
+            print(str(timeit.default_timer() - last_time) + " seconds to plot snippet plots")
+            last_time = timeit.default_timer()
+        if self.make_pdf:
+            self.plot_peaks_strength()
+            print(str(timeit.default_timer() - last_time) + " seconds to plot individual peaks")
+            last_time = timeit.default_timer()
         self.write_json()
         self.write_output() #
         # print out data, including run time, number of peaks found, etc
@@ -157,11 +163,12 @@ class MSRunPeakFinder:
                 elif spectrum['ms level'] == 2:
                     self.stats['ms2spectra'] += 1
                     self.smallest_peak_intensity = sys.maxsize
-                    lower_index = sys.maxsize # 158, 159, 162-165, 175-176 are for snippets
-                    upper_index = 0
+                    if self.find_snippets:
+                        lower_index = sys.maxsize
+                        upper_index = 0
                     for index in range(len(spectrum['m/z array'])):
                         peak_mz = spectrum['m/z array'][index]
-                        if peak_mz > 110:
+                        if self.find_snippets and peak_mz > 110:
                             lower_index = min(lower_index, index)
                             if peak_mz < 130:
                                 upper_index = max(upper_index, index)
@@ -174,7 +181,7 @@ class MSRunPeakFinder:
                             self.by_intensity[int(10000 * peak_mz + 0.5)] += intensity
                             self.smallest_peak_intensity = min(self.smallest_peak_intensity, intensity)
 
-                    if upper_index != 0 and upper_index > lower_index:
+                    if self.find_snippets and upper_index != 0 and upper_index > lower_index:
                         self.scan_snippets.append([self.stats['counter'], spectrum['m/z array'][lower_index:upper_index], spectrum['intensity array'][lower_index:upper_index]])
 
                     # Compare the intensity to the smallest intensity, returning the strength of the intensity
@@ -688,55 +695,6 @@ class MSRunPeakFinder:
         peak_mz = round((peak[0] + (popt[1] * peak[0] / 1e6)), 5)
         return [peak_mz, round(popt[0], 1)]
 
-    def identify_peaks(self):
-        print("starting to identify peaks")
-        # This uses the observed peaks and sees how many of them can be identified. It accounts for any
-        # corrections applicable
-        for key in self.known_ions: # Resets identifications, in case it is the second run through
-            self.known_ions[key][1] = False
-
-        # Creates an array with a spline correction for each observed peak
-        if self.has_correction_spline:
-            mz_values = []
-            for peak in self.observed_peaks:
-                mz_values.append(peak[0])
-            x_values = np.array(mz_values)
-            y_values = interpolate.BSpline(self.t, self.c, self.k)(x_values)
-            if self.has_second_spline:
-                y_values_2 = interpolate.BSpline(self.t2, self.c2, self.k2)(x_values)
-                for index in range(len(y_values)):
-                    y_values[index] += y_values_2[index]
-        
-        # Goes through and applies all corrections, then see if the peak can be identified
-        for index in range(len(self.observed_peaks)):
-            identifications = []
-            peak = self.observed_peaks[index].copy()
-            crude_correction_mz = self.crude_correction * peak[0] / 1e6
-
-            if self.has_correction_spline:
-                spline_correction_mz = y_values[index] * peak[0] / 1e6
-            else:
-                spline_correction_mz = 0
-
-            peak[0] -= (crude_correction_mz + spline_correction_mz)
-            self.observed_peaks[index] = self.observed_peaks[index][0:2]
-            for key in self.known_ions:
-                amino_acid_mz = self.known_ions[key][0]
-                # Checks the tolerance based on a constant ppm, so each peak has its own mz tolerance
-                if peak[0] <= 150:
-                    peak_tolerance = self.tolerance_150 * peak[0] / 1e6
-                else:
-                    peak_tolerance = self.tolerance * peak[0] / 1e6
-                if not self.known_ions[key][1] and peak[0] > amino_acid_mz - peak_tolerance and peak[0] < amino_acid_mz + peak_tolerance:
-                    identified_peak = [round(amino_acid_mz, 5), round(peak[0] - amino_acid_mz, 8), key]
-                    identifications.append(identified_peak)
-                    self.known_ions[key][1] = True
-            
-            # Sorts the identifications for each peak so the closest identifications are at the front
-            identifications.sort(key = lambda x: abs(x[1]))
-            for identification in identifications:
-                self.observed_peaks[index].append(identification)
-  
     def binned(self):
         binned_known_ions = [ [] for i in range(4001) ]
         for key in self.known_ions:
@@ -746,7 +704,7 @@ class MSRunPeakFinder:
         
         return binned_known_ions
 
-    def identify_peaks_optimized(self):
+    def identify_peaks(self):
         print("starting to identify peaks")
         # This uses the observed peaks and sees how many of them can be identified. It accounts for any
         # corrections applicable
@@ -797,7 +755,6 @@ class MSRunPeakFinder:
             identifications.sort(key = lambda x: abs(x[1]))
             for identification in identifications:
                 self.observed_peaks[index].append(identification)
-    
 
     def update_refined(self, crude_correction, t, c, k):
         mz_values = []
@@ -894,19 +851,20 @@ class MSRunPeakFinder:
             else:
                 continue
         self.keep_intense_remove_outliers(mz_values, delta_values_ppm)
-        # self.ax[0,1].set_title(f"crude_correction: {self.crude_correction}", fontsize="xx-small")
-        self.ax[0][1].scatter(self.refined_mz_values, self.refined_delta_ppm_values, 0.5)
-        self.ax[0][1].axhline(y = self.crude_correction, color = 'k', linestyle = 'dashed')
-        mz_values = [peak[0] for peak in mz_values]
-        self.ax[0][1].text(min(mz_values), 0, f'tolerance: {self.tolerance} ppm', fontsize='xx-small', ha='left', va='top')
-        self.ax[0][1].text(315, self.crude_correction + 0.1, f'crude_correction: {round(self.crude_correction, 2)} ppm', fontsize='xx-small', ha='right', va='bottom')
-        self.ax[0][1].axhline(y = 0, color = 'k', linewidth = 1, linestyle = '-')
-        self.ax[0][1].set(xlabel='m/z', ylabel='PPM')
+        if self.make_pdf:
+            # self.ax[0,1].set_title(f"crude_correction: {self.crude_correction}", fontsize="xx-small")
+            self.ax[0][1].scatter(self.refined_mz_values, self.refined_delta_ppm_values, 0.5)
+            self.ax[0][1].axhline(y = self.crude_correction, color = 'k', linestyle = 'dashed')
+            mz_values = [peak[0] for peak in mz_values]
+            self.ax[0][1].text(min(mz_values), 0, f'tolerance: {self.tolerance} ppm', fontsize='xx-small', ha='left', va='top')
+            self.ax[0][1].text(315, self.crude_correction + 0.1, f'crude_correction: {round(self.crude_correction, 2)} ppm', fontsize='xx-small', ha='right', va='bottom')
+            self.ax[0][1].axhline(y = 0, color = 'k', linewidth = 1, linestyle = '-')
+            self.ax[0][1].set(xlabel='m/z', ylabel='PPM')
 
-        self.ax[2][1].scatter(self.refined_mz_values, self.refined_delta_ppm_values, 0.5)
-        self.ax[2][1].axhline(y = 0, color = 'k', linewidth = 1, linestyle = '-')
-        self.ax[2][1].set(xlabel='m/z', ylabel='PPM')
-        plt.tight_layout()
+            self.ax[2][1].scatter(self.refined_mz_values, self.refined_delta_ppm_values, 0.5)
+            self.ax[2][1].axhline(y = 0, color = 'k', linewidth = 1, linestyle = '-')
+            self.ax[2][1].set(xlabel='m/z', ylabel='PPM')
+            plt.tight_layout()
 
     def find_first_spline(self):
         # Calculates the artificial peak point for the after 400 calibration constant
@@ -927,8 +885,9 @@ class MSRunPeakFinder:
         index_increment = (500 - index) / num_of_artificial_peaks
         artificial_peak_intensity = np.median(artificial_peak_range)
         self.after_400_calibration = np.median(artificial_peak_range)
-        self.ax[1][0].axhline(y = 0, color = 'k', linewidth = 1, linestyle = '-')
-        self.ax[1][0].set(xlabel='m/z', ylabel='PPM')
+        if self.make_pdf:
+            self.ax[1][0].axhline(y = 0, color = 'k', linewidth = 1, linestyle = '-')
+            self.ax[1][0].set(xlabel='m/z', ylabel='PPM')
 
         # Adds artificial peaks above 500 with the median between 300 and 400 so the spline 
         # fit will flatten out, making the correction applicable for points above 400 if necessary
@@ -960,12 +919,14 @@ class MSRunPeakFinder:
                 self.has_correction_spline = True
                 x_regular = np.arange(mz_values[0], mz_values[-1])
                 y_values = interpolate.BSpline(self.t, self.c, self.k)(x_regular)
-            self.ax[1][0].plot(x_regular, y_values, 'b')
-            # self.ax[1,0].set_title(f"t: {self.t}, c: {self.c}, k: {self.k}", fontsize="xx-small")
+            if self.make_pdf:
+                self.ax[1][0].plot(x_regular, y_values, 'b')
+                # self.ax[1,0].set_title(f"t: {self.t}, c: {self.c}, k: {self.k}", fontsize="xx-small")
             self.update_refined(self.crude_correction, self.t, self.c, self.k)
-        self.ax[1][0].scatter(mz_values, delta_values_ppm, 0.5)
-        plt.tight_layout()
-        plt.close()
+        if self.make_pdf:
+            self.ax[1][0].scatter(mz_values, delta_values_ppm, 0.5)
+            plt.tight_layout()
+            plt.close()
 
     def find_second_spline(self):
         # This calculates the coefficients for the second spline fit and plots the delta scatterplot
@@ -991,7 +952,8 @@ class MSRunPeakFinder:
             self.has_second_spline = True
             x_regular = np.arange(mz_values[0], mz_values[-1])
             y_values = interpolate.BSpline(self.t2, self.c2, self.k2)(x_regular)
-            self.ax[1][1].plot(x_regular, y_values, 'g')
+            if self.make_pdf:
+                self.ax[1][1].plot(x_regular, y_values, 'g')
         except:
             try:
                 print("adding artificial line on second spline fit")
@@ -1013,14 +975,17 @@ class MSRunPeakFinder:
                 self.has_second_spline = True
                 x_regular = np.arange(mz_values[0], mz_values[-1])
                 y_values = interpolate.BSpline(self.t2, self.c2, self.k2)(x_regular)
-                self.ax[1][1].plot(x_regular, y_values, 'g')
+                if self.make_pdf:
+                    self.ax[1][1].plot(x_regular, y_values, 'g')
             except:
-                self.ax[1][1].text(max(mz_values), max(delta_values_ppm), 'second spline fit could not be applied', fontsize='xx-small', ha='right', va='top')
+                if self.make_pdf:
+                    self.ax[1][1].text(max(mz_values), max(delta_values_ppm), 'second spline fit could not be applied', fontsize='xx-small', ha='right', va='top')
                 print("the second spline fit could not be applied")
         finally:
-            self.ax[1][1].scatter(mz_values, delta_values_ppm, 0.5)
-            self.ax[1][1].axhline(y = 0, color = 'k', linewidth = 1, linestyle = '-')
-            self.ax[1][1].set(xlabel='m/z', ylabel='PPM')
+            if self.make_pdf:
+                self.ax[1][1].scatter(mz_values, delta_values_ppm, 0.5)
+                self.ax[1][1].axhline(y = 0, color = 'k', linewidth = 1, linestyle = '-')
+                self.ax[1][1].set(xlabel='m/z', ylabel='PPM')
             self.update_refined(0, self.t2, self.c2, self.k2)
 
     def plot_corrected_scatterplot(self):
@@ -1390,7 +1355,7 @@ def get_strength(intensity, smallest_peak_intensity):
         return 4
 
 def process_job(job_parameters):
-    peak_finder = MSRunPeakFinder(job_parameters["file"], job_parameters["tolerance"], job_parameters["rows"], job_parameters["columns"])
+    peak_finder = MSRunPeakFinder(job_parameters["file"], job_parameters["tolerance"], job_parameters["rows"], job_parameters["columns"], job_parameters["make_pdf"], job_parameters["find_snippets"])
     print(f"working on {job_parameters['file']}")
     peak_finder.process_file()
 
@@ -1401,6 +1366,8 @@ def main():
     argparser.add_argument('--columns', action='store', default=3, type=int, help='Number of columns for output')
     argparser.add_argument('--tolerance', action='store', default=5, type=float, help='Tolerance for identifying peaks in ppm')
     argparser.add_argument('--n_threads', action='store', type=int, help='Set the number of files to process in parallel (defaults to number of cores)')
+    argparser.add_argument('--make_pdf', action='store', default=False, type=bool, help='Determines if the pdf should be created. Auto assumes False')
+    argparser.add_argument('--find_snippets', action='store', default=False, type=bool, help='Determines if the program should search for IH snippets. Auto assumes False')
     argparser.add_argument('files', type=str, nargs='+', help='Filenames of one or more mzML files to read')
 
     params = argparser.parse_args()
@@ -1419,7 +1386,7 @@ def main():
         
     jobs = []
     for file in params.files:
-        jobs.append({"file": file, "tolerance": params.tolerance, "rows": params.rows, "columns": params.columns})
+        jobs.append({"file": file, "tolerance": params.tolerance, "rows": params.rows, "columns": params.columns, "make_pdf": params.make_pdf, "find_snippets": params.find_snippets})
 
     if len(jobs) == 1:
         process_job(jobs[0])

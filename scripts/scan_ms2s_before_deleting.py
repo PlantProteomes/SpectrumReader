@@ -491,11 +491,11 @@ class MSRunPeakFinder:
         return [peak_mz, round(popt[0], 1)]
 
     def identify_peaks(self):
+        print("starting to identify peaks")
         # This uses the observed peaks and sees how many of them can be identified. It accounts for any
         # corrections applicable
-        for index in range(len(self.known_ions)): # Resets identifications, in case it is the second run through
-            if self.known_ions[index][2]:
-                self.known_ions[index][2] = False
+        for key in self.known_ions: # Resets identifications, in case it is the second run through
+            self.known_ions[key][1] = False
 
         # Creates an array with a spline correction for each observed peak
         if self.has_correction_spline:
@@ -504,48 +504,41 @@ class MSRunPeakFinder:
                 mz_values.append(peak[0])
             x_values = np.array(mz_values)
             y_values = interpolate.BSpline(self.t, self.c, self.k)(x_values)
+            if self.has_second_spline:
+                y_values_2 = interpolate.BSpline(self.t2, self.c2, self.k2)(x_values)
+                for index in range(len(y_values)):
+                    y_values[index] += y_values_2[index]
         
         # Goes through and applies all corrections, then see if the peak can be identified
-        modify_refined = self.has_correction_spline
-        refined_index = 0
         for index in range(len(self.observed_peaks)):
             identifications = []
             peak = self.observed_peaks[index].copy()
             crude_correction_mz = self.crude_correction * peak[0] / 1e6
-            peak[0] -= crude_correction_mz
 
             if self.has_correction_spline:
                 spline_correction_mz = y_values[index] * peak[0] / 1e6
-                peak[0] -= spline_correction_mz
+            else:
+                spline_correction_mz = 0
 
+            peak[0] -= (crude_correction_mz + spline_correction_mz)
             self.observed_peaks[index] = self.observed_peaks[index][0:2]
-            for ion_index in range(len(self.known_ions)):
-                amino_acid = self.known_ions[ion_index]
+            for key in self.known_ions:
+                amino_acid_mz = self.known_ions[key][0]
                 # Checks the tolerance based on a constant ppm, so each peak has its own mz tolerance
                 if peak[0] <= 150:
                     peak_tolerance = self.tolerance_150 * peak[0] / 1e6
                 else:
                     peak_tolerance = self.tolerance * peak[0] / 1e6
-                if peak[0] > amino_acid[0] - peak_tolerance and peak[0] < amino_acid[0] + peak_tolerance and not amino_acid[2]:
-                    identified_peak = [amino_acid[0], int(100000*(peak[0] - amino_acid[0]) + 0.5) / 100000, amino_acid[1]]
+                if not self.known_ions[key][1] and peak[0] > amino_acid_mz - peak_tolerance and peak[0] < amino_acid_mz + peak_tolerance:
+                    identified_peak = [round(amino_acid_mz, 5), round(peak[0] - amino_acid_mz, 8), key]
                     identifications.append(identified_peak)
-                    self.known_ions[ion_index][2] = True
+                    self.known_ions[key][1] = True
             
             # Sorts the identifications for each peak so the closest identifications are at the front
             identifications.sort(key = lambda x: abs(x[1]))
             for identification in identifications:
                 self.observed_peaks[index].append(identification)
-
-            # Checks if this is the second round of identifications. If it is, it checks if the peak is in
-            # the refined peaks list. If it is, it changes the delta ppm for that peak to be the most
-            # updated identification and delta ppm
-            if modify_refined and self.observed_peaks[index][0] == self.refined_mz_values[refined_index] and len(identifications) > 0:
-                self.refined_delta_ppm_values[refined_index] = identifications[0][1]
-                refined_index += 1
-                if refined_index >= len(self.refined_mz_values):
-                    modify_refined = False
-
-        print("finished identifying peaks")
+  
 
     def keep_intense_remove_outliers(self, mz_values, delta_ppm_values):
         # Creates a new variable to store a set of refined peaks, only keeping the most intense peaks in
