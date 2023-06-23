@@ -210,8 +210,13 @@ class MSRunPeakFinder:
         amino_acids = ['A', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'K', 'L', 'M', 'N', 'P', 'Q', 'R', 'S', 'T', 'V', 'W', 'Y']
         amino_acid_modifications = {
             'C[Carbamidomethyl]': {'mz': 57.021464, 'amino acid': 'C'},
-            'M[Oxidation]': {'mz': 15.994915, 'amino acid': 'M'}
+            'M[Oxidation]': {'mz': 15.994915, 'amino acid': 'M'},
+            'M[Acetyl]': {'mz': 42.010565, 'amino acid': 'M'},
+            'L[Acetyl]': {'mz': 42.010565, 'amino acid': 'L'}
         }
+
+        # for amino_acid in amino_acids: # considers Acetylation
+            # amino_acid_modifications[f'{amino_acid}[Acetyl]'] = {'mz': 42.010565, 'amino acid': amino_acid}
 
         for key in amino_acid_modifications:
             amino_acids.append(key)
@@ -415,7 +420,6 @@ class MSRunPeakFinder:
             "C6H15N2O",
             "C5H13N3O2",
             "C10H8NO2",
-            "C7H14NO",
             "C6H13O3",
             "C4H8N3O",
             "C8H7O4",
