@@ -29,7 +29,7 @@ class UnidentifiedPeakFinder:
                 print(f"ERROR: File '{file}' not founds or not a file")
                 return
             if file[-3:] != "tsv":
-                print(f"ERROR: File '{file}' is not a tsv")
+                print(f"ERROR: File '{file}' is not a tsv file")
                 return
         
         self.file_names = params.tsv_files
@@ -89,9 +89,9 @@ class UnidentifiedPeakFinder:
             print(f"finished finding unidentified/formulaic peaks in {key}")
 
 def main():
-    combine_list = CombineList()
+    find_unidentified = UnidentifiedPeakFinder()
     # Populates the aggregated_observed_peaks dictionary
-    combine_list.read_files()
-    combine_list.rewrite_tsvs()
+    find_unidentified.read_files()
+    find_unidentified.rewrite_tsvs()
 
 if __name__ == "__main__": main()
