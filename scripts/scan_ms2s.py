@@ -70,7 +70,7 @@ class MSRunPeakFinder:
         self.initial_tolerance = 20
         self.proton_mass = 1.007276
         self.electron_mass = 0.000548
-        self.isotope_mass = 1.00334 # 1.00335
+        self.isotope_mass = 1.0034 # 1.00335
         self.crude_correction = 0
         self.after_400_calibration = 0
         self.has_correction_spline = False
