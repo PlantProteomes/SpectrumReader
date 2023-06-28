@@ -1264,7 +1264,7 @@ class MSRunPeakFinder:
                 plotted_identification = [0, 0, 0]
                 while count <= len(peak) - 1:
                     if peak[count][1] != plotted_identification[1]:
-                        line_x = (peak[count][1]) * 1e6 / peak[0]
+                        line_x = (peak[count][1]) # * 1e6 / peak[0]
                         plotted_identification = [peak[count][2], peak[count][1], plotted_identification[2] + 1]
                         ax[x,y].axvline(x=-line_x, color='black', lw=1, linestyle='--')
                         ax[x][y].text(-line_x, max(intensity_values), f'{plotted_identification[2]}', fontsize='xx-small', ha='left', va='top')
@@ -1322,6 +1322,9 @@ class MSRunPeakFinder:
             peak_mz = output_peaks[index][0]
             correction = (y_values[index] + self.crude_correction) * peak_mz / 1e6
             output_peaks[index].insert(1, round(peak_mz - correction, 5))
+            for identification_index in range(len(output_peaks[index]) - 4):
+                identification_index += 4
+                output_peaks[index][identification_index][1] = round(output_peaks[index][identification_index][1] * 1e6 / (peak_mz - correction), 2)
 
         output_peaks.insert(0, ['uncorrected m/z', 'corrected m/z', 'intensity', 'percentage', 'primary identification', 'other identifications'])
         with open(f'{self.peak_file}.tsv', 'w') as file:
