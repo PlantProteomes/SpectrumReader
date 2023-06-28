@@ -137,12 +137,12 @@ class MSRunPeakFinder:
             self.analyze_snippets() # skipping analyzing snippets for now, to add back, uncomment 158
             print(str(timeit.default_timer() - last_time) + " seconds to plot snippet plots")
             last_time = timeit.default_timer()
+        self.write_output() #
         if self.make_pdf:
             self.plot_peaks_strength()
             print(str(timeit.default_timer() - last_time) + " seconds to plot individual peaks")
             last_time = timeit.default_timer()
         self.write_json()
-        self.write_output() #
         # print out data, including run time, number of peaks found, etc
         self.show_stats()
 
@@ -446,12 +446,11 @@ class MSRunPeakFinder:
             "C6H14N",
             "C4H10NO2",
             "C12H6N2", # after this is Q2018 hardcoded
-            'C5H11',
+            'C5H11', # (cyclopentane)
             'CH5N4',
             'C4H9O',
             'C3H7O2',
             'C2H7N2O',
-            'C5H12N',
             'C4H7O2',
             'C4H9O2',
             'H6N6',
@@ -1203,12 +1202,13 @@ class MSRunPeakFinder:
 
         # Takes the most 300 most intense peaks to print out
         if len(self.observed_peaks) > 300:
-            self.observed_peaks.sort(key = lambda x: -1 * x[1])
+            self.observed_peaks.sort(key = lambda x: -1 * x[2])
             self.observed_peaks = self.observed_peaks[0:300]
             self.observed_peaks.sort(key = lambda x: x[0])
 
         for index in range(len(self.observed_peaks)):
             peak = self.observed_peaks[index]
+            peak.pop(1)
             fig.subplots_adjust(top=0.98, bottom=0.05, left=0.12, right=0.98, hspace=0.2, wspace=0.38)
             # mz_values = []
             intensity_values = []
@@ -1254,10 +1254,10 @@ class MSRunPeakFinder:
                 continue
             
             if len(peak) >= 4:
-                if self.has_correction_spline:
-                    spline_correction_mz = y_values[index] * peak[0] / 1e6
-                else:
-                    spline_correction_mz = 0
+                # if self.has_correction_spline:
+                    # spline_correction_mz = y_values[index] * peak[0] / 1e6
+                # else:
+                spline_correction_mz = 0
                 identified_ion_name = ''
                 ion_mz = peak[3][0]
                 count = 3
