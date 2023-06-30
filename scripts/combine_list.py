@@ -204,7 +204,7 @@ class CombineList:
     def remove_single_peaks(self):
         removed = 0
         for index in range(len(self.all_peaks)):
-            if self.all_peaks[index - removed][2][0] == '1' and not self.all_peaks[index - removed][2].endswith('1'):
+            if self.all_peaks[index - removed][2][0] == '1' and (not self.all_peaks[index - removed][2].endswith('1') and len(self.all_peaks[index - removed][2]) == 3):
                 self.all_peaks.pop(index - removed)
                 removed += 1
 
