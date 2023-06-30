@@ -18,34 +18,47 @@ class HeatMapCreator:
         
         params = argparser.parse_args()
         self.tsv_file = params.tsv_file
-        self.heat_map_matrix = numpy.zeros((20,25))
-        self.residues = ['+CO', '+H2O', '+H2ON2', '+NH3', '-CHN', '-CH2', '-CH2N', '-CH2N2', '-CH3N', '-C2H2', '-C2H3N3', '-C2H4', '-C2H4N2', '-C3H6', '-C3H6N2', '-C4H6N2', '-C4H7N', '-CH5N3', '-CH6N2', '-CO', '-H2O', '-NH', '-NH2', '-NH3', '-N3H7']
-        self.amino_acids = ['A', 'C', 'D' , 'E', 'F', 'G', 'H', 'I', 'K', 'L', 'M', 'N', 'P', 'Q', 'R', 'S', 'T', 'V', 'W', 'Y']
+        # self.heat_map_matrix = numpy.zeros((20,25))
+        self.residues = {} # make a nested dictionary
+        # 
+        self.scanned_residues = []
+        self.amino_acids = ['A', 'C', 'C[Carbamidomethyl]', 'D' , 'E', 'F', 'G', 'H', 'I', 'K', 'L', 'M', 'M[Oxidation]', 'N', 'P', 'Q', 'R', 'S', 'T', 'V', 'W', 'Y']
 
     def read_file(self):
         with open(self.tsv_file) as file:
             lines = [line.rstrip() for line in file]
-            lines = lines[1:]
+            lines = lines[1:] # removes the header line
             for peak in lines:
                 line_split = [i for i in peak.split("\t")]
                 if line_split[6] != '?':
                     identification = line_split[6]
-                    if identification[0] == 'I':
-                        amino_acid_index = self.amino_acids.index(identification[1])
-                        for residue_index in range(len(self.residues)):
-                            if self.residues[residue_index] in identification:
-                                self.heat_map_matrix[amino_acid_index][residue_index] = 1
+                    if identification[0] == 'I' and "+i" not in identification:
+                        residue = identification[2:]
+                        if not residue in self.scanned_residues:
+                            self.residues[residue] = {}
+                            self.scanned_residues.append(residue)
+                        self.residues[residue][identification[1]] = float(line_split[1]) # adds the intensity
                 if line_split[7] != '?':
                     identifications = line_split[7]
                     identifications = literal_eval(identifications)
                     for identification in identifications:
-                        if identification[0] == 'I':
-                            amino_acid_index = self.amino_acids.index(identification[1])
-                            for residue_index in range(len(self.residues)):
-                                if self.residues[residue_index] in identification:
-                                    self.heat_map_matrix[amino_acid_index][residue_index] = 1
+                        if identification[0] == 'I' and "+i" not in identification:
+                            residue = identification[2:]
+                            if not residue in self.scanned_residues:
+                                self.residues[residue] = {}
+                                self.scanned_residues.append(residue)
+                            self.residues[residue][identification[1]] = float(line_split[1]) # adds the intensity
 
     def generate_heatmap(self):
+        self.heat_map_matrix = numpy.zeros((20,len(self.residues)))
+
+        residue_index = 0
+        for residue in self.residues:
+            for amino_acid in self.residues[residue]:
+                amino_acid_index = self.amino_acids.index(amino_acid)
+                self.heat_map_matrix[amino_acid_index][residue_index] = self.residues[residue][amino_acid]
+            residue_index += 1
+
         # plot heatmap
         plt.imshow(self.heat_map_matrix, cmap = 'autumn')
         plt.colorbar()

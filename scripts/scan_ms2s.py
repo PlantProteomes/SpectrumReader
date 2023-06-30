@@ -211,8 +211,8 @@ class MSRunPeakFinder:
         amino_acid_modifications = {
             'C[Carbamidomethyl]': {'mz': 57.021464, 'amino acid': 'C'},
             'M[Oxidation]': {'mz': 15.994915, 'amino acid': 'M'},
-            'M[Acetyl]': {'mz': 42.010565, 'amino acid': 'M'},
-            'L[Acetyl]': {'mz': 42.010565, 'amino acid': 'L'}
+            '[Acetyl]-M': {'mz': 42.010565, 'amino acid': 'M'},
+            '[Acetyl]-L': {'mz': 42.010565, 'amino acid': 'L'}
         }
 
         # for amino_acid in amino_acids: # considers Acetylation

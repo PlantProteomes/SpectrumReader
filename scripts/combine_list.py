@@ -42,7 +42,7 @@ class CombineList:
             file_name = self.file_names[index - removed]
             # Creates a list to store all the observed peaks
             observed_peaks = []
-            has_histidine = False
+            has_normalized_ion = False
             # Splits the file into separate lines. In this case, each line is a new observed peak
             with open(file_name) as file:
                 lines = [line.rstrip() for line in file]
@@ -66,9 +66,11 @@ class CombineList:
 
                         # If there is no histidine, I end this process early and don't consider it
                         # TODO: Remove it in the future
-                        if not has_histidine and primary_identification[0] == "IH":
-                            has_histidine = True
-                        elif not has_histidine and mz > 110.1:
+                        # if not has_normalized_ion and primary_identification[0] == "IH":
+                        if not has_normalized_ion and primary_identification[0] == "a(II)":
+                            has_normalized_ion = True
+                        # elif not has_normalized_ion and mz > 110.1:
+                        elif not has_normalized_ion and mz > 199.2:
                             break
 
                         other_identification = []
@@ -77,13 +79,14 @@ class CombineList:
                         observed_peaks.append([mz, intensity, percent, primary_identification, other_identification])
                     else:
                         mz = float(line_split[0])
-                        if not has_histidine and mz > 110.1:
+                        # if not has_normalized_ion and mz > 110.1:
+                        if not has_normalized_ion and mz > 199.2:
                             break
                         intensity = float(line_split[1])
                         percent = float(line_split[2][0:-1])
                         observed_peaks.append([mz, intensity, percent, "?", "?"])
 
-                if has_histidine:
+                if has_normalized_ion:
                     self.aggregated_observed_peaks[file_name] = observed_peaks
                     lines = lines[0].split("\t")
                     self.smallest_mz.append(float(lines[1]) - 0.01) # if there are multiple peaks that are
@@ -94,23 +97,24 @@ class CombineList:
                     # will not affect the accuracy of how many ms runs the peak may exist in, but is small enough
                     # that it will not affect any other calculations
                 else:
-                    print(f"removed {file_name} since it did not find a histidine")
+                    print(f"removed {file_name} since it did not find the normalized ion")
                     removed += 1
                     self.file_names.remove(file_name)
                     # TODO: change track the largest intensity/other peak, can use that as the normalized intensity
 
         print("finished reading files")
-
-    def find_histidines(self): # can eventually rename to find_relative_intensity or something
+    
+    def find_relative_intensity(self): # can eventually rename to find_relative_intensity or something
         # Goes through the aggregated_observed_peaks to find the histidine and stores the intensity to be
         # used as the normalized intensity
-        self.histidine_intensity = []
+        self.normalized_intensity = []
         for file_name in self.file_names:
             for peak in self.aggregated_observed_peaks[file_name]:
-                if len(peak) > 3 and peak[3][0] == "IH":
-                    self.histidine_intensity.append(peak[1])
+                # if len(peak) > 3 and peak[3][0] == "IH":
+                if len(peak) > 3 and peak[3][0] == "a(II)":
+                    self.normalized_intensity.append(peak[1])
 
-        print("finished finding histidines")
+        print("finished finding normalized ion")
 
     def merge_lists(self):
         # accesses the first peak in all files
@@ -118,7 +122,7 @@ class CombineList:
 
         # round the intensity to 1 decimal point after normalizing it to the histidine intensity
         for index in range(len(peaks)):
-            peaks[index][1] = round(peaks[index][1] * 10000 / self.histidine_intensity[index], 1)
+            peaks[index][1] = round(peaks[index][1] * 10000 / self.normalized_intensity[index], 1)
 
         # take the m/z and find those with the same m/z
         peak_mzs = [item[0] for item in peaks]
@@ -141,7 +145,7 @@ class CombineList:
                         del self.aggregated_observed_peaks[file_name]
                     else:
                         peaks[index] = self.aggregated_observed_peaks[file_name][0]
-                        peaks[index][1] = round(peaks[index][1] * 10000 / self.histidine_intensity[index], 1)
+                        peaks[index][1] = round(peaks[index][1] * 10000 / self.normalized_intensity[index], 1)
                         peak_mzs[index] = peaks[index][0]
 
             peak = []
@@ -197,6 +201,13 @@ class CombineList:
                 possible_ms_runs += 1
         return possible_ms_runs
 
+    def remove_single_peaks(self):
+        removed = 0
+        for index in range(len(self.all_peaks)):
+            if self.all_peaks[index - removed][2][0] == '1' and not self.all_peaks[index - removed][2].endswith('1'):
+                self.all_peaks.pop(index - removed)
+                removed += 1
+
     def write_combined_list(self):
         with open('combined_list.tsv', 'w') as file:
             writer = csv.writer(file, delimiter='\t', lineterminator='\n')
@@ -208,8 +219,9 @@ def main():
     combine_list = CombineList()
     # Populates the aggregated_observed_peaks dictionary
     combine_list.read_files()
-    combine_list.find_histidines()
+    combine_list.find_relative_intensity()
     combine_list.merge_lists()
+    combine_list.remove_single_peaks()
     combine_list.write_combined_list()
 
 if __name__ == "__main__": main()
