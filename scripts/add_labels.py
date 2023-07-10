@@ -46,7 +46,7 @@ class LabelAdder:
                     is_common = False
                     is_immonium = False
                     fraction = row[2].split("/")
-                    if float(fraction[0])/float(fraction[1]) == 1.0 or float(row[1]) >= 5000.0:
+                    if float(fraction[0])/float(fraction[1]) == 1.0 and float(row[1]) >= 5000.0:
                         is_common = True
                     if row[6][0] == "I":
                         is_immonium = True

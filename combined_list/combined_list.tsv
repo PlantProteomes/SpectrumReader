@@ -1,16 +1,16 @@
 mz	intensity	ms runs	percentage	theoretical m/z	delta PPM	primary identification	other identifications	labels
-55.05419	1094.9	14/14	0.7%	55.05423	0.73	IV-NH3	['II-CH2-NH3', 'IL-CH2-NH3']	COM, IMM
-56.04946	3598.8	19/19	1.2%	56.04948	0.36	IK-C2H4-NH3	['IQ-CO-NH3', 'IR-C2H4N2-NH3', 'IT-H2O']	COM, IMM
+55.05419	1094.9	14/14	0.7%	55.05423	0.73	IV-NH3	['II-CH2-NH3', 'IL-CH2-NH3']	IMM
+56.04946	3598.8	19/19	1.2%	56.04948	0.36	IK-C2H4-NH3	['IQ-CO-NH3', 'IR-C2H4N2-NH3', 'IT-H2O']	IMM
 57.03344	293.3	5/19	0.3%	57.03349	0.88	IT-NH3	[]	IMM
 57.06984	445.4	11/19	0.2%	?	?	?	?	
 58.04128	162.4	2/19	0.1%	?	?	?	?	
 58.06508	213.8	4/19	0.2%	?	?	?	?	
 59.04911	280.5	3/19	0.1%	?	?	?	?	
-60.04436	3774.6	20/20	1.8%	60.04439	0.5	IS	[]	COM, IMM
+60.04436	3774.6	20/20	1.8%	60.04439	0.5	IS	[]	IMM
 60.05558	2143.4	12/20	1.9%	60.05562	0.67	IR-C4H7N	[]	IMM
 61.01062	2254.8	13/20	1.4%	61.01065	0.49	IM-C2H2-NH3	[]	IMM
 68.04946	167.6	2/20	0.2%	68.04948	0.29	IL[Acetyl]-C3H6-H2O	[]	IMM
-69.03347	1142.6	20/20	0.7%	69.03349	0.29	IV+CO-NH3-CH2	['IL[Acetyl]-C3H6-NH3']	COM, IMM
+69.03347	1142.6	20/20	0.7%	69.03349	0.29	IV+CO-NH3-CH2	['IL[Acetyl]-C3H6-NH3']	IMM
 69.04471	340.0	11/20	0.4%	69.04472	0.14	IN-H2O	['a(GG)-H2O']	IMM
 69.06986	5324.8	20/20	3.0%	69.06988	0.29	II-NH3	['IL-NH3']	COM, IMM
 70.02873	3156.5	14/20	3.2%	70.02874	0.14	ID-H2O	['IN-NH3', 'IS+CO-H2O', 'b(S)-H2O', 'a(GG)-NH3']	IMM
@@ -18,12 +18,12 @@ mz	intensity	ms runs	percentage	theoretical m/z	delta PPM	primary identification
 70.06511	50219.5	20/20	8.7%	70.06513	0.29	IP	['IR-CH5N3', 'IR-CH2N2-NH3']	COM, IMM
 71.04911	314.4	11/20	0.4%	?	?	?	?	
 71.06846	2749.9	13/20	3.1%	71.06848	0.28	IP+i	['IR-CH5N3+i', 'IR-CH2N2-NH3+i']	IMM
-71.08552	1072.3	20/20	0.4%	71.08553	0.14	C5H11	[]	COM
+71.08552	1072.3	20/20	0.4%	71.08553	0.14	C5H11	[]	
 72.04436	675.2	11/20	0.8%	72.04439	0.42	b(A)	['y(A)-H2O']	
 72.08076	55922.7	20/20	9.8%	72.08078	0.28	II-CH2	['IL-CH2', 'IV']	COM, IMM
 72.08293	207.2	3/20	0.2%	?	?	?	?	
 73.02838	1623.9	18/20	0.8%	73.02841	0.41	y(A)-NH3	[]	
-73.04678	1217.5	20/20	0.7%	?	?	?	?	COM
+73.04678	1217.5	20/20	0.7%	?	?	?	?	
 73.06476	612.9	19/20	0.4%	73.06479	0.41	C4H9O	[]	
 73.0841	4448.9	14/20	4.1%	73.08413	0.41	II-CH2+i	['IL-CH2+i', 'IV+i']	IMM
 74.06003	22535.4	20/20	8.1%	74.06004	0.14	IT	[]	COM, IMM
@@ -34,7 +34,7 @@ mz	intensity	ms runs	percentage	theoretical m/z	delta PPM	primary identification
 79.61911	364.2	2/20	2.0%	?	?	?	?	
 80.04948	187.6	9/20	0.3%	80.04948	0.0	b(P)-H2O	['a(AA)-H2O-NH3']	
 80.05442	943.1	12/20	0.6%	?	?	?	?	
-81.03349	7414.6	17/20	4.9%	81.03349	0.0	b(P)-NH3	['y(P)-H2O-NH3', 'IR+H2O-N3H7-NH3']	COM
+81.03349	7414.6	17/20	4.9%	81.03349	0.0	b(P)-NH3	['y(P)-H2O-NH3', 'IR+H2O-N3H7-NH3']	
 81.06988	445.5	11/20	0.5%	?	?	?	?	
 82.03686	297.1	11/20	0.5%	82.03684	-0.24	b(P)-NH3+i	['y(P)-H2O-NH3+i', 'IR+H2O-N3H7-NH3+i']	
 82.06514	876.4	11/20	1.4%	82.06513	-0.12	b(V)-H2O	[]	
@@ -48,7 +48,7 @@ mz	intensity	ms runs	percentage	theoretical m/z	delta PPM	primary identification
 84.07806	536.3	11/20	1.0%	?	?	?	?	
 84.08078	80825.4	20/20	18.1%	84.08078	0.0	IK-NH3	[]	COM, IMM
 84.08344	404.6	11/20	0.4%	?	?	?	?	
-85.01065	11309.6	9/20	2.0%	85.01065	0.0	IM[Acetyl]-C2H2-NH3-H2O	['IM[Oxidation]-H2O-NH3']	COM, IMM
+85.01065	11309.6	9/20	2.0%	85.01065	0.0	IM[Acetyl]-C2H2-NH3-H2O	['IM[Oxidation]-H2O-NH3']	IMM
 85.02839	370.2	11/20	0.8%	85.02841	0.24	IT+CO-NH3	['IE-NH3', 'b(T)-NH3', 'y(T)-H2O-NH3']	IMM
 85.03962	702.9	11/20	0.7%	?	?	?	?	
 85.04774	483.6	11/20	1.0%	85.04774	0.0	IQ-NH3+i	['IE-H2O+i', 'IT+CO-H2O+i', 'b(T)-H2O+i', 'a(AG)-NH3+i']	IMM
@@ -74,8 +74,8 @@ mz	intensity	ms runs	percentage	theoretical m/z	delta PPM	primary identification
 90.00085	186.5	7/20	0.3%	?	?	?	?	
 90.06308	709.3	15/20	0.7%	?	?	?	?	
 91.05428	1617.2	17/20	2.0%	91.05423	-0.55	IF-CH3N	['IY-CO-NH3']	IMM
-91.05739	1603.0	20/20	1.0%	?	?	?	?	COM
-92.01647	17903.9	9/20	3.3%	?	?	?	?	COM
+91.05739	1603.0	20/20	1.0%	?	?	?	?	
+92.01647	17903.9	9/20	3.3%	?	?	?	?	
 93.01022	231.9	4/20	0.3%	?	?	?	?	
 93.04479	2156.8	11/20	4.5%	93.04472	-0.75	IH-NH3	[]	IMM
 93.05735	191.7	10/20	0.2%	?	?	?	?	
@@ -87,17 +87,17 @@ mz	intensity	ms runs	percentage	theoretical m/z	delta PPM	primary identification
 95.06044	382.4	11/20	1.1%	95.06037	-0.74	IR-NH3-NH3	[]	IMM
 95.08558	235.2	2/20	0.4%	?	?	?	?	
 96.04442	1884.9	11/20	3.1%	96.04439	-0.31	a(AS)-H2O-NH3	['a(GT)-H2O-NH3']	
-96.05565	5025.3	11/20	4.9%	?	?	?	?	COM
-97.0284	29475.9	9/20	22.8%	?	?	?	?	COM
+96.05565	5025.3	11/20	4.9%	?	?	?	?	
+97.0284	29475.9	9/20	22.8%	?	?	?	?	
 97.03961	208.3	7/20	0.3%	97.03964	0.31	b(N)-H2O	['b(GG)-H2O']	
 97.05895	232.1	6/20	0.4%	?	?	?	?	
 97.06479	185.8	4/20	0.4%	97.06479	0.0	b(I)-NH3	['y(I)-H2O-NH3', 'b(L)-NH3', 'y(L)-H2O-NH3', 'IL[Acetyl]-CH2-NH3']	
 98.02364	1120.8	11/20	1.8%	98.02365	0.1	b(D)-H2O	['b(N)-NH3', 'y(N)-H2O-NH3', 'b(GG)-NH3', 'y(GG)-H2O-NH3']	
 98.03173	788.3	11/20	1.6%	?	?	?	?	
-98.06002	2687.2	20/20	3.2%	98.06004	0.2	b(P)	['y(P)-H2O', 'IR+H2O-N3H7', 'a(AA)-NH3']	COM
+98.06002	2687.2	20/20	3.2%	98.06004	0.2	b(P)	['y(P)-H2O', 'IR+H2O-N3H7', 'a(AA)-NH3']	
 98.09642	147.6	2/20	0.5%	?	?	?	?	
 98.98416	6348.9	20/20	4.6%	?	?	?	?	COM
-99.04403	2920.2	20/20	2.2%	99.04406	0.3	y(P)-NH3	['IR+H2O+H2O-N3H7-NH3']	COM
+99.04403	2920.2	20/20	2.2%	99.04406	0.3	y(P)-NH3	['IR+H2O+H2O-N3H7-NH3']	
 99.05527	1687.7	14/20	2.2%	99.05529	0.2	a(GS)-H2O	[]	
 99.08041	368.1	11/20	0.5%	?	?	?	?	
 99.09165	175.4	7/20	0.4%	?	?	?	?	
@@ -185,7 +185,7 @@ mz	intensity	ms runs	percentage	theoretical m/z	delta PPM	primary identification
 112.02807	158.2	2/85	0.3%	?	?	?	?	
 112.03932	177.1	19/85	0.4%	112.0393	-0.18	b(E)-H2O	['IQ+CO-NH3', 'b(Q)-NH3', 'y(Q)-H2O-NH3', 'b(AG)-NH3', 'y(AG)-H2O-NH3', 'a(SS)-H2O-NH3']	
 112.04732	112.8	6/85	0.6%	?	?	?	?	
-112.05055	19808.7	18/85	13.4%	?	?	?	?	COM
+112.05055	19808.7	18/85	13.4%	?	?	?	?	
 112.0757	988.2	72/85	2.0%	112.07569	-0.09	IK+CO-NH3	['b(K)-NH3', 'y(K)-H2O-NH3', 'a(GV)-NH3']	IMM
 112.08346	74.6	4/85	1.4%	112.08379	2.94	IL[Acetyl]-NH3+i	[]	IMM
 112.08691	9600.4	85/85	20.1%	112.08692	0.09	IR-NH3	[]	COM, IMM
@@ -199,7 +199,7 @@ mz	intensity	ms runs	percentage	theoretical m/z	delta PPM	primary identification
 113.04757	548.9	11/85	1.2%	?	?	?	?	
 113.05386	2595.0	11/85	2.7%	?	?	?	?	
 113.05968	1050.0	72/85	2.4%	113.05971	0.27	IK+CO+H2O-NH3-NH3	[]	IMM
-113.07094	3325.2	85/85	7.8%	113.07094	0.0	a(AS)-H2O	['a(GT)-H2O']	COM
+113.07094	3325.2	85/85	7.8%	113.07094	0.0	a(AS)-H2O	['a(GT)-H2O']	
 113.09034	109.8	4/85	1.1%	113.09027	-0.62	IR-NH3+i	[]	IMM
 113.09607	122.1	5/85	1.0%	?	?	?	?	
 113.10731	217.3	45/85	0.8%	113.10733	0.18	C6H13N2	[]	
@@ -233,7 +233,7 @@ mz	intensity	ms runs	percentage	theoretical m/z	delta PPM	primary identification
 115.96404	63.3	2/85	0.5%	?	?	?	?	
 116.01645	2973.7	74/85	4.6%	116.01646	0.09	IC[Carbamidomethyl]-NH3	['a(CG)-NH3']	IMM
 116.0665	201.6	2/85	0.7%	?	?	?	?	
-116.07059	4907.9	85/85	13.0%	116.0706	0.09	y(P)	['IR+H2O+H2O-N3H7']	COM
+116.07059	4907.9	85/85	13.0%	116.0706	0.09	y(P)	['IR+H2O+H2O-N3H7']	
 116.08186	219.3	2/85	0.2%	?	?	?	?	
 116.08995	134.9	15/85	0.7%	116.08994	-0.09	a(AA)+i	[]	
 116.13962	483.6	5/85	3.8%	?	?	?	?	
@@ -274,7 +274,7 @@ mz	intensity	ms runs	percentage	theoretical m/z	delta PPM	primary identification
 118.58606	263.2	6/85	2.7%	?	?	?	?	
 118.97143	140.0	4/85	0.7%	?	?	?	?	
 119.03522	319.0	11/85	0.6%	?	?	?	?	
-119.04914	2521.5	85/85	5.5%	119.04914	0.0	IY-NH3	[]	COM, IMM
+119.04914	2521.5	85/85	5.5%	119.04914	0.0	IY-NH3	[]	IMM
 119.05229	113.6	4/85	0.5%	?	?	?	?	
 119.0815	2013.2	83/85	2.3%	119.0815	0.0	IT+CO+NH3	['C4H11N2O2']	IMM
 119.0855	215.4	21/85	1.4%	?	?	?	?	
@@ -358,7 +358,7 @@ mz	intensity	ms runs	percentage	theoretical m/z	delta PPM	primary identification
 125.24534	103.8	3/85	1.1%	?	?	?	?	
 125.63019	225.2	5/85	1.9%	?	?	?	?	
 126.01784	488.4	5/85	4.2%	?	?	?	?	
-126.05494	4003.2	85/85	5.5%	126.05495	0.08	b(AA)-NH3	['y(AA)-H2O-NH3', 'a(ST)-H2O-NH3']	COM
+126.05494	4003.2	85/85	5.5%	126.05495	0.08	b(AA)-NH3	['y(AA)-H2O-NH3', 'a(ST)-H2O-NH3']	
 126.0662	1285.5	11/85	1.3%	126.06619	-0.08	a(GN)-H2O	['a(GGG)-H2O']	
 126.07876	520.4	6/85	3.2%	?	?	?	?	
 126.09134	596.2	53/85	1.1%	126.09134	0.0	a(AV)-NH3	['a(GI)-NH3', 'a(GL)-NH3']	
@@ -367,7 +367,7 @@ mz	intensity	ms runs	percentage	theoretical m/z	delta PPM	primary identification
 126.40988	107.7	5/85	1.1%	?	?	?	?	
 126.80167	184.1	5/85	1.6%	?	?	?	?	
 127.03896	562.1	59/85	0.9%	127.03897	0.08	C6H7O3	[]	
-127.0502	1611.4	85/85	3.1%	127.0502	0.0	a(DG)-H2O	['a(GN)-NH3', 'b(GS)-H2O', 'a(GGG)-NH3']	COM
+127.0502	1611.4	85/85	3.1%	127.0502	0.0	a(DG)-H2O	['a(GN)-NH3', 'b(GS)-H2O', 'a(GGG)-NH3']	
 127.05842	557.9	3/85	1.1%	127.0583	-0.94	b(AA)-NH3+i	['y(AA)-H2O-NH3+i', 'a(ST)-H2O-NH3+i']	
 127.07537	341.7	17/85	1.2%	?	?	?	?	
 127.08186	117.5	4/85	0.5%	?	?	?	?	
@@ -427,10 +427,10 @@ mz	intensity	ms runs	percentage	theoretical m/z	delta PPM	primary identification
 131.04917	338.5	11/85	1.4%	131.04914	-0.23	b(F)-NH3	['y(F)-H2O-NH3']	
 131.06858	276.7	38/85	1.2%	131.06848	-0.76	IW-CH3N+i	['b(F)-H2O+i']	IMM
 131.07027	2137.6	26/85	5.0%	131.07027	0.0	C6H11O3	[]	
-131.08144	3897.7	85/85	5.6%	131.0815	0.46	a(AS)	['a(GT)']	COM
+131.08144	3897.7	85/85	5.6%	131.0815	0.46	a(AS)	['a(GT)']	
 131.08546	211.9	6/85	2.1%	?	?	?	?	
 131.08975	972.6	63/85	3.5%	131.08961	-1.07	IK+CO+H2O-NH3+i	['y(K)-NH3+i']	IMM
-131.11788	3041.5	85/85	4.5%	131.11789	0.08	C6H15N2O	[]	COM
+131.11788	3041.5	85/85	4.5%	131.11789	0.08	C6H15N2O	[]	
 131.23179	362.0	5/85	3.3%	?	?	?	?	
 131.52853	65.3	5/85	0.3%	?	?	?	?	
 131.64588	592.3	5/85	5.4%	?	?	?	?	
@@ -438,7 +438,7 @@ mz	intensity	ms runs	percentage	theoretical m/z	delta PPM	primary identification
 132.06551	353.1	10/85	1.1%	?	?	?	?	
 132.0736	73.0	4/85	0.5%	?	?	?	?	
 132.07673	807.7	78/85	1.6%	132.07675	0.15	C4H10N3O2	[]	
-132.08075	3526.6	85/85	5.3%	132.08078	0.23	IW-CHN	['a(PP)-H2O-NH3']	COM, IMM
+132.08075	3526.6	85/85	5.3%	132.08078	0.23	IW-CHN	['a(PP)-H2O-NH3']	IMM
 132.09674	1658.3	6/85	6.3%	?	?	?	?	
 132.10189	778.4	70/85	7.4%	132.10191	0.15	y(I)	['y(L)']	
 132.10763	238.7	5/85	2.6%	?	?	?	?	
@@ -447,8 +447,8 @@ mz	intensity	ms runs	percentage	theoretical m/z	delta PPM	primary identification
 132.89982	451.3	5/85	4.1%	?	?	?	?	
 132.95862	167.6	2/85	1.4%	?	?	?	?	
 133.03184	71.8	18/85	1.2%	133.03178	-0.45	y(M)-NH3	[]	
-133.04299	22281.2	79/85	20.6%	133.04301	0.15	IC[Carbamidomethyl]	['a(CG)']	COM, IMM
-133.06073	2202.9	85/85	3.2%	133.06077	0.3	y(N)	['y(GG)']	COM
+133.04299	22281.2	79/85	20.6%	133.04301	0.15	IC[Carbamidomethyl]	['a(CG)']	IMM
+133.06073	2202.9	85/85	3.2%	133.06077	0.3	y(N)	['y(GG)']	
 133.06475	56.9	7/85	0.9%	?	?	?	?	
 133.08079	77.6	5/85	2.1%	?	?	?	?	
 133.08589	1212.6	80/85	6.3%	133.08592	0.23	C6H13O3	[]	
@@ -507,7 +507,7 @@ mz	intensity	ms runs	percentage	theoretical m/z	delta PPM	primary identification
 137.06503	2877.6	17/85	4.1%	?	?	?	?	
 137.07085	808.2	15/85	1.5%	137.07094	0.66	a(AQ)-H2O-NH3	['b(GP)-H2O', 'a(AAG)-H2O-NH3']	
 137.07339	61.6	5/85	0.6%	?	?	?	?	
-137.07912	4769.8	85/85	12.1%	137.07904	-0.58	IY+i	['b(AV)-H2O-NH3+i', 'b(GI)-H2O-NH3+i', 'b(GL)-H2O-NH3+i', 'a(PT)-H2O-NH3+i']	COM, IMM
+137.07912	4769.8	85/85	12.1%	137.07904	-0.58	IY+i	['b(AV)-H2O-NH3+i', 'b(GI)-H2O-NH3+i', 'b(GL)-H2O-NH3+i', 'a(PT)-H2O-NH3+i']	IMM
 137.09605	415.3	7/85	4.3%	?	?	?	?	
 137.10722	177.2	3/85	0.5%	137.10732	0.73	a(AK)-H2O-NH3	[]	
 137.1324	490.2	9/85	2.8%	?	?	?	?	
@@ -543,7 +543,7 @@ mz	intensity	ms runs	percentage	theoretical m/z	delta PPM	primary identification
 140.1433	815.6	6/85	5.3%	?	?	?	?	
 140.95923	2036.2	48/85	4.6%	?	?	?	?	
 141.05454	85.9	5/85	0.8%	?	?	?	?	
-141.06579	3463.0	85/85	9.7%	141.06585	0.43	a(AD)-H2O	['a(AN)-NH3', 'b(AS)-H2O', 'a(EG)-H2O', 'a(GQ)-NH3', 'b(GT)-H2O', 'a(AGG)-NH3']	COM
+141.06579	3463.0	85/85	9.7%	141.06585	0.43	a(AD)-H2O	['a(AN)-NH3', 'b(AS)-H2O', 'a(EG)-H2O', 'a(GQ)-NH3', 'b(GT)-H2O', 'a(AGG)-NH3']	
 141.09096	203.1	6/85	1.9%	?	?	?	?	
 141.09657	192.6	5/85	1.2%	?	?	?	?	
 141.10218	6387.5	85/85	16.2%	141.10224	0.43	a(AP)	['a(GK)-NH3', 'a(SV)-H2O']	COM
@@ -567,7 +567,7 @@ mz	intensity	ms runs	percentage	theoretical m/z	delta PPM	primary identification
 142.67708	266.1	5/85	2.7%	?	?	?	?	
 143.04511	274.2	23/85	0.8%	?	?	?	?	
 143.07022	204.2	14/85	0.8%	?	?	?	?	
-143.0815	4522.8	85/85	8.1%	143.0815	0.0	b(AA)	['y(AA)-H2O', 'a(ST)-H2O']	COM
+143.0815	4522.8	85/85	8.1%	143.0815	0.0	b(AA)	['y(AA)-H2O', 'a(ST)-H2O']	
 143.08553	58.9	3/85	0.7%	?	?	?	?	
 143.09404	853.3	6/85	1.9%	?	?	?	?	
 143.10563	97.4	11/85	0.3%	?	?	?	?	
@@ -591,7 +591,7 @@ mz	intensity	ms runs	percentage	theoretical m/z	delta PPM	primary identification
 145.0679	90.1	5/85	0.5%	145.06887	6.69	y(AA)-NH3+i	['a(ST)-NH3+i']	
 145.08433	37.2	3/85	0.3%	?	?	?	?	
 145.08585	1401.0	17/85	1.4%	?	?	?	?	
-145.09714	2463.0	85/85	4.1%	145.09715	0.07	a(AT)	[]	COM
+145.09714	2463.0	85/85	4.1%	145.09715	0.07	a(AT)	[]	
 145.10113	247.6	6/85	2.1%	?	?	?	?	
 145.12226	436.9	2/85	1.4%	?	?	?	?	
 145.13352	99.2	6/85	0.7%	?	?	?	?	
@@ -673,7 +673,7 @@ mz	intensity	ms runs	percentage	theoretical m/z	delta PPM	primary identification
 151.14801	248.2	8/85	2.1%	?	?	?	?	
 152.0342	245.1	22/85	0.6%	152.03422	0.13	b(AD)-H2O-NH3	['b(EG)-H2O-NH3']	
 152.0541	99.0	2/85	0.6%	152.05355	-3.62	b(AN)-H2O-NH3+i	['b(GQ)-H2O-NH3+i', 'b(AGG)-H2O-NH3+i']	
-152.05669	6286.4	22/85	15.4%	?	?	?	?	COM
+152.05669	6286.4	22/85	15.4%	?	?	?	?	
 152.07061	495.5	35/85	1.3%	152.0706	-0.07	b(AP)-NH3	['y(AP)-H2O-NH3', 'a(DV)-H2O-NH3', 'b(SV)-H2O-NH3']	
 152.08185	217.2	15/85	1.1%	?	?	?	?	
 152.10699	481.8	40/85	1.7%	152.10699	0.0	a(IT)-H2O-NH3	['a(LT)-H2O-NH3', 'a(PV)-NH3']	
@@ -706,7 +706,7 @@ mz	intensity	ms runs	percentage	theoretical m/z	delta PPM	primary identification
 155.09276	679.0	61/85	1.9%	155.09274	-0.13	C6H11N4O	[]	
 155.09904	587.1	17/85	1.7%	?	?	?	?	
 155.10655	200.8	6/85	2.1%	?	?	?	?	
-155.11785	3473.3	85/85	10.4%	155.11789	0.26	a(AK)-NH3	['a(IS)-H2O', 'a(LS)-H2O', 'a(TV)-H2O']	COM
+155.11785	3473.3	85/85	10.4%	155.11789	0.26	a(AK)-NH3	['a(IS)-H2O', 'a(LS)-H2O', 'a(TV)-H2O']	
 155.14301	178.6	2/85	1.1%	?	?	?	?	
 155.15351	131.1	5/85	1.3%	?	?	?	?	
 155.1543	83.7	3/85	0.6%	?	?	?	?	
@@ -714,7 +714,7 @@ mz	intensity	ms runs	percentage	theoretical m/z	delta PPM	primary identification
 155.97463	227.7	4/85	3.8%	?	?	?	?	
 155.98682	180.7	6/85	1.8%	?	?	?	?	
 156.06551	267.8	12/85	0.7%	156.06552	0.06	a(AE)-NH3	['b(AT)-NH3', 'y(AT)-H2O-NH3', 'y(GP)-NH3']	
-156.07678	2743.9	85/85	5.9%	156.07675	-0.19	IH+CO+H2O	['y(H)', 'a(NS)-H2O', 'a(GGS)-H2O']	COM, IMM
+156.07678	2743.9	85/85	5.9%	156.07675	-0.19	IH+CO+H2O	['y(H)', 'a(NS)-H2O', 'a(GGS)-H2O']	IMM
 156.08497	119.2	24/85	0.9%	156.08485	-0.77	b(GP)+i	['a(AE)-H2O+i', 'a(AQ)-NH3+i', 'b(AT)-H2O+i', 'y(GP)-H2O+i', 'a(AAG)-NH3+i']	
 156.08929	50.9	2/85	0.4%	?	?	?	?	
 156.10192	361.0	31/85	1.5%	156.10191	-0.06	b(L[Acetyl])	['y(L[Acetyl])-H2O', 'a(IS)-NH3', 'a(LS)-NH3', 'a(TV)-NH3']	
@@ -725,10 +725,10 @@ mz	intensity	ms runs	percentage	theoretical m/z	delta PPM	primary identification
 156.59266	201.7	7/85	0.4%	?	?	?	?	
 156.75984	111.6	2/85	1.2%	?	?	?	?	
 157.01321	241.8	11/85	0.6%	?	?	?	?	
-157.0608	2062.6	85/85	5.4%	157.06077	-0.19	a(DS)-H2O	['a(NS)-NH3', 'b(SS)-H2O', 'a(GGS)-NH3']	COM
+157.0608	2062.6	85/85	5.4%	157.06077	-0.19	a(DS)-H2O	['a(NS)-NH3', 'b(SS)-H2O', 'a(GGS)-NH3']	
 157.0859	264.5	9/85	1.8%	157.08592	0.13	y(L[Acetyl])-NH3	[]	
 157.09033	147.4	5/85	0.7%	?	?	?	?	
-157.09711	4692.2	85/85	13.3%	157.09715	0.25	b(GV)	['a(PS)', 'y(GV)-H2O', 'a(TT)-H2O']	COM
+157.09711	4692.2	85/85	13.3%	157.09715	0.25	b(GV)	['a(PS)', 'y(GV)-H2O', 'a(TT)-H2O']	
 157.10114	122.4	5/85	1.5%	?	?	?	?	
 157.10848	1951.7	74/85	10.2%	157.10839	-0.57	b(R)	['IK+CO+H2ON2-H2O', 'IR+CO', 'y(R)-H2O']	
 157.10896	517.8	4/85	6.1%	157.10839	-3.63	b(R)	['IK+CO+H2ON2-H2O', 'IR+CO', 'y(R)-H2O']	
@@ -757,7 +757,7 @@ mz	intensity	ms runs	percentage	theoretical m/z	delta PPM	primary identification
 159.09166	19476.1	85/85	25.6%	159.09167	0.06	IW	['a(FG)-H2O']	COM, IMM
 159.10153	303.1	7/85	1.7%	?	?	?	?	
 159.10587	57.6	4/85	0.2%	?	?	?	?	
-159.11282	4086.1	85/85	7.8%	159.1128	-0.13	a(SV)	[]	COM
+159.11282	4086.1	85/85	7.8%	159.1128	-0.13	a(SV)	[]	
 159.11674	311.6	6/85	2.6%	?	?	?	?	
 159.1491	73.0	2/85	0.3%	?	?	?	?	
 159.16038	208.1	2/85	0.9%	?	?	?	?	
@@ -780,7 +780,7 @@ mz	intensity	ms runs	percentage	theoretical m/z	delta PPM	primary identification
 161.05972	2180.9	12/91	2.8%	?	?	?	?	
 161.07432	369.0	38/91	1.2%	161.07431	-0.06	a(GM)	[]	
 161.08087	416.3	2/91	0.8%	?	?	?	?	
-161.09208	1255.8	91/91	2.3%	161.09207	-0.06	y(AA)	['a(ST)']	COM
+161.09208	1255.8	91/91	2.3%	161.09207	-0.06	y(AA)	['a(ST)']	
 161.09602	298.4	9/91	2.2%	?	?	?	?	
 161.10735	391.1	10/91	1.3%	?	?	?	?	
 161.11721	188.1	11/91	1.0%	?	?	?	?	
@@ -902,7 +902,7 @@ mz	intensity	ms runs	percentage	theoretical m/z	delta PPM	primary identification
 170.02944	156.4	3/91	0.4%	?	?	?	?	
 170.04476	250.1	32/91	1.1%	170.04478	0.12	b(AD)-NH3	['y(AD)-H2O-NH3', 'b(EG)-NH3', 'y(EG)-H2O-NH3']	
 170.04787	1007.7	4/91	6.4%	?	?	?	?	
-170.06003	3369.6	91/91	5.9%	170.06004	0.06	IW+CO-NH3	['b(W)-NH3', 'y(W)-H2O-NH3', 'b(FG)-H2O-NH3']	COM, IMM
+170.06003	3369.6	91/91	5.9%	170.06004	0.06	IW+CO-NH3	['b(W)-NH3', 'y(W)-H2O-NH3', 'b(FG)-H2O-NH3']	IMM
 170.06342	770.0	14/91	1.5%	170.06341	-0.06	a(MT)-H2O-NH3	['b(AD)-H2O+i', 'b(AN)-NH3+i', 'y(AN)-H2O-NH3+i', 'b(EG)-H2O+i', 'b(GQ)-NH3+i', 'y(GQ)-H2O-NH3+i', 'b(AGG)-NH3+i', 'y(AGG)-H2O-NH3+i', 'a(GSS)-H2O-NH3+i']	
 170.08114	304.0	13/91	0.9%	170.08117	0.18	y(AP)-NH3	['a(DV)-NH3', 'b(SV)-NH3', 'y(SV)-H2O-NH3']	
 170.09239	442.9	46/91	1.6%	170.0924	0.06	a(NT)-H2O	['a(QS)-H2O', 'a(AGS)-H2O', 'a(GGT)-H2O']	
@@ -949,7 +949,7 @@ mz	intensity	ms runs	percentage	theoretical m/z	delta PPM	primary identification
 173.06917	134.2	2/91	0.3%	?	?	?	?	
 173.07435	145.3	13/91	0.7%	173.07431	-0.23	a(CP)	['a(AM[Oxidation])-H2O', 'a(MS)-H2O', 'b(GN)+i', 'b(GGG)+i', 'y(GN)-H2O+i', 'y(GGG)-H2O+i']	
 173.0808	272.1	11/91	1.8%	?	?	?	?	
-173.09212	4661.4	91/91	12.0%	173.09207	-0.29	a(AE)	['b(AT)', 'y(GP)', 'y(AT)-H2O']	COM
+173.09212	4661.4	91/91	12.0%	173.09207	-0.29	a(AE)	['b(AT)', 'y(GP)', 'y(AT)-H2O']	
 173.09597	192.3	6/91	2.2%	?	?	?	?	
 173.11102	50.3	3/91	0.4%	173.1114	2.2	a(AQ)+i	['a(AAG)+i']	
 173.11306	64.1	7/91	0.5%	?	?	?	?	
@@ -999,7 +999,7 @@ mz	intensity	ms runs	percentage	theoretical m/z	delta PPM	primary identification
 175.148	177.5	10/91	1.5%	?	?	?	?	
 175.55471	64.6	5/91	0.3%	?	?	?	?	
 175.97663	110.4	5/91	1.4%	?	?	?	?	
-176.01989	6183.4	11/91	3.0%	176.0203	2.33	C6H2N5O2	[]	COM
+176.01989	6183.4	11/91	3.0%	176.0203	2.33	C6H2N5O2	[]	
 176.05536	197.7	2/91	0.2%	176.05535	-0.06	y(SS)-NH3	[]	
 176.07061	277.5	10/91	0.7%	176.0706	-0.06	a(GY)-NH3	[]	
 176.08184	230.4	13/91	0.7%	176.08184	0.0	a(HT)-H2O-NH3	[]	
@@ -1060,7 +1060,7 @@ mz	intensity	ms runs	percentage	theoretical m/z	delta PPM	primary identification
 181.07204	104.9	3/91	0.4%	?	?	?	?	
 181.08569	120.5	4/91	2.3%	?	?	?	?	
 181.08584	286.4	3/91	1.1%	?	?	?	?	
-181.09707	2247.8	91/91	8.0%	181.09715	0.44	IY+CO+NH3	['a(DK)-H2O-NH3', 'a(EP)-H2O', 'b(KS)-H2O-NH3', 'a(PQ)-NH3', 'b(PT)-H2O', 'a(AAT)-H2O-NH3', 'a(AGP)-NH3', 'a(GSV)-H2O-NH3']	COM, IMM
+181.09707	2247.8	91/91	8.0%	181.09715	0.44	IY+CO+NH3	['a(DK)-H2O-NH3', 'a(EP)-H2O', 'b(KS)-H2O-NH3', 'a(PQ)-NH3', 'b(PT)-H2O', 'a(AAT)-H2O-NH3', 'a(AGP)-NH3', 'a(GSV)-H2O-NH3']	IMM
 181.10537	121.6	3/91	1.1%	181.10526	-0.61	a(EI)-H2O-NH3+i	['a(EL)-H2O-NH3+i', 'b(IT)-H2O-NH3+i', 'b(LT)-H2O-NH3+i', 'a(L[Acetyl]S)-H2O-NH3+i', 'b(PV)-NH3+i', 'y(PV)-H2O-NH3+i']	
 181.10841	815.5	54/91	5.2%	181.10839	-0.11	a(AH)	['a(RS)-H2O-NH3']	
 181.11541	189.9	2/91	0.6%	?	?	?	?	
@@ -1131,7 +1131,7 @@ mz	intensity	ms runs	percentage	theoretical m/z	delta PPM	primary identification
 185.07434	989.6	15/91	1.8%	185.07431	-0.16	b(AM)-H2O	['b(CV)-H2O', 'a(GM[Acetyl])-H2O', 'a(DN)-H2O+i', 'a(NN)-NH3+i', 'b(NS)-H2O+i', 'a(DGG)-H2O+i', 'a(GGN)-NH3+i', 'b(GGS)-H2O+i']	
 185.07679	214.5	8/91	1.5%	?	?	?	?	
 185.08082	143.8	9/91	1.6%	?	?	?	?	
-185.09204	4950.2	91/91	16.7%	185.09207	0.16	a(DP)	['b(PS)', 'a(ET)-H2O', 'y(PS)-H2O', 'a(QT)-NH3', 'b(TT)-H2O', 'a(AAS)-NH3', 'a(AGT)-NH3']	COM
+185.09204	4950.2	91/91	16.7%	185.09207	0.16	a(DP)	['b(PS)', 'a(ET)-H2O', 'y(PS)-H2O', 'a(QT)-NH3', 'b(TT)-H2O', 'a(AAS)-NH3', 'a(AGT)-NH3']	
 185.10323	239.8	14/91	5.3%	?	?	?	?	
 185.11076	50.4	8/91	0.5%	185.1107	-0.32	a(MV)-H2O	['a(NP)+i', 'a(GGP)+i', 'a(QT)-H2O+i', 'a(AAS)-H2O+i', 'a(AGT)-H2O+i']	
 185.11716	270.2	5/91	1.3%	?	?	?	?	
@@ -1153,7 +1153,7 @@ mz	intensity	ms runs	percentage	theoretical m/z	delta PPM	primary identification
 186.09489	53.4	11/91	0.8%	186.09542	2.85	a(DP)+i	['b(PS)+i', 'a(ET)-H2O+i', 'y(PS)-H2O+i', 'a(QT)-NH3+i', 'b(TT)-H2O+i', 'a(AAS)-NH3+i', 'a(AGT)-NH3+i', 'a(MV)-NH3']	
 186.09557	404.6	7/91	3.2%	186.09542	-0.81	a(DP)+i	['b(PS)+i', 'a(ET)-H2O+i', 'y(PS)-H2O+i', 'a(QT)-NH3+i', 'b(TT)-H2O+i', 'a(AAS)-NH3+i', 'a(AGT)-NH3+i', 'a(MV)-NH3']	
 186.11245	85.8	4/91	0.7%	186.11247	0.11	y(AI)-NH3	['y(AL)-NH3']	
-186.12369	3353.2	91/91	11.2%	186.1237	0.05	b(GK)	['a(NV)', 'a(AAA)', 'a(GGV)', 'y(GK)-H2O']	COM
+186.12369	3353.2	91/91	11.2%	186.1237	0.05	b(GK)	['a(NV)', 'a(AAA)', 'a(GGV)', 'y(GK)-H2O']	
 186.12764	78.6	3/91	0.4%	?	?	?	?	
 186.13197	374.1	33/91	2.0%	186.1318	-0.91	b(AI)+i	['b(AL)+i', 'a(GL[Acetyl])+i', 'y(AI)-H2O+i', 'y(AL)-H2O+i', 'a(KT)-NH3+i']	
 186.16819	811.1	65/91	3.3%	186.16819	0.0	a(IV)+i	['a(LV)+i']	
@@ -1162,7 +1162,7 @@ mz	intensity	ms runs	percentage	theoretical m/z	delta PPM	primary identification
 187.01009	220.4	3/91	0.7%	?	?	?	?	
 187.03656	176.3	4/91	0.6%	?	?	?	?	
 187.05365	163.6	6/91	0.8%	187.05358	-0.37	a(AC[Carbamidomethyl])-NH3	['a(CE)-H2O', 'a(CQ)-NH3', 'b(CT)-H2O', 'b(GM[Oxidation])-H2O', 'a(ACG)-NH3']	
-187.07127	2924.3	91/91	9.8%	187.07133	0.32	b(AD)	['b(EG)', 'y(AD)-H2O', 'y(AN)-NH3', 'y(EG)-H2O', 'y(GQ)-NH3', 'y(AGG)-NH3', 'a(GSS)-NH3']	COM
+187.07127	2924.3	91/91	9.8%	187.07133	0.32	b(AD)	['b(EG)', 'y(AD)-H2O', 'y(AN)-NH3', 'y(EG)-H2O', 'y(GQ)-NH3', 'y(AGG)-NH3', 'a(GSS)-NH3']	
 187.07926	278.2	2/91	1.1%	187.07943	0.91	a(ET)-NH3+i	['y(PS)-NH3+i', 'b(TT)-NH3+i', 'y(TT)-H2O-NH3+i']	
 187.08667	1659.0	87/91	4.2%	187.08659	-0.43	IW+CO	['b(W)', 'y(W)-H2O', 'b(FG)-H2O']	IMM
 187.08761	523.0	2/91	7.2%	?	?	?	?	
@@ -1191,7 +1191,7 @@ mz	intensity	ms runs	percentage	theoretical m/z	delta PPM	primary identification
 189.06922	448.1	44/91	1.9%	189.06923	0.05	b(GM)	['y(GM)-H2O', 'a(M[Oxidation]S)-H2O']	
 189.07387	493.6	2/91	1.8%	189.07395	0.42	y(W)-NH3+i	['b(FG)-NH3+i', 'y(FG)-H2O-NH3+i', 'a(SY)-H2O-NH3+i']	
 189.07573	90.8	3/91	0.6%	?	?	?	?	
-189.08692	2660.6	91/91	6.5%	189.08698	0.32	a(DT)	['a(ES)', 'b(ST)', 'y(ST)-H2O']	COM
+189.08692	2660.6	91/91	6.5%	189.08698	0.32	a(DT)	['a(ES)', 'b(ST)', 'y(ST)-H2O']	
 189.09096	73.0	4/91	1.1%	?	?	?	?	
 189.09416	55.1	4/91	0.4%	189.09508	4.87	y(SV)-NH3+i	[]	
 189.10225	209.7	26/91	1.0%	189.10224	-0.05	a(AY)-H2O	['a(FS)-H2O', 'a(GPP)-H2O-NH3']	
@@ -1342,7 +1342,7 @@ mz	intensity	ms runs	percentage	theoretical m/z	delta PPM	primary identification
 199.07137	2817.2	88/91	10.3%	199.07133	-0.2	a(DE)-H2O	['a(DQ)-NH3', 'b(DT)-H2O', 'a(EN)-NH3', 'b(ES)-H2O', 'b(NT)-NH3', 'y(NT)-H2O-NH3', 'b(QS)-NH3', 'y(QS)-H2O-NH3', 'a(ADG)-NH3', 'b(AGS)-NH3', 'y(AGS)-H2O-NH3', 'a(EGG)-NH3', 'b(GGT)-NH3', 'y(GGT)-H2O-NH3', 'a(SSS)-H2O-NH3']	
 199.08664	98.7	7/91	0.5%	199.08659	-0.25	a(FN)-H2O-NH3	['a(GW)-NH3', 'a(FGG)-H2O-NH3']	
 199.09632	159.3	8/91	1.8%	?	?	?	?	
-199.10773	3853.5	91/91	13.0%	199.10772	-0.05	a(EP)	['b(PT)', 'a(DK)-NH3', 'b(KS)-NH3', 'y(KS)-H2O-NH3', 'y(PT)-H2O', 'a(AAT)-NH3', 'a(GSV)-NH3']	COM
+199.10773	3853.5	91/91	13.0%	199.10772	-0.05	a(EP)	['b(PT)', 'a(DK)-NH3', 'b(KS)-NH3', 'y(KS)-H2O-NH3', 'y(PT)-H2O', 'a(AAT)-NH3', 'a(GSV)-NH3']	
 199.11881	127.0	3/91	1.4%	199.11895	0.7	a(RS)-NH3	[]	
 199.12522	258.4	19/91	1.2%	?	?	?	?	
 199.13282	262.1	9/91	0.8%	?	?	?	?	
@@ -1364,7 +1364,7 @@ mz	intensity	ms runs	percentage	theoretical m/z	delta PPM	primary identification
 200.11089	57.6	5/91	1.3%	200.11107	0.9	a(EP)+i	['b(PT)+i', 'a(DK)-NH3+i', 'b(KS)-NH3+i', 'y(KS)-H2O-NH3+i', 'y(PT)-H2O+i', 'a(AAT)-NH3+i', 'a(GSV)-NH3+i', 'a(IM)-NH3', 'a(LM)-NH3']	
 200.11132	185.2	5/91	2.5%	200.11107	-1.25	a(EP)+i	['b(PT)+i', 'a(DK)-NH3+i', 'b(KS)-NH3+i', 'y(KS)-H2O-NH3+i', 'y(PT)-H2O+i', 'a(AAT)-NH3+i', 'a(GSV)-NH3+i', 'a(IM)-NH3', 'a(LM)-NH3']	
 200.11408	90.1	4/91	1.4%	?	?	?	?	
-200.13935	4340.5	91/91	14.8%	200.13935	0.0	b(AK)	['a(IN)', 'a(LN)', 'a(QV)', 'a(AGV)', 'a(GGI)', 'a(GGL)', 'y(AK)-H2O']	COM
+200.13935	4340.5	91/91	14.8%	200.13935	0.0	b(AK)	['a(IN)', 'a(LN)', 'a(QV)', 'a(AGV)', 'a(GGI)', 'a(GGL)', 'y(AK)-H2O']	
 200.14771	332.4	13/91	1.7%	200.14745	-1.3	a(AL[Acetyl])+i	['b(VV)+i', 'y(VV)-H2O+i']	
 200.1505	84.4	5/91	1.6%	200.15059	0.45	a(AR)	[]	
 200.17568	131.7	7/91	1.0%	200.17574	0.3	a(KV)	[]	
@@ -1374,7 +1374,7 @@ mz	intensity	ms runs	percentage	theoretical m/z	delta PPM	primary identification
 200.98446	65.5	2/91	0.4%	?	?	?	?	
 201.03285	54.9	10/91	0.3%	201.03284	-0.05	b(CD)-H2O	['b(CN)-NH3', 'y(CN)-H2O-NH3', 'b(C[Carbamidomethyl]G)-NH3', 'y(C[Carbamidomethyl]G)-H2O-NH3', 'b(CGG)-NH3', 'y(CGG)-H2O-NH3']	
 201.06921	432.6	38/91	1.5%	201.06923	0.1	b(CP)	['b(AM[Oxidation])-H2O', 'y(CP)-H2O', 'a(DM)-H2O', 'a(MN)-NH3', 'b(MS)-H2O', 'a(AAC)-NH3', 'a(GGM)-NH3']	
-201.08701	2391.7	91/91	7.7%	201.08698	-0.15	b(AE)	['y(AE)-H2O', 'y(AQ)-NH3', 'a(ASS)-NH3', 'y(AAG)-NH3', 'a(GST)-NH3']	COM
+201.08701	2391.7	91/91	7.7%	201.08698	-0.15	b(AE)	['y(AE)-H2O', 'y(AQ)-NH3', 'a(ASS)-NH3', 'y(AAG)-NH3', 'a(GST)-NH3']	
 201.09085	98.6	5/91	1.3%	?	?	?	?	
 201.10225	1784.5	17/91	3.6%	201.10224	-0.05	b(AF)-H2O	[]	
 201.10553	470.0	39/91	2.9%	201.10561	0.4	a(MP)	['a(M[Oxidation]V)-H2O', 'b(AQ)+i', 'b(AAG)+i', 'y(AQ)-H2O+i', 'a(ASS)-H2O+i', 'y(AAG)-H2O+i', 'a(GST)-H2O+i']	
@@ -1477,7 +1477,7 @@ mz	intensity	ms runs	percentage	theoretical m/z	delta PPM	primary identification
 207.08769	546.0	32/91	2.4%	207.08765	-0.19	a(DH)-H2O	['a(HN)-NH3', 'b(HS)-H2O', 'a(GGH)-NH3']	
 207.10125	82.1	8/91	1.7%	?	?	?	?	
 207.10467	86.2	3/91	0.5%	?	?	?	?	
-207.11283	3455.1	91/91	9.0%	207.1128	-0.14	a(AY)	['a(FS)', 'b(IQ)-H2O-NH3', 'b(LQ)-H2O-NH3', 'a(L[Acetyl]N)-H2O-NH3', 'a(APT)-H2O-NH3', 'b(AAV)-H2O-NH3', 'b(AGI)-H2O-NH3', 'b(AGL)-H2O-NH3', 'a(GGL[Acetyl])-H2O-NH3', 'a(GPP)-NH3']	COM
+207.11283	3455.1	91/91	9.0%	207.1128	-0.14	a(AY)	['a(FS)', 'b(IQ)-H2O-NH3', 'b(LQ)-H2O-NH3', 'a(L[Acetyl]N)-H2O-NH3', 'a(APT)-H2O-NH3', 'b(AAV)-H2O-NH3', 'b(AGI)-H2O-NH3', 'b(AGL)-H2O-NH3', 'a(GGL[Acetyl])-H2O-NH3', 'a(GPP)-NH3']	
 207.12413	653.5	40/91	3.2%	207.12404	-0.43	a(HP)	[]	
 207.13788	123.4	6/91	1.3%	?	?	?	?	
 207.14916	97.2	6/91	1.5%	207.14919	0.14	b(IK)-H2O-NH3	['b(KL)-H2O-NH3', 'a(L[Acetyl]P)-H2O', 'a(AVV)-H2O-NH3', 'a(GIV)-H2O-NH3', 'a(GLV)-H2O-NH3']	
@@ -1544,7 +1544,7 @@ mz	intensity	ms runs	percentage	theoretical m/z	delta PPM	primary identification
 211.10772	1394.7	85/91	5.8%	211.10772	0.0	b(DI)-H2O	['b(DL)-H2O', 'b(EV)-H2O', 'b(IN)-NH3', 'y(IN)-H2O-NH3', 'b(LN)-NH3', 'y(LN)-H2O-NH3', 'b(QV)-NH3', 'y(QV)-H2O-NH3', 'a(APS)-NH3', 'a(ATT)-H2O-NH3', 'b(AGV)-NH3', 'y(AGV)-H2O-NH3', 'a(GPT)-NH3', 'b(GGI)-NH3', 'b(GGL)-NH3', 'y(GGI)-H2O-NH3', 'y(GGL)-H2O-NH3', 'a(SSV)-H2O-NH3']	
 211.11907	633.3	41/91	2.9%	211.11895	-0.57	a(HT)	['b(AR)-NH3', 'y(AR)-H2O-NH3', 'a(QQ)-H2O', 'a(AAN)-H2O', 'a(AGQ)-H2O']	
 211.13276	121.8	7/91	1.2%	?	?	?	?	
-211.14409	4190.5	91/91	13.9%	211.1441	0.05	b(IP)	['b(LP)', 'y(IP)-H2O', 'b(KV)-NH3', 'y(KV)-H2O-NH3', 'y(LP)-H2O', 'a(L[Acetyl]T)-H2O', 'a(AAI)-NH3', 'a(AAL)-NH3', 'a(GVV)-NH3']	COM
+211.14409	4190.5	91/91	13.9%	211.1441	0.05	b(IP)	['b(LP)', 'y(IP)-H2O', 'b(KV)-NH3', 'y(KV)-H2O-NH3', 'y(LP)-H2O', 'a(L[Acetyl]T)-H2O', 'a(AAI)-NH3', 'a(AAL)-NH3', 'a(GVV)-NH3']	
 211.14799	42.5	2/91	0.6%	?	?	?	?	
 211.15528	419.7	6/91	5.2%	211.15534	0.28	a(KQ)-H2O	['a(RV)-NH3', 'a(AGK)-H2O']	
 211.16647	107.2	2/91	0.8%	?	?	?	?	
@@ -1561,7 +1561,7 @@ mz	intensity	ms runs	percentage	theoretical m/z	delta PPM	primary identification
 212.06658	299.1	31/91	1.3%	212.06658	0.0	b(DN)-H2O	['b(NN)-NH3', 'y(NN)-H2O-NH3', 'b(DGG)-H2O', 'b(GGN)-NH3', 'y(GGN)-H2O-NH3']	
 212.08182	199.5	3/91	0.5%	?	?	?	?	
 212.09175	420.8	6/91	3.0%	212.09173	-0.09	b(DI)-NH3	['b(DL)-NH3', 'y(DI)-H2O-NH3', 'y(DL)-H2O-NH3', 'b(EV)-NH3', 'y(EV)-H2O-NH3']	
-212.10297	3202.8	91/91	12.2%	212.10297	0.0	b(NP)	['b(GGP)', 'a(EQ)-H2O', 'y(NP)-H2O', 'a(QQ)-NH3', 'b(QT)-H2O', 'a(AAD)-H2O', 'a(AAN)-NH3', 'a(AEG)-H2O', 'a(AGQ)-NH3', 'b(AAS)-H2O', 'b(AGT)-H2O', 'y(GGP)-H2O']	COM
+212.10297	3202.8	91/91	12.2%	212.10297	0.0	b(NP)	['b(GGP)', 'a(EQ)-H2O', 'y(NP)-H2O', 'a(QQ)-NH3', 'b(QT)-H2O', 'a(AAD)-H2O', 'a(AAN)-NH3', 'a(AEG)-H2O', 'a(AGQ)-NH3', 'b(AAS)-H2O', 'b(AGT)-H2O', 'y(GGP)-H2O']	
 212.11386	70.4	2/91	0.6%	?	?	?	?	
 212.11819	116.5	4/91	0.6%	212.11822	0.14	a(AW)-H2O	[]	
 212.13934	843.1	72/91	6.0%	212.13935	0.05	a(AAP)	['a(EK)-H2O', 'a(KQ)-NH3', 'b(KT)-H2O', 'a(AGK)-NH3', 'a(ASV)-H2O', 'a(GIS)-H2O', 'a(GLS)-H2O', 'a(GTV)-H2O']	
@@ -1586,7 +1586,7 @@ mz	intensity	ms runs	percentage	theoretical m/z	delta PPM	primary identification
 213.11203	207.3	11/91	1.6%	?	?	?	?	
 213.12334	679.0	60/91	4.2%	213.12337	0.14	b(GL[Acetyl])	['y(PP)', 'a(EK)-NH3', 'y(GL[Acetyl])-H2O', 'b(KT)-NH3', 'y(KT)-H2O-NH3', 'a(ASV)-NH3', 'a(GIS)-NH3', 'a(GLS)-NH3', 'a(GTV)-NH3']	
 213.13452	177.3	14/91	0.9%	213.1346	0.38	a(RT)-NH3	[]	
-213.15976	4564.8	91/91	13.3%	213.15975	-0.05	b(IV)	['b(LV)', 'y(IV)-H2O', 'y(LV)-H2O']	COM
+213.15976	4564.8	91/91	13.3%	213.15975	-0.05	b(IV)	['b(LV)', 'y(IV)-H2O', 'y(LV)-H2O']	
 213.1637	95.1	3/91	0.8%	?	?	?	?	
 213.22116	71.9	4/91	0.4%	?	?	?	?	
 213.64481	72.8	6/91	0.4%	?	?	?	?	
@@ -1598,7 +1598,7 @@ mz	intensity	ms runs	percentage	theoretical m/z	delta PPM	primary identification
 214.08225	223.9	39/91	0.9%	214.08223	-0.09	a(DGS)-H2O	['a(GNS)-NH3', 'b(GSS)-H2O']	
 214.08625	246.8	4/91	1.4%	214.08626	0.05	a(EF)-H2O-NH3	['b(FT)-H2O-NH3']	
 214.09005	69.3	17/91	1.0%	214.09033	1.31	b(DP)+i	['y(DP)-H2O+i', 'a(EE)-H2O+i', 'a(EQ)-NH3+i', 'b(ET)-H2O+i', 'y(NP)-NH3+i', 'b(QT)-NH3+i', 'y(QT)-H2O-NH3+i', 'a(AAD)-NH3+i', 'a(AEG)-NH3+i', 'b(AAS)-NH3+i', 'b(AGT)-NH3+i', 'y(AAS)-H2O-NH3+i', 'y(AGT)-H2O-NH3+i', 'y(GGP)-NH3+i', 'a(SST)-H2O-NH3+i', 'a(CL[Acetyl])-NH3', 'b(MV)-NH3', 'y(MV)-H2O-NH3']	
-214.09745	6043.2	17/91	6.3%	?	?	?	?	COM
+214.09745	6043.2	17/91	6.3%	?	?	?	?	
 214.1008	145.6	26/91	0.6%	214.10086	0.28	b(CK)-H2O	['a(C[Carbamidomethyl]V)-H2O', 'a(MQ)-H2O', 'a(AGM)-H2O', 'a(CGV)-H2O', 'y(GH)+i', 'a(GNS)-H2O+i']	
 214.11862	1412.0	85/91	5.5%	214.11862	0.0	b(NV)	['b(AAA)', 'a(GPS)', 'b(GGV)', 'y(NV)-H2O', 'a(AST)-H2O', 'y(AAA)-H2O', 'a(GTT)-H2O', 'y(GGV)-H2O']	
 214.12679	59.7	5/91	0.4%	214.12672	-0.33	b(GL[Acetyl])+i	['y(PP)+i', 'a(EK)-NH3+i', 'y(GL[Acetyl])-H2O+i', 'b(KT)-NH3+i', 'y(KT)-H2O-NH3+i', 'a(ASV)-NH3+i', 'a(GIS)-NH3+i', 'a(GLS)-NH3+i', 'a(GTV)-NH3+i']	
@@ -1631,7 +1631,7 @@ mz	intensity	ms runs	percentage	theoretical m/z	delta PPM	primary identification
 216.06309	162.2	5/91	2.1%	?	?	?	?	
 216.07995	43.5	17/91	0.5%	216.08012	0.79	a(C[Carbamidomethyl]T)-H2O	['a(M[Oxidation]N)-H2O', 'a(ACS)-H2O', 'a(CGT)-H2O', 'a(GGM[Oxidation])-H2O']	
 216.08799	2669.4	17/91	4.9%	216.08823	1.11	b(CK)-NH3+i	['y(CK)-H2O-NH3+i', 'a(C[Carbamidomethyl]V)-NH3+i', 'a(EM)-H2O+i', 'a(MQ)-NH3+i', 'b(MT)-H2O+i', 'a(M[Acetyl]S)-H2O+i', 'a(AGM)-NH3+i', 'a(CGV)-NH3+i']	
-216.09791	3342.8	91/91	10.4%	216.09788	-0.14	a(DQ)	['a(EN)', 'b(NT)', 'b(QS)', 'a(ADG)', 'b(AGS)', 'a(EGG)', 'b(GGT)', 'y(NT)-H2O', 'y(QS)-H2O', 'y(AGS)-H2O', 'y(GGT)-H2O', 'a(SSS)-H2O']	COM
+216.09791	3342.8	91/91	10.4%	216.09788	-0.14	a(DQ)	['a(EN)', 'b(NT)', 'b(QS)', 'a(ADG)', 'b(AGS)', 'a(EGG)', 'b(GGT)', 'y(NT)-H2O', 'y(QS)-H2O', 'y(AGS)-H2O', 'y(GGT)-H2O', 'a(SSS)-H2O']	
 216.10613	115.1	7/91	1.3%	216.10598	-0.69	b(DV)+i	['y(DV)-H2O+i', 'y(NV)-NH3+i', 'a(AST)-NH3+i', 'y(AAA)-NH3+i', 'a(GTT)-NH3+i', 'y(GGV)-NH3+i', 'a(IM[Oxidation])-NH3', 'a(LM[Oxidation])-NH3']	
 216.11341	109.4	24/91	0.7%	216.11314	-1.25	a(GW)	['a(FN)-H2O', 'b(HI)-H2O-NH3', 'b(HL)-H2O-NH3', 'a(FGG)-H2O']	
 216.12305	321.7	12/91	1.3%	216.12303	-0.09	y(IT)-NH3	['y(LT)-NH3']	
@@ -1706,7 +1706,7 @@ mz	intensity	ms runs	percentage	theoretical m/z	delta PPM	primary identification
 219.11607	207.9	9/91	1.2%	219.11618	0.5	a(M[Oxidation]V)	['y(AQ)+i', 'a(ASS)+i', 'y(AAG)+i', 'a(GST)+i']	
 219.12271	236.7	13/91	2.2%	?	?	?	?	
 219.13291	49.3	13/91	2.8%	219.13393	4.65	y(IS)	['y(LS)', 'y(TV)']	
-219.13396	7605.7	6/91	34.1%	219.13393	-0.14	y(IS)	['y(LS)', 'y(TV)']	COM
+219.13396	7605.7	6/91	34.1%	219.13393	-0.14	y(IS)	['y(LS)', 'y(TV)']	
 219.13782	200.4	9/91	1.8%	?	?	?	?	
 219.14923	2018.2	90/91	4.3%	219.14919	-0.18	a(FV)	['a(AIP)-H2O-NH3', 'a(ALP)-H2O-NH3']	
 219.15293	645.3	3/91	3.6%	219.15327	1.55	y(AK)+i	[]	
@@ -1746,7 +1746,7 @@ mz	intensity	ms runs	percentage	theoretical m/z	delta PPM	primary identification
 221.1033	875.1	59/91	3.6%	221.1033	0.0	a(EH)-H2O	['a(HQ)-NH3', 'b(HT)-H2O', 'a(AGH)-NH3']	
 221.10896	622.0	3/91	1.9%	?	?	?	?	
 221.11702	92.5	6/91	1.5%	?	?	?	?	
-221.12844	2274.3	91/91	5.0%	221.12845	0.05	a(FT)	['a(L[Acetyl]Q)-H2O-NH3', 'a(AGL[Acetyl])-H2O-NH3', 'a(APP)-NH3', 'b(AAI)-H2O-NH3', 'b(AAL)-H2O-NH3', 'b(GVV)-H2O-NH3', 'a(PSV)-H2O-NH3']	COM
+221.12844	2274.3	91/91	5.0%	221.12845	0.05	a(FT)	['a(L[Acetyl]Q)-H2O-NH3', 'a(AGL[Acetyl])-H2O-NH3', 'a(APP)-NH3', 'b(AAI)-H2O-NH3', 'b(AAL)-H2O-NH3', 'b(GVV)-H2O-NH3', 'a(PSV)-H2O-NH3']	
 221.13834	718.3	23/91	3.9%	?	?	?	?	
 221.1535	61.7	4/91	1.0%	?	?	?	?	
 221.22633	80.7	6/91	0.9%	?	?	?	?	
@@ -1830,7 +1830,7 @@ mz	intensity	ms runs	percentage	theoretical m/z	delta PPM	primary identification
 226.08217	1473.8	84/91	7.9%	226.08223	0.27	b(DQ)-H2O	['b(EN)-H2O', 'y(HS)-NH3', 'b(NQ)-NH3', 'y(NQ)-H2O-NH3', 'b(ADG)-H2O', 'b(AGN)-NH3', 'y(AGN)-H2O-NH3', 'b(EGG)-H2O', 'b(GGQ)-NH3', 'y(GGQ)-H2O-NH3', 'a(NSS)-H2O-NH3']	
 226.08483	81.1	4/91	0.6%	226.08381	-4.51	b(CR)-H2O-NH3+i	[]	
 226.10118	406.4	4/91	1.8%	226.10086	-1.42	a(C[Carbamidomethyl]K)-H2O-NH3	['a(ACP)-H2O', 'a(CGK)-H2O-NH3', 'a(DH)+i', 'b(HS)+i', 'y(HS)-H2O+i', 'b(NQ)-H2O+i', 'b(AGN)-H2O+i', 'b(GGQ)-H2O+i']	
-226.11861	4365.1	91/91	17.7%	226.11862	0.04	b(PQ)	['b(AGP)', 'b(DK)-H2O', 'b(KN)-NH3', 'y(KN)-H2O-NH3', 'y(PQ)-H2O', 'a(AAE)-H2O', 'a(AAQ)-NH3', 'b(AAT)-H2O', 'y(AGP)-H2O', 'a(DGV)-H2O', 'a(GNV)-NH3', 'b(GGK)-NH3', 'b(GSV)-H2O', 'y(GGK)-H2O-NH3', 'a(PSS)-H2O']	COM
+226.11861	4365.1	91/91	17.7%	226.11862	0.04	b(PQ)	['b(AGP)', 'b(DK)-H2O', 'b(KN)-NH3', 'y(KN)-H2O-NH3', 'y(PQ)-H2O', 'a(AAE)-H2O', 'a(AAQ)-NH3', 'b(AAT)-H2O', 'y(AGP)-H2O', 'a(DGV)-H2O', 'a(GNV)-NH3', 'b(GGK)-NH3', 'b(GSV)-H2O', 'y(GGK)-H2O-NH3', 'a(PSS)-H2O']	
 226.1299	179.9	8/91	1.8%	226.12985	-0.22	a(DR)-H2O	['a(NR)-NH3', 'b(RS)-H2O', 'a(GGR)-NH3']	
 226.14257	115.6	5/91	1.8%	?	?	?	?	
 226.14624	83.3	2/91	0.3%	?	?	?	?	
@@ -1848,7 +1848,7 @@ mz	intensity	ms runs	percentage	theoretical m/z	delta PPM	primary identification
 227.06611	737.8	65/91	3.5%	227.06625	0.62	b(DE)-H2O	['b(DQ)-NH3', 'y(DQ)-H2O-NH3', 'b(EN)-NH3', 'y(EN)-H2O-NH3', 'b(ADG)-NH3', 'y(ADG)-H2O-NH3', 'a(DSS)-H2O-NH3', 'b(EGG)-NH3', 'y(EGG)-H2O-NH3', 'b(SSS)-H2O-NH3']	
 227.08155	90.6	3/91	0.5%	227.0815	-0.22	b(FN)-H2O-NH3	['b(GW)-NH3', 'y(GW)-H2O-NH3', 'b(FGG)-H2O-NH3']	
 227.08492	293.9	18/91	1.7%	227.08488	-0.18	b(AM[Acetyl])-H2O	['b(M[Oxidation]P)-H2O', 'a(AAM[Oxidation])-H2O-NH3', 'a(ACP)-NH3', 'a(AMS)-H2O-NH3', 'a(CSV)-H2O-NH3', 'a(GMT)-H2O-NH3', 'b(DQ)-H2O+i', 'b(EN)-H2O+i', 'y(HS)-NH3+i', 'b(NQ)-NH3+i', 'y(NQ)-H2O-NH3+i', 'b(ADG)-H2O+i', 'b(AGN)-NH3+i', 'y(AGN)-H2O-NH3+i', 'b(EGG)-H2O+i', 'b(GGQ)-NH3+i', 'y(GGQ)-H2O-NH3+i', 'a(NSS)-H2O-NH3+i']	
-227.10259	3071.5	91/91	10.6%	227.10263	0.18	b(EP)	['b(DK)-NH3', 'y(DK)-H2O-NH3', 'y(EP)-H2O', 'y(PQ)-NH3', 'a(AAE)-NH3', 'b(AAT)-NH3', 'y(AAT)-H2O-NH3', 'y(AGP)-NH3', 'a(DGV)-NH3', 'b(GSV)-NH3', 'y(GSV)-H2O-NH3', 'a(PSS)-NH3', 'a(STT)-H2O-NH3']	COM
+227.10259	3071.5	91/91	10.6%	227.10263	0.18	b(EP)	['b(DK)-NH3', 'y(DK)-H2O-NH3', 'y(EP)-H2O', 'y(PQ)-NH3', 'a(AAE)-NH3', 'b(AAT)-NH3', 'y(AAT)-H2O-NH3', 'y(AGP)-NH3', 'a(DGV)-NH3', 'b(GSV)-NH3', 'y(GSV)-H2O-NH3', 'a(PSS)-NH3', 'a(STT)-H2O-NH3']	
 227.11387	182.5	26/91	2.1%	227.11387	0.0	y(AH)	['a(DR)-NH3', 'b(RS)-NH3', 'y(RS)-H2O-NH3', 'a(ANS)-H2O', 'a(GNT)-H2O', 'a(GQS)-H2O']	
 227.12203	140.3	28/91	1.6%	227.12197	-0.26	b(PQ)+i	['b(AGP)+i', 'b(DK)-H2O+i', 'b(KN)-NH3+i', 'y(KN)-H2O-NH3+i', 'y(PQ)-H2O+i', 'a(AAE)-H2O+i', 'a(AAQ)-NH3+i', 'b(AAT)-H2O+i', 'y(AGP)-H2O+i', 'a(DGV)-H2O+i', 'a(GNV)-NH3+i', 'b(GGK)-NH3+i', 'b(GSV)-H2O+i', 'y(GGK)-H2O-NH3+i', 'a(PSS)-H2O+i', 'b(IM)-H2O', 'b(LM)-H2O', 'a(M[Acetyl]V)-H2O']	
 227.12768	203.6	10/91	1.6%	?	?	?	?	
@@ -1859,7 +1859,7 @@ mz	intensity	ms runs	percentage	theoretical m/z	delta PPM	primary identification
 227.15393	26.7	2/91	0.4%	?	?	?	?	
 227.15589	155.4	6/91	1.4%	?	?	?	?	
 227.15838	351.2	8/91	4.1%	227.15835	-0.13	b(KP)+i	['a(GPV)+i', 'y(KP)-H2O+i', 'a(AAK)-NH3+i', 'a(AIS)-H2O+i', 'a(ALS)-H2O+i', 'a(ATV)-H2O+i', 'a(GIT)-H2O+i', 'a(GLT)-H2O+i']	
-227.17538	4885.6	91/91	12.9%	227.1754	0.09	b(II)	['b(IL)', 'b(LL)', 'a(L[Acetyl]V)', 'y(II)-H2O', 'y(IL)-H2O', 'y(LL)-H2O']	COM
+227.17538	4885.6	91/91	12.9%	227.1754	0.09	b(II)	['b(IL)', 'b(LL)', 'a(L[Acetyl]V)', 'y(II)-H2O', 'y(IL)-H2O', 'y(LL)-H2O']	
 227.17929	54.4	3/91	0.7%	?	?	?	?	
 227.20038	517.7	7/91	2.6%	?	?	?	?	
 227.2118	140.1	2/91	0.8%	?	?	?	?	
@@ -1874,7 +1874,7 @@ mz	intensity	ms runs	percentage	theoretical m/z	delta PPM	primary identification
 228.10586	132.9	28/91	1.6%	228.10598	0.53	b(EP)+i	['b(DK)-NH3+i', 'y(DK)-H2O-NH3+i', 'y(EP)-H2O+i', 'y(PQ)-NH3+i', 'a(AAE)-NH3+i', 'b(AAT)-NH3+i', 'y(AAT)-H2O-NH3+i', 'y(AGP)-NH3+i', 'a(DGV)-NH3+i', 'b(GSV)-NH3+i', 'y(GSV)-H2O-NH3+i', 'a(PSS)-NH3+i', 'a(STT)-H2O-NH3+i', 'b(IM)-NH3', 'y(IM)-H2O-NH3', 'b(LM)-NH3', 'y(LM)-H2O-NH3', 'a(M[Acetyl]V)-NH3']	
 228.11317	329.0	18/91	1.7%	228.11314	-0.13	a(SW)-H2O	[]	
 228.12325	436.0	2/91	2.0%	228.12303	-0.96	y(AL[Acetyl])-NH3	[]	
-228.13431	4362.2	91/91	15.9%	228.13427	-0.18	b(IN)	['b(LN)', 'b(QV)', 'a(APS)', 'b(AGV)', 'a(GPT)', 'b(GGI)', 'b(GGL)', 'y(IN)-H2O', 'y(LN)-H2O', 'y(QV)-H2O', 'a(ATT)-H2O', 'y(AGV)-H2O', 'a(GKS)-NH3', 'y(GGI)-H2O', 'y(GGL)-H2O', 'a(SSV)-H2O']	COM
+228.13431	4362.2	91/91	15.9%	228.13427	-0.18	b(IN)	['b(LN)', 'b(QV)', 'a(APS)', 'b(AGV)', 'a(GPT)', 'b(GGI)', 'b(GGL)', 'y(IN)-H2O', 'y(LN)-H2O', 'y(QV)-H2O', 'a(ATT)-H2O', 'y(AGV)-H2O', 'a(GKS)-NH3', 'y(GGI)-H2O', 'y(GGL)-H2O', 'a(SSV)-H2O']	
 228.14551	178.1	17/91	1.8%	228.1455	-0.04	b(AR)	['y(AR)-H2O']	
 228.15922	86.4	4/91	1.5%	228.15942	0.88	y(II)-NH3	['y(IL)-NH3', 'y(LL)-NH3']	
 228.16365	63.8	5/91	0.5%	?	?	?	?	
@@ -1949,7 +1949,7 @@ mz	intensity	ms runs	percentage	theoretical m/z	delta PPM	primary identification
 232.01805	37.5	2/91	0.9%	?	?	?	?	
 232.03693	774.5	15/91	1.9%	?	?	?	?	
 232.07505	907.7	70/91	2.4%	232.07504	-0.04	b(AC[Carbamidomethyl])	['b(CQ)', 'b(ACG)', 'y(AC[Carbamidomethyl])-H2O', 'y(CQ)-H2O', 'y(ACG)-H2O', 'a(CSS)-H2O']	
-232.0829	6736.3	17/91	17.4%	232.08314	1.03	b(GM[Acetyl])+i	['a(EM[Oxidation])-H2O+i', 'y(GM[Acetyl])-H2O+i', 'a(M[Oxidation]Q)-NH3+i', 'b(M[Oxidation]T)-H2O+i', 'a(ACT)-NH3+i', 'a(AGM[Oxidation])-NH3+i', 'a(GMS)-NH3+i']	COM
+232.0829	6736.3	17/91	17.4%	232.08314	1.03	b(GM[Acetyl])+i	['a(EM[Oxidation])-H2O+i', 'y(GM[Acetyl])-H2O+i', 'a(M[Oxidation]Q)-NH3+i', 'b(M[Oxidation]T)-H2O+i', 'a(ACT)-NH3+i', 'a(AGM[Oxidation])-NH3+i', 'a(GMS)-NH3+i']	
 232.09287	123.1	4/91	0.8%	232.0928	-0.3	a(DGS)	['b(GSS)', 'y(GSS)-H2O']	
 232.10062	52.3	8/91	0.6%	232.1009	1.21	y(DP)+i	['a(EE)+i', 'b(ET)+i', 'y(ET)-H2O+i', 'y(QT)-NH3+i', 'y(AAS)-NH3+i', 'y(AGT)-NH3+i', 'a(SST)-NH3+i']	
 232.10806	156.2	8/91	0.9%	232.10805	-0.04	a(NY)-H2O	['a(GGY)-H2O']	
@@ -1981,7 +1981,7 @@ mz	intensity	ms runs	percentage	theoretical m/z	delta PPM	primary identification
 233.13839	113.1	3/91	1.0%	?	?	?	?	
 233.13967	404.3	2/91	1.1%	233.13969	0.09	b(HI)-H2O	['b(HL)-H2O']	
 233.14959	2889.3	8/91	14.2%	233.14958	-0.04	y(IT)	['y(LT)']	
-233.16484	3413.8	91/91	9.7%	233.16484	0.0	a(FI)	['a(FL)', 'a(PVV)-H2O-NH3']	COM
+233.16484	3413.8	91/91	9.7%	233.16484	0.0	a(FI)	['a(FL)', 'a(PVV)-H2O-NH3']	
 233.22624	44.8	3/91	0.7%	?	?	?	?	
 233.624	40.7	3/91	0.3%	?	?	?	?	
 233.81989	57.8	2/91	0.5%	?	?	?	?	
@@ -2015,7 +2015,7 @@ mz	intensity	ms runs	percentage	theoretical m/z	delta PPM	primary identification
 235.0826	287.3	30/91	2.0%	235.08257	-0.13	b(DH)-H2O	['b(HN)-NH3', 'y(HN)-H2O-NH3', 'b(GGH)-NH3', 'y(GGH)-H2O-NH3', 'y(MT)-NH3+i']	
 235.09316	84.0	23/91	0.6%	235.09246	-2.98	y(DT)	['y(ES)', 'a(MM)']	
 235.09621	33.5	2/91	0.8%	?	?	?	?	
-235.10768	2433.4	91/91	8.1%	235.10772	0.17	b(AY)	['a(DF)', 'b(FS)', 'y(AY)-H2O', 'y(FS)-H2O', 'b(L[Acetyl]N)-H2O-NH3', 'a(AEP)-H2O-NH3', 'b(APT)-H2O-NH3', 'b(GGL[Acetyl])-H2O-NH3', 'b(GPP)-NH3', 'y(GPP)-H2O-NH3']	COM
+235.10768	2433.4	91/91	8.1%	235.10772	0.17	b(AY)	['a(DF)', 'b(FS)', 'y(AY)-H2O', 'y(FS)-H2O', 'b(L[Acetyl]N)-H2O-NH3', 'a(AEP)-H2O-NH3', 'b(APT)-H2O-NH3', 'b(GGL[Acetyl])-H2O-NH3', 'b(GPP)-NH3', 'y(GPP)-H2O-NH3']	
 235.11897	1759.1	81/91	7.8%	235.11895	-0.09	b(HP)	['y(HP)-H2O', 'a(AAH)-NH3']	
 235.13162	48.8	4/91	1.9%	?	?	?	?	
 235.14409	1510.6	89/91	4.3%	235.1441	0.04	a(VY)	['b(L[Acetyl]P)-H2O', 'a(AAL[Acetyl])-H2O-NH3', 'b(AVV)-H2O-NH3', 'b(GIV)-H2O-NH3', 'b(GLV)-H2O-NH3', 'a(IPS)-H2O-NH3', 'a(LPS)-H2O-NH3', 'a(PTV)-H2O-NH3']	
@@ -2090,7 +2090,7 @@ mz	intensity	ms runs	percentage	theoretical m/z	delta PPM	primary identification
 240.09565	601.8	6/91	8.5%	?	?	?	?	
 240.09776	1526.7	80/91	7.0%	240.09788	0.5	b(EQ)-H2O	['y(HT)-NH3', 'b(QQ)-NH3', 'y(QQ)-H2O-NH3', 'b(AAD)-H2O', 'b(AAN)-NH3', 'b(AEG)-H2O', 'b(AGQ)-NH3', 'y(AAN)-H2O-NH3', 'y(AGQ)-H2O-NH3', 'a(NST)-H2O-NH3', 'a(QSS)-H2O-NH3']	
 240.11717	43.3	3/91	0.7%	240.11722	0.21	a(EH)+i	['b(HT)+i', 'y(HT)-H2O+i', 'b(QQ)-H2O+i', 'b(AAN)-H2O+i', 'b(AGQ)-H2O+i', 'a(ACK)-H2O-NH3', 'a(GMP)-H2O']	
-240.13421	3506.0	91/91	16.1%	240.13427	0.25	b(AAP)	['b(EK)-H2O', 'b(KQ)-NH3', 'y(KQ)-H2O-NH3', 'a(ADV)-H2O', 'a(ANV)-NH3', 'b(AGK)-NH3', 'b(ASV)-H2O', 'y(AAP)-H2O', 'y(AGK)-H2O-NH3', 'a(DGI)-H2O', 'a(DGL)-H2O', 'a(EGV)-H2O', 'a(GIN)-NH3', 'a(GLN)-NH3', 'a(GQV)-NH3', 'b(GIS)-H2O', 'b(GLS)-H2O', 'b(GTV)-H2O', 'a(KSS)-H2O-NH3', 'a(PST)-H2O']	COM
+240.13421	3506.0	91/91	16.1%	240.13427	0.25	b(AAP)	['b(EK)-H2O', 'b(KQ)-NH3', 'y(KQ)-H2O-NH3', 'a(ADV)-H2O', 'a(ANV)-NH3', 'b(AGK)-NH3', 'b(ASV)-H2O', 'y(AAP)-H2O', 'y(AGK)-H2O-NH3', 'a(DGI)-H2O', 'a(DGL)-H2O', 'a(EGV)-H2O', 'a(GIN)-NH3', 'a(GLN)-NH3', 'a(GQV)-NH3', 'b(GIS)-H2O', 'b(GLS)-H2O', 'b(GTV)-H2O', 'a(KSS)-H2O-NH3', 'a(PST)-H2O']	
 240.13966	47.8	3/91	0.6%	?	?	?	?	
 240.14558	177.8	10/91	1.4%	240.1455	-0.33	a(ER)-H2O	['a(QR)-NH3', 'b(RT)-H2O', 'a(AGR)-NH3']	
 240.15227	55.7	5/91	0.9%	?	?	?	?	
@@ -2136,7 +2136,7 @@ mz	intensity	ms runs	percentage	theoretical m/z	delta PPM	primary identification
 242.11348	667.7	71/91	3.2%	242.11353	0.21	a(DGP)	['b(GPS)', 'a(ADT)-H2O', 'a(AES)-H2O', 'a(ANT)-NH3', 'a(AQS)-NH3', 'b(AST)-H2O', 'a(EGT)-H2O', 'a(GQT)-NH3', 'b(GTT)-H2O', 'y(GPS)-H2O']	
 242.12874	174.1	8/91	0.5%	242.12879	0.21	a(TW)-H2O	[]	
 242.13729	80.6	6/91	1.1%	242.13689	-1.65	b(FK)-H2O-NH3+i	['a(VW)-NH3+i', 'a(FGV)-H2O-NH3+i']	
-242.14987	3389.6	91/91	13.6%	242.14992	0.21	b(IQ)	['b(LQ)', 'a(L[Acetyl]N)', 'a(APT)', 'b(AAV)', 'b(AGI)', 'b(AGL)', 'a(GGL[Acetyl])', 'y(IQ)-H2O', 'y(LQ)-H2O', 'a(AKS)-NH3', 'y(AAV)-H2O', 'y(AGI)-H2O', 'y(AGL)-H2O', 'a(GKT)-NH3', 'a(ISS)-H2O', 'a(LSS)-H2O', 'a(STV)-H2O']	COM
+242.14987	3389.6	91/91	13.6%	242.14992	0.21	b(IQ)	['b(LQ)', 'a(L[Acetyl]N)', 'a(APT)', 'b(AAV)', 'b(AGI)', 'b(AGL)', 'a(GGL[Acetyl])', 'y(IQ)-H2O', 'y(LQ)-H2O', 'a(AKS)-NH3', 'y(AAV)-H2O', 'y(AGI)-H2O', 'y(AGL)-H2O', 'a(GKT)-NH3', 'a(ISS)-H2O', 'a(LSS)-H2O', 'a(STV)-H2O']	
 242.1612	87.2	3/91	0.8%	?	?	?	?	
 242.18621	1520.5	84/91	7.4%	242.1863	0.37	b(IK)	['b(KL)', 'a(AVV)', 'a(GIV)', 'a(GLV)', 'y(IK)-H2O', 'y(KL)-H2O']	
 242.19763	357.8	6/91	3.9%	242.19754	-0.37	a(IR)	['a(LR)']	
@@ -2183,7 +2183,7 @@ mz	intensity	ms runs	percentage	theoretical m/z	delta PPM	primary identification
 244.13643	154.8	15/91	2.5%	244.13728	3.48	a(DL[Acetyl])+i	['b(EI)+i', 'b(EL)+i', 'b(L[Acetyl]S)+i', 'y(EI)-H2O+i', 'y(EL)-H2O+i', 'y(IQ)-NH3+i', 'y(LQ)-NH3+i', 'y(L[Acetyl]S)-H2O+i', 'y(AAV)-NH3+i', 'y(AGI)-NH3+i', 'y(AGL)-NH3+i', 'a(ISS)-NH3+i', 'a(LSS)-NH3+i', 'a(STV)-NH3+i']	
 244.13747	505.8	9/91	4.9%	244.13728	-0.78	a(DL[Acetyl])+i	['b(EI)+i', 'b(EL)+i', 'b(L[Acetyl]S)+i', 'y(EI)-H2O+i', 'y(EL)-H2O+i', 'y(IQ)-NH3+i', 'y(LQ)-NH3+i', 'y(L[Acetyl]S)-H2O+i', 'y(AAV)-NH3+i', 'y(AGI)-NH3+i', 'y(AGL)-NH3+i', 'a(ISS)-NH3+i', 'a(LSS)-NH3+i', 'a(STV)-NH3+i']	
 244.14052	157.5	13/91	1.7%	244.14042	-0.41	a(DR)	['b(RS)', 'y(RS)-H2O']	
-244.16557	5754.6	90/91	13.1%	244.16557	0.0	y(KP)	['a(AIS)', 'a(ALS)', 'a(ATV)', 'a(GIT)', 'a(GLT)']	COM
+244.16557	5754.6	90/91	13.1%	244.16557	0.0	y(KP)	['a(AIS)', 'a(ALS)', 'a(ATV)', 'a(GIT)', 'a(GLT)']	
 244.5956	106.8	2/91	0.7%	?	?	?	?	
 244.80527	49.1	5/91	0.2%	?	?	?	?	
 244.81211	129.6	2/91	0.8%	?	?	?	?	
@@ -2312,7 +2312,7 @@ mz	intensity	ms runs	percentage	theoretical m/z	delta PPM	primary identification
 249.1458	353.4	6/91	1.9%	249.14584	0.16	a(HR)-NH3	['a(KM[Oxidation])+i']	
 249.14723	35.4	3/91	1.4%	249.14607	-4.66	a(KM[Oxidation])+i	[]	
 249.15064	89.7	6/91	0.8%	?	?	?	?	
-249.15976	3117.5	91/91	9.2%	249.15975	-0.04	a(IY)	['a(LY)', 'b(KL[Acetyl])-H2O-NH3', 'b(AIV)-H2O-NH3', 'b(ALV)-H2O-NH3', 'a(GL[Acetyl]V)-H2O-NH3', 'b(GII)-H2O-NH3', 'b(GIL)-H2O-NH3', 'b(GLL)-H2O-NH3', 'a(IPT)-H2O-NH3', 'a(LPT)-H2O-NH3', 'a(PPV)-NH3']	COM
+249.15976	3117.5	91/91	9.2%	249.15975	-0.04	a(IY)	['a(LY)', 'b(KL[Acetyl])-H2O-NH3', 'b(AIV)-H2O-NH3', 'b(ALV)-H2O-NH3', 'a(GL[Acetyl]V)-H2O-NH3', 'b(GII)-H2O-NH3', 'b(GIL)-H2O-NH3', 'b(GLL)-H2O-NH3', 'a(IPT)-H2O-NH3', 'a(LPT)-H2O-NH3', 'a(PPV)-NH3']	
 249.16327	67.8	6/91	0.6%	249.16383	2.25	y(KT)+i	[]	
 249.18477	62.8	4/91	0.8%	?	?	?	?	
 249.21729	93.8	3/91	0.9%	?	?	?	?	
@@ -2341,9 +2341,9 @@ mz	intensity	ms runs	percentage	theoretical m/z	delta PPM	primary identification
 251.0126	296.0	3/91	0.3%	?	?	?	?	
 251.05192	645.3	2/91	0.6%	251.05186	-0.24	b(CM[Oxidation])	['y(CM[Oxidation])-H2O']	
 251.05971	499.2	3/91	0.9%	251.05996	1.0	a(M[Oxidation]M[Oxidation])-NH3+i	[]	
-251.0679	5819.9	16/91	33.9%	251.06782	-0.32	b(HM[Oxidation])-H2O-NH3+i	[]	COM
+251.0679	5819.9	16/91	33.9%	251.06782	-0.32	b(HM[Oxidation])-H2O-NH3+i	[]	
 251.09627	463.4	6/91	4.9%	251.09611	-0.64	b(HM)-H2O	[]	
-251.10265	1736.4	91/91	4.9%	251.10263	-0.08	a(DY)	['b(SY)', 'y(SY)-H2O', 'b(ADV)-H2O-NH3', 'a(DPT)-H2O-NH3', 'b(DGI)-H2O-NH3', 'b(DGL)-H2O-NH3', 'a(EPS)-H2O-NH3', 'b(EGV)-H2O-NH3', 'b(PST)-H2O-NH3']	COM
+251.10265	1736.4	91/91	4.9%	251.10263	-0.08	a(DY)	['b(SY)', 'y(SY)-H2O', 'b(ADV)-H2O-NH3', 'a(DPT)-H2O-NH3', 'b(DGI)-H2O-NH3', 'b(DGL)-H2O-NH3', 'a(EPS)-H2O-NH3', 'b(EGV)-H2O-NH3', 'b(PST)-H2O-NH3']	
 251.10606	117.3	3/91	0.6%	251.106	-0.24	y(MT)	['y(GSS)+i']	
 251.11394	139.8	13/91	1.3%	251.11387	-0.28	b(ER)-H2O-NH3	['a(AHS)-NH3', 'a(ANQ)-H2O-NH3', 'a(GHT)-NH3', 'a(GQQ)-H2O-NH3', 'b(GNP)-H2O']	
 251.11516	504.4	2/91	1.7%	?	?	?	?	
@@ -2480,7 +2480,7 @@ mz	intensity	ms runs	percentage	theoretical m/z	delta PPM	primary identification
 258.09855	340.4	18/91	1.3%	258.09855	0.0	b(HH)-NH3	['y(HH)-H2O-NH3', 'b(C[Carbamidomethyl]I)-NH3+i', 'b(C[Carbamidomethyl]L)-NH3+i', 'y(C[Carbamidomethyl]I)-H2O-NH3+i', 'y(C[Carbamidomethyl]L)-H2O-NH3+i', 'a(EM[Acetyl])-H2O+i', 'a(M[Acetyl]Q)-NH3+i', 'b(M[Acetyl]T)-H2O+i', 'a(AGM[Acetyl])-NH3+i', 'a(AM[Oxidation]T)-H2O-NH3+i', 'b(AAM)-NH3+i', 'b(ACV)-NH3+i', 'y(AAM)-H2O-NH3+i', 'y(ACV)-H2O-NH3+i', 'a(CPT)-NH3+i', 'b(CGI)-NH3+i', 'b(CGL)-NH3+i', 'y(CGI)-H2O-NH3+i', 'y(CGL)-H2O-NH3+i', 'a(GM[Oxidation]P)-NH3+i', 'a(MST)-H2O-NH3+i']	
 258.10856	1378.5	86/91	6.1%	258.10845	-0.43	b(EQ)	['b(AAD)', 'b(AEG)', 'y(EQ)-H2O', 'y(QQ)-NH3', 'y(AAD)-H2O', 'y(AAN)-NH3', 'y(AEG)-H2O', 'y(AGQ)-NH3', 'a(DST)-H2O', 'a(ESS)-H2O', 'a(NST)-NH3', 'a(QSS)-NH3', 'b(SST)-H2O']	
 258.12371	279.1	43/91	1.3%	258.1237	-0.04	b(AW)	['y(AW)-H2O', 'b(FQ)-H2O', 'b(HL[Acetyl])-H2O-NH3', 'b(AFG)-H2O']	
-258.1448	3278.9	91/91	14.4%	258.14483	0.12	b(EK)	['a(ADV)', 'b(ASV)', 'y(AAP)', 'a(DGI)', 'a(DGL)', 'a(EGV)', 'b(GIS)', 'b(GLS)', 'b(GTV)', 'a(PST)', 'y(EK)-H2O', 'y(KQ)-NH3', 'y(AGK)-NH3', 'y(ASV)-H2O', 'y(GIS)-H2O', 'y(GLS)-H2O', 'y(GTV)-H2O', 'a(KSS)-NH3', 'a(TTT)-H2O']	COM
+258.1448	3278.9	91/91	14.4%	258.14483	0.12	b(EK)	['a(ADV)', 'b(ASV)', 'y(AAP)', 'a(DGI)', 'a(DGL)', 'a(EGV)', 'b(GIS)', 'b(GLS)', 'b(GTV)', 'a(PST)', 'y(EK)-H2O', 'y(KQ)-NH3', 'y(AGK)-NH3', 'y(ASV)-H2O', 'y(GIS)-H2O', 'y(GLS)-H2O', 'y(GTV)-H2O', 'a(KSS)-NH3', 'a(TTT)-H2O']	
 258.15628	161.9	14/91	1.1%	258.15607	-0.81	a(ER)	['b(RT)', 'y(RT)-H2O']	
 258.16029	301.6	39/91	1.2%	258.16009	-0.77	a(VW)	['b(FK)-H2O', 'a(FGV)-H2O']	
 258.16866	214.1	3/91	1.9%	258.16819	-1.82	a(FL[Acetyl])-H2O+i	[]	
@@ -2512,7 +2512,7 @@ mz	intensity	ms runs	percentage	theoretical m/z	delta PPM	primary identification
 259.97319	547.0	2/91	0.5%	?	?	?	?	
 259.99793	97.2	6/91	1.3%	?	?	?	?	
 260.00443	282.3	3/91	0.4%	?	?	?	?	
-260.04101	5092.4	9/91	3.8%	260.04096	-0.19	b(CM[Acetyl])-NH3	['y(CM[Acetyl])-H2O-NH3', 'b(M[Oxidation]M[Oxidation])-H2O-NH3', 'b(C[Carbamidomethyl]D)-NH3+i', 'y(C[Carbamidomethyl]D)-H2O-NH3+i', 'b(CDG)-NH3+i', 'y(CDG)-H2O-NH3+i']	COM
+260.04101	5092.4	9/91	3.8%	260.04096	-0.19	b(CM[Acetyl])-NH3	['y(CM[Acetyl])-H2O-NH3', 'b(M[Oxidation]M[Oxidation])-H2O-NH3', 'b(C[Carbamidomethyl]D)-NH3+i', 'y(C[Carbamidomethyl]D)-H2O-NH3+i', 'b(CDG)-NH3+i', 'y(CDG)-H2O-NH3+i']	
 260.07468	138.8	2/91	0.9%	260.07398	-2.69	b(FM[Oxidation])-H2O-NH3	['b(MY)-H2O-NH3']	
 260.08768	120.4	26/91	0.8%	260.08771	0.12	a(DDG)	['b(DGS)', 'y(DGS)-H2O', 'y(GNS)-NH3', 'a(ACM)-H2O', 'a(CCV)-H2O']	
 260.10308	141.9	5/91	0.6%	260.10297	-0.42	b(NY)-H2O	['b(GGY)-H2O']	
@@ -2526,7 +2526,7 @@ mz	intensity	ms runs	percentage	theoretical m/z	delta PPM	primary identification
 260.16055	851.1	8/91	5.7%	260.16048	-0.27	y(IQ)	['y(LQ)', 'y(AAV)', 'y(AGI)', 'y(AGL)', 'a(ISS)', 'a(LSS)', 'a(STV)']	
 260.16676	91.0	6/91	0.6%	?	?	?	?	
 260.17375	95.2	5/91	0.8%	?	?	?	?	
-260.19696	3640.3	91/91	13.1%	260.19687	-0.35	y(IK)	['y(KL)']	COM
+260.19696	3640.3	91/91	13.1%	260.19687	-0.35	y(IK)	['y(KL)']	
 260.62027	342.5	2/91	1.9%	?	?	?	?	
 260.98036	224.0	2/91	0.3%	?	?	?	?	
 260.99659	387.5	5/91	0.3%	?	?	?	?	
@@ -4058,7 +4058,7 @@ mz	intensity	ms runs	percentage	theoretical m/z	delta PPM	primary identification
 329.80745	42.5	2/91	0.6%	?	?	?	?	
 330.02017	146.3	4/91	1.1%	?	?	?	?	
 330.03978	100.5	4/91	1.4%	?	?	?	?	
-330.05975	5937.4	17/91	30.6%	?	?	?	?	COM
+330.05975	5937.4	17/91	30.6%	?	?	?	?	
 330.09738	132.3	3/91	0.9%	330.09879	4.27	b(CPY)-H2O-NH3+i	[]	
 330.11213	67.6	4/91	1.1%	330.11182	-0.94	b(CEP)	['b(AEM[Oxidation])-H2O', 'b(AM[Oxidation]Q)-NH3', 'y(AC[Carbamidomethyl]P)-NH3', 'y(AM[Oxidation]Q)-H2O-NH3', 'b(CDK)-NH3', 'y(CDK)-H2O-NH3', 'y(CEP)-H2O', 'y(CPQ)-NH3', 'a(C[Carbamidomethyl]DV)-NH3', 'b(C[Carbamidomethyl]SV)-NH3', 'y(C[Carbamidomethyl]SV)-H2O-NH3', 'a(DEM)-H2O', 'a(DMQ)-NH3', 'a(DM[Acetyl]S)-H2O', 'b(DMT)-H2O', 'a(EMN)-NH3', 'b(EMS)-H2O', 'b(MNT)-NH3', 'b(MQS)-NH3', 'y(MNT)-H2O-NH3', 'y(MQS)-H2O-NH3', 'a(M[Acetyl]NS)-NH3', 'b(M[Acetyl]SS)-H2O', 'b(C[Carbamidomethyl]W)-H2O+i', 'b(CGW)-H2O+i']	
 330.12948	187.1	29/91	1.6%	330.12958	0.3	b(AEE)	['b(DDV)', 'y(AEE)-H2O', 'y(AEQ)-NH3', 'y(DDV)-H2O', 'y(DNV)-NH3', 'a(AMM[Acetyl])-H2O', 'a(CM[Acetyl]V)-H2O', 'b(CIM)-H2O', 'b(CLM)-H2O', 'a(MM[Oxidation]P)-H2O']	
@@ -4514,7 +4514,7 @@ mz	intensity	ms runs	percentage	theoretical m/z	delta PPM	primary identification
 347.81859	52.5	3/91	2.0%	?	?	?	?	
 347.83288	43.0	2/91	1.0%	?	?	?	?	
 347.97431	212.4	6/91	3.0%	?	?	?	?	
-348.07036	5309.4	20/91	16.6%	?	?	?	?	COM
+348.07036	5309.4	20/91	16.6%	?	?	?	?	
 348.12034	32.0	13/91	0.7%	348.11901	-3.82	a(DDY)-H2O	['a(DNY)-NH3', 'b(DSY)-H2O', 'b(NSY)-NH3', 'y(NSY)-H2O-NH3', 'b(C[Carbamidomethyl]W)+i', 'b(CGW)+i', 'y(C[Carbamidomethyl]W)-H2O+i', 'b(AHM[Acetyl])-H2O-NH3+i', 'b(CFN)-H2O+i', 'y(CGW)-H2O+i', 'b(C[Carbamidomethyl]FG)-H2O+i', 'b(HM[Oxidation]P)-H2O-NH3+i']	
 348.12236	112.2	12/91	0.8%	348.12238	0.06	b(AEM[Oxidation])	['y(CEP)', 'a(DEM)', 'a(DM[Acetyl]S)', 'b(DMT)', 'b(EMS)', 'b(M[Acetyl]SS)', 'y(AEM[Oxidation])-H2O', 'y(AM[Oxidation]Q)-NH3', 'y(CDK)-NH3', 'y(C[Carbamidomethyl]SV)-NH3', 'y(DMT)-H2O', 'y(EMS)-H2O', 'y(MNT)-NH3', 'y(MQS)-NH3', 'y(M[Acetyl]SS)-H2O', 'a(MMM)-H2O', 'b(C[Carbamidomethyl]W)+i', 'b(CGW)+i', 'y(C[Carbamidomethyl]W)-H2O+i', 'b(AHM[Acetyl])-H2O-NH3+i', 'b(CFN)-H2O+i', 'y(CGW)-H2O+i', 'b(C[Carbamidomethyl]FG)-H2O+i', 'b(HM[Oxidation]P)-H2O-NH3+i']	
 348.13756	176.0	3/91	1.5%	348.13764	0.23	b(CFP)	['b(AFM[Oxidation])-H2O', 'b(AMY)-H2O', 'b(CVY)-H2O', 'y(CFP)-H2O', 'a(DFM)-H2O', 'a(FMN)-NH3', 'b(FMS)-H2O', 'a(GM[Acetyl]Y)-H2O', 'a(DNY)-H2O+i', 'b(EHP)-NH3+i', 'y(EHP)-H2O-NH3+i', 'a(NNY)-NH3+i', 'b(NSY)-H2O+i']	
