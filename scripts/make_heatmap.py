@@ -19,10 +19,10 @@ class HeatMapCreator:
         params = argparser.parse_args()
         self.tsv_file = params.tsv_file
         # self.heat_map_matrix = numpy.zeros((20,25))
-        self.residues = {} # make a nested dictionary
+        self.residues = {'no loss': {}} # make a nested dictionary
         # 
         self.scanned_residues = []
-        self.amino_acids = ['A', 'C', 'C[Carbamidomethyl]', 'D' , 'E', 'F', 'G', 'H', 'I', 'K', 'L', 'M', 'M[Oxidation]', 'N', 'P', 'Q', 'R', 'S', 'T', 'V', 'W', 'Y']
+        self.amino_acids = ['IA', 'IC', 'IC[Carbamidomethyl]', 'ID' , 'IE', 'IF', 'IG', 'IH', 'II', 'IK', 'IL', 'IM', 'IM[Oxidation]', 'IN', 'IP', 'IQ', 'IR', 'IS', 'IT', 'IV', 'IW', 'IY']
 
     def read_file(self):
         with open(self.tsv_file) as file:
@@ -33,41 +33,79 @@ class HeatMapCreator:
                 if line_split[6] != '?':
                     identification = line_split[6]
                     if identification[0] == 'I' and "+i" not in identification:
-                        residue = identification[2:]
+                        if "[Acetyl]" in identification:
+                            continue
+                        elif "[Oxidation]" in identification:
+                            amino_acid = identification[:13]
+                            residue = identification[13:]
+                        elif "[Carbamidomethyl]" in identification:
+                            amino_acid = identification[:19]
+                            residue = identification[19:]
+                        else:
+                            amino_acid = identification[:2]
+                            residue = identification[2:]
                         if not residue in self.scanned_residues:
                             self.residues[residue] = {}
                             self.scanned_residues.append(residue)
-                        self.residues[residue][identification[1]] = float(line_split[1]) # adds the intensity
+                        self.residues[residue][amino_acid] = float(line_split[1]) # adds the intensity
                 if line_split[7] != '?':
                     identifications = line_split[7]
                     identifications = literal_eval(identifications)
                     for identification in identifications:
                         if identification[0] == 'I' and "+i" not in identification:
-                            residue = identification[2:]
+                            if "[Acetyl]" in identification:
+                                continue
+                            elif "[Oxidation]" in identification:
+                                amino_acid = identification[:13]
+                                residue = identification[13:]
+                            elif "[Carbamidomethyl]" in identification:
+                                amino_acid = identification[:19]
+                                residue = identification[19:]
+                            else:
+                                amino_acid = identification[:2]
+                                residue = identification[2:]
                             if not residue in self.scanned_residues:
                                 self.residues[residue] = {}
                                 self.scanned_residues.append(residue)
-                            self.residues[residue][identification[1]] = float(line_split[1]) # adds the intensity
+                            self.residues[residue][amino_acid] = float(line_split[1]) # adds the intensity
+
+    def to_strength(self, intensity):
+        if intensity == 0:
+            return 0
+        elif intensity <= 250:
+            return 0.2
+        elif intensity <= 2000:
+            return 0.5
+        else:
+            return 0.8
 
     def generate_heatmap(self):
-        self.heat_map_matrix = numpy.zeros((20,len(self.residues)))
+        self.residues["no loss"] = self.residues.pop('')
+        self.heat_map_matrix = numpy.zeros((len(self.amino_acids),len(self.residues)))
+
+        residue_list = list(self.residues.items())
+        residue_list.sort(key = lambda x: -1 * sum(x[1].values()))
+        residue_list.sort(key = lambda x: -1 * len(x[1]))
+        self.residues = dict(residue_list)
 
         residue_index = 0
         for residue in self.residues:
             for amino_acid in self.residues[residue]:
                 amino_acid_index = self.amino_acids.index(amino_acid)
-                self.heat_map_matrix[amino_acid_index][residue_index] = self.residues[residue][amino_acid]
+                self.heat_map_matrix[amino_acid_index][residue_index] = self.to_strength(self.residues[residue][amino_acid])
             residue_index += 1
 
         # plot heatmap
-        plt.imshow(self.heat_map_matrix, cmap = 'autumn')
-        plt.colorbar()
+        plt.imshow(self.heat_map_matrix, cmap = 'BuPu')
+        im_ratio = self.heat_map_matrix.shape[0]/self.heat_map_matrix.shape[1]
+        plt.colorbar(fraction=0.047*im_ratio)
 
         # Set tick labels
-        plt.xticks(range(len(self.residues)), self.residues, rotation = 90)
-        plt.yticks(range(len(self.amino_acids)), self.amino_acids)
+        plt.xticks(range(len(self.residues)), self.residues, rotation = 90, fontsize = 5)
+        plt.yticks(range(len(self.amino_acids)), self.amino_acids, fontsize = 5)
         
         # save the figure
+        plt.tight_layout()
         plt.savefig("heatmap.pdf")
         plt.close
 

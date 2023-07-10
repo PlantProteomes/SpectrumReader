@@ -211,8 +211,8 @@ class MSRunPeakFinder:
         amino_acid_modifications = {
             'C[Carbamidomethyl]': {'mz': 57.021464, 'amino acid': 'C'},
             'M[Oxidation]': {'mz': 15.994915, 'amino acid': 'M'},
-            '[Acetyl]-M': {'mz': 42.010565, 'amino acid': 'M'},
-            '[Acetyl]-L': {'mz': 42.010565, 'amino acid': 'L'}
+            'M[Acetyl]': {'mz': 42.010565, 'amino acid': 'M'},
+            'L[Acetyl]': {'mz': 42.010565, 'amino acid': 'L'}
         }
 
         # for amino_acid in amino_acids: # considers Acetylation
@@ -267,9 +267,14 @@ class MSRunPeakFinder:
         for acid in amino_acids:
             for ion in ion_types:
                 if len(acid) == 1:
+                    acid_base = acid
                     base_acid_mz = mass.calculate_mass(sequence=acid, ion_type=ion, charge=1)
                 else:
-                    base_acid_mz = mass.calculate_mass(sequence=acid[0], ion_type=ion, charge=1) + amino_acid_modifications[acid]['mz']
+                    if acid[0] == '[':
+                        acid_base = acid[8]
+                    else:
+                        acid_base = acid[0]
+                    base_acid_mz = mass.calculate_mass(sequence=acid_base, ion_type=ion, charge=1) + amino_acid_modifications[acid]['mz']
 
                 # Adds possible modifications, but only for a ions
                 if ion == 'a':
@@ -278,9 +283,9 @@ class MSRunPeakFinder:
                     # Add base a ion's isotope
                     self.known_ions[f"I{acid}+i"] = [base_acid_mz + self.isotope_mass, False]
                     # Check if there are any possible modifications, if there are, add them too
-                    for modification in modification_deltas[acid[0]]:
+                    for modification in modification_deltas[acid_base]:
                         acid_mz = base_acid_mz
-                        acid_mz += modification_deltas[acid[0]][modification]
+                        acid_mz += modification_deltas[acid_base][modification]
                         self.known_ions[f"I{acid}{modification}"] = [acid_mz, False]
                         self.known_ions[f"I{acid}{modification}+i"] = [acid_mz + self.isotope_mass, False]
                 # add b and y ions
@@ -295,18 +300,28 @@ class MSRunPeakFinder:
                 pair_acid_1 = amino_acids[identifier_index_1]
                 # Checks if it is Carbamidomethyl or Oxidation
                 if len(pair_acid_1) == 1:
+                    pair_1_acid_base = pair_acid_1
                     pair_mz_1 = mass.calculate_mass(sequence=pair_acid_1, ion_type=ion, charge=1)
                 else:
-                    pair_mz_1 = amino_acid_modifications[pair_acid_1]['mz'] + mass.calculate_mass(sequence=pair_acid_1[0], ion_type=ion, charge=1)
+                    if pair_acid_1[0] == '[':
+                        pair_1_acid_base = pair_acid_1[8]
+                    else:
+                        pair_1_acid_base = pair_acid_1[0]
+                    pair_mz_1 = amino_acid_modifications[pair_acid_1]['mz'] + mass.calculate_mass(sequence=pair_1_acid_base, ion_type=ion, charge=1)
                 
                 # Second amino acid
                 for identifier_index_2 in range(len(amino_acids) - identifier_index_1):
                     identifier_index_2 += identifier_index_1
                     pair_acid_2 = amino_acids[identifier_index_2]
                     if len(pair_acid_2) == 1:
+                        pair_2_acid_base = pair_acid_2
                         pair_mz_2 = mass.calculate_mass(sequence=pair_acid_2, ion_type='b', charge=0)
                     else:
-                        pair_mz_2 = amino_acid_modifications[pair_acid_2]['mz'] + mass.calculate_mass(sequence=pair_acid_2[0], ion_type='b', charge=0)
+                        if pair_acid_2[0] == '[':
+                            pair_2_acid_base = pair_acid_2[8]
+                        else:
+                            pair_2_acid_base = pair_acid_2[0]
+                        pair_mz_2 = amino_acid_modifications[pair_acid_2]['mz'] + mass.calculate_mass(sequence=pair_2_acid_base, ion_type='b', charge=0)
                     
                     # Add two amino acids together
                     pair_mz = pair_mz_1 + pair_mz_2
@@ -327,27 +342,42 @@ class MSRunPeakFinder:
                 trio_acid_1 = amino_acids[identifier_index_1]
                 # Checks if it is Carbamidomethyl or Oxidation
                 if len(trio_acid_1) == 1:
+                    trio_1_acid_base = trio_acid_1
                     trio_mz_1 = mass.calculate_mass(sequence=trio_acid_1, ion_type=ion, charge=1)
                 else:
-                    trio_mz_1 = amino_acid_modifications[trio_acid_1]['mz'] + mass.calculate_mass(sequence=trio_acid_1[0], ion_type=ion, charge=1)
+                    if trio_acid_1[0] == '[':
+                        trio_1_acid_base = trio_acid_1[8]
+                    else:
+                        trio_1_acid_base = trio_acid_1[0]
+                    trio_mz_1 = amino_acid_modifications[trio_acid_1]['mz'] + mass.calculate_mass(sequence=trio_1_acid_base, ion_type=ion, charge=1)
                 
                 # Second amino acid
                 for identifier_index_2 in range(len(amino_acids) - identifier_index_1):
                     identifier_index_2 += identifier_index_1
                     trio_acid_2 = amino_acids[identifier_index_2]
                     if len(trio_acid_2) == 1:
+                        trio_2_acid_base = trio_acid_2
                         trio_mz_2 = mass.calculate_mass(sequence=trio_acid_2, ion_type='b', charge=0)
                     else:
-                        trio_mz_2 = amino_acid_modifications[trio_acid_2]['mz'] + mass.calculate_mass(sequence=trio_acid_2[0], ion_type='b', charge=0)
+                        if trio_acid_2[0] == '[':
+                            trio_2_acid_base = trio_acid_2[8]
+                        else:
+                            trio_2_acid_base = trio_acid_2[0]
+                        trio_mz_2 = amino_acid_modifications[trio_acid_2]['mz'] + mass.calculate_mass(sequence=trio_2_acid_base, ion_type='b', charge=0)
                     
                     # Third amino acid
                     for identifier_index_3 in range(len(amino_acids) - identifier_index_2):
                         identifier_index_3 += identifier_index_2
                         trio_acid_3 = amino_acids[identifier_index_3]
                         if len(trio_acid_3) == 1:
+                            trio_3_acid_base = trio_acid_3
                             trio_mz_3 = mass.calculate_mass(sequence=trio_acid_3, ion_type='b', charge=0)
                         else:
-                            trio_mz_3 = amino_acid_modifications[trio_acid_3]['mz'] + mass.calculate_mass(sequence=trio_acid_3[0], ion_type='b', charge=0)
+                            if trio_acid_3[0] == '[':
+                                trio_3_acid_base = trio_acid_3[8]
+                            else:
+                                trio_3_acid_base = trio_acid_3[0]
+                            trio_mz_3 = amino_acid_modifications[trio_acid_3]['mz'] + mass.calculate_mass(sequence=trio_3_acid_base, ion_type='b', charge=0)
 
                         # Adds all 3 together
                         trio_mz = trio_mz_1 + trio_mz_2 + trio_mz_3
@@ -502,7 +532,7 @@ class MSRunPeakFinder:
         # This takes a string and splits it into the + and -, reducing any redundancies
         # i.e. IE+H2O-H2O -> IE
         condensed_acid = ""
-        match = re.match(r'([abyI][^\+\-]+)(.+)$', explanation)
+        match = re.match(r'([abyI\[\]][^\+\-]+)(.+)$', explanation)
         if match:
             ions = match.group(1)
             losses = match.group(2)
@@ -518,6 +548,9 @@ class MSRunPeakFinder:
                     additions.append(modification[1:])
                 else:
                     subtractions.append(modification[1:])
+
+            additions.sort()
+            subtractions.sort()
 
             removed = 0
             for add_index in range(len(additions)):
@@ -755,6 +788,7 @@ class MSRunPeakFinder:
                     binned_known_ions[int(peak[0] * 10)][known_ion_index][2] = True
 
             # Sorts the identifications for each peak so the closest identifications are at the front
+            identifications.sort(key = lambda x: len(x[2]))
             identifications.sort(key = lambda x: abs(x[1]))
             for identification in identifications:
                 self.observed_peaks[index].append(identification)

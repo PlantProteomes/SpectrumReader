@@ -208,6 +208,38 @@ class CombineList:
                 self.all_peaks.pop(index - removed)
                 removed += 1
 
+    def filter_list(self):
+        removed = 0
+        for index in range(len(self.all_peaks)):
+            if index == 0:
+                continue
+            fraction = self.all_peaks[index - removed][2].split("/")
+            if float(fraction[0])/float(fraction[1]) != 1.0 or self.all_peaks[index - removed][1] < 5000:
+                self.all_peaks.pop(index - removed)
+                removed += 1
+
+    def add_labels(self):
+        for index in range(len(self.all_peaks)):
+            if index == 0:
+                self.all_peaks[index].append("labels")
+                continue
+
+            is_common = False
+            is_immonium = False
+            fraction = self.all_peaks[index][2].split("/")
+            if float(fraction[0])/float(fraction[1]) == 1.0 or self.all_peaks[index][1] >= 5000:
+                is_common = True
+            if self.all_peaks[index][6][0] == "I":
+                is_immonium = True
+            if is_common and is_immonium:
+                self.all_peaks[index].append("COM, IMM")
+            elif is_common:
+                self.all_peaks[index].append("COM")
+            elif is_immonium:
+                self.all_peaks[index].append("IMM")
+            else:
+                self.all_peaks[index].append()
+
     def write_combined_list(self):
         with open('combined_list.tsv', 'w') as file:
             writer = csv.writer(file, delimiter='\t', lineterminator='\n')
@@ -222,6 +254,8 @@ def main():
     combine_list.find_relative_intensity()
     combine_list.merge_lists()
     combine_list.remove_single_peaks()
+    combine_list.filter_list()
+    combine_list.add_labels()
     combine_list.write_combined_list()
 
 if __name__ == "__main__": main()
