@@ -238,7 +238,7 @@ class CombineList:
             elif is_immonium:
                 self.all_peaks[index].append("IMM")
             else:
-                self.all_peaks[index].append()
+                self.all_peaks[index].append("")
 
     def write_combined_list(self):
         with open('combined_list.tsv', 'w') as file:
