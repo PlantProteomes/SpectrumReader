@@ -3,6 +3,7 @@
 
 # must first change to scripts folder through "cd .\scripts\"
 # to run the program (use terminal): python add_labels.py --tsv_file ..\data\combined_list.tsv
+# to run the program (use terminal): python add_labels.py --tsv_file ..\combined_list\combined_list.tsv
 
 import csv
 import argparse

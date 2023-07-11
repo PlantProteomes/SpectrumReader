@@ -254,7 +254,7 @@ def main():
     combine_list.find_relative_intensity()
     combine_list.merge_lists()
     combine_list.remove_single_peaks()
-    combine_list.filter_list()
+    # combine_list.filter_list()
     combine_list.add_labels()
     combine_list.write_combined_list()
 
