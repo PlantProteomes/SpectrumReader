@@ -1360,7 +1360,7 @@ class MSRunPeakFinder:
                 identification_index += 4
                 output_peaks[index][identification_index][1] = round(output_peaks[index][identification_index][1] * 1e6 / (peak_mz - correction), 2)
 
-        output_peaks.insert(0, ['uncorrected m/z', 'corrected m/z', 'intensity', 'percentage', 'primary identification', 'other identifications'])
+        output_peaks.insert(0, ['uncorrected m/z', 'corrected m/z', 'intensity', 'percentage of spectra', 'primary identification', 'other identifications'])
         with open(f'{self.peak_file}.tsv', 'w') as file:
         # with open('common_peaks.tsv', 'w') as file:
             writer = csv.writer(file, delimiter='\t', lineterminator='\n')

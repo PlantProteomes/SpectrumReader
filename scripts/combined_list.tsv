@@ -1,4 +1,4 @@
-mz	intensity	ms runs	percentage	theoretical m/z	delta PPM	primary identification	other identifications
+mz	intensity	ms runs	percentage	theoretical m/z	delta PPM	primary identification	other identifications	labels
 70.06511	55933.8	2/2	8.8%	70.06513	0.29	IP	['IR-CH5N3', 'IR-CH2N2-NH3', 'a(AI)-H2O^2', 'a(AL)-H2O^2']	COM, IMM
 72.08076	72582.6	2/2	9.8%	72.08078	0.28	II-CH2	['IL-CH2', 'IV']	COM, IMM
 74.06003	21195.2	2/2	7.5%	74.06004	0.14	IT	[]	COM, IMM

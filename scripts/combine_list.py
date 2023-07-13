@@ -32,7 +32,7 @@ class CombineList:
         # Creates a dictionary with the key being the file name and the value being a list of all the
         # observed peak from the tsv file
         self.aggregated_observed_peaks = {}
-        self.all_peaks = [["mz", "intensity", "ms runs", "percentage", "theoretical m/z", "delta PPM", "primary identification", "other identifications"]]
+        self.all_peaks = [["average m/z", "average intensity", "ms runs", "percentage of spectra", "theoretical m/z", "delta PPM", "primary identification", "other identifications"]]
 
     def read_files(self):
         # Goes through each file to add all observed peaks
@@ -208,6 +208,15 @@ class CombineList:
                 self.all_peaks.pop(index - removed)
                 removed += 1
 
+    def reduce_peaks(self):
+        removed = 0
+        for index in range(len(self.all_peaks)):
+            if index == 0:
+                continue
+            if self.all_peaks[index-removed][2].startswith('2/') or float(self.all_peaks[index-removed][3][:-1]) <= 0.5:
+                self.all_peaks.pop(index - removed)
+                removed += 1
+
     def filter_list(self):
         removed = 0
         for index in range(len(self.all_peaks)):
@@ -255,6 +264,7 @@ def main():
     combine_list.merge_lists()
     combine_list.remove_single_peaks()
     # combine_list.filter_list()
+    combine_list.reduce_peaks()
     combine_list.add_labels()
     combine_list.write_combined_list()
 
