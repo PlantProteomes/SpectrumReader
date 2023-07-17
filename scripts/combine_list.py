@@ -193,6 +193,8 @@ class CombineList:
 
     def array_to_string(self):
         for index in range(len(self.all_peaks)):
+            if index == 0:
+                continue
             other_identifications = self.all_peaks[index][7]
             other_identifications_string = ""
             for identification in other_identifications:
