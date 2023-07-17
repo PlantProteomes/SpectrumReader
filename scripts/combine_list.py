@@ -191,6 +191,14 @@ class CombineList:
 
         print("finished merging lists")
 
+    def array_to_string(self):
+        for index in range(len(self.all_peaks)):
+            other_identifications = self.all_peaks[index][7]
+            other_identifications_string = ""
+            for identification in other_identifications:
+                other_identifications_string += identification + ", "
+            self.all_peaks[index][7] = other_identifications_string[:-2]
+
     def find_denominator(self, mz):
         # returns the number of ms runs the peak could have appeared in. for example, if the peak is 90 m/z
         # and appears in 5/6 ms runs but the 6th ms run starts data collection at 100 m/z, the 6th ms run
@@ -265,6 +273,7 @@ def main():
     combine_list.remove_single_peaks()
     # combine_list.filter_list()
     combine_list.reduce_peaks()
+    combine_list.array_to_string()
     combine_list.add_labels()
     combine_list.write_combined_list()
 
