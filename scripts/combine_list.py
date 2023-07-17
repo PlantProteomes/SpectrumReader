@@ -15,6 +15,7 @@ class CombineList:
         # Takes in all the tsv file names in a string format separated by commas
         argparser = argparse.ArgumentParser(description='An example program that reads an mzML file sequentially')
         argparser.add_argument('tsv_files', type=str, nargs='+', help='Filenames of one or more tsv files to read')
+        argparser.add_argument('--filter_tsv', action='store', default=False, type=bool, help='Determines if the tsv should be filtered leaving most intense peaks. Auto assumes False')
         
         params = argparser.parse_args()
 
@@ -28,6 +29,7 @@ class CombineList:
                 return
         
         self.file_names = params.tsv_files
+        self.filter_tsv = params.filter_tsv
             
         # Creates a dictionary with the key being the file name and the value being a list of all the
         # observed peak from the tsv file
@@ -236,6 +238,13 @@ class CombineList:
             if float(fraction[0])/float(fraction[1]) != 1.0 or self.all_peaks[index - removed][1] < 5000:
                 self.all_peaks.pop(index - removed)
                 removed += 1
+            other_identifications = self.all_peaks[index - removed][7]
+            if other_identifications.count(",") >= 3:
+                val = -1
+                for i in range(0, 3):
+                    val = other_identifications.find(",", val + 1)
+                self.all_peaks[index - removed][7] = other_identifications[0:val] + ", etc"
+
 
     def add_labels(self):
         for index in range(len(self.all_peaks)):
@@ -273,10 +282,11 @@ def main():
     combine_list.find_relative_intensity()
     combine_list.merge_lists()
     combine_list.remove_single_peaks()
-    # combine_list.filter_list()
     combine_list.reduce_peaks()
     combine_list.array_to_string()
     combine_list.add_labels()
+    if combine_list.filter_tsv:
+        combine_list.filter_list()
     combine_list.write_combined_list()
 
 if __name__ == "__main__": main()
