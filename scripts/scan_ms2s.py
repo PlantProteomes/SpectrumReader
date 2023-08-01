@@ -1425,6 +1425,8 @@ def main():
             print(f"ERROR: File '{file}' is not an mzML nor a mzML.gz")
             return
         
+    start_time = timeit.default_timer()
+    
     jobs = []
     for file in params.files:
         jobs.append({"file": file, "tolerance": params.tolerance, "rows": params.rows, "columns": params.columns, "make_pdf": params.make_pdf, "find_snippets": params.find_snippets})
@@ -1441,5 +1443,7 @@ def main():
         pool.close()
         pool.join()
         print("")
+
+    print(f"Total time to run {len(jobs)} files is {timeit.default_timer() - start_time}")
 
 if __name__ == "__main__": main()
