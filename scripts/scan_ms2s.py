@@ -1375,6 +1375,7 @@ class MSRunPeakFinder:
 
         print(f"INFO: Elapsed time: {t1-self.t0}")
         print(f"INFO: Processed {self.stats['counter']/(t1-self.t0)} spectra per second")
+        self.stats['ms2spectra']
 
     # Gaussian function used for curve fitting
 
@@ -1426,19 +1427,21 @@ def main():
             return
         
     start_time = timeit.default_timer()
+    total_ms2_spectra = 0
     
     jobs = []
     for file in params.files:
         jobs.append({"file": file, "tolerance": params.tolerance, "rows": params.rows, "columns": params.columns, "make_pdf": params.make_pdf, "find_snippets": params.find_snippets})
 
     if len(jobs) == 1:
-        process_job(jobs[0])
+        total_ms2_spectra += process_job(jobs[0])
     else:
         #### Process the jobs in parallel
         n_threads = params.n_threads or multiprocessing.cpu_count()
         print(f"Processing files with n_threads={n_threads} (one mzML per thread)", end='', flush=True)
         pool = multiprocessing.Pool(processes=n_threads)
         results = pool.map_async(process_job, jobs)
+        print(results)
         #results = pool.map(process_job, jobs)
         pool.close()
         pool.join()
