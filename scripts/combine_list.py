@@ -124,7 +124,7 @@ class CombineList:
 
         # round the intensity to 1 decimal point after normalizing it to the histidine intensity
         for index in range(len(peaks)):
-            peaks[index][1] = round(peaks[index][1] * 10000 / self.normalized_intensity[index], 1)
+            peaks[index][1] = round(peaks[index][1] * 100 / self.normalized_intensity[index], 1)
 
         # take the m/z and find those with the same m/z
         peak_mzs = [item[0] for item in peaks]
@@ -147,7 +147,7 @@ class CombineList:
                         del self.aggregated_observed_peaks[file_name]
                     else:
                         peaks[index] = self.aggregated_observed_peaks[file_name][0]
-                        peaks[index][1] = round(peaks[index][1] * 10000 / self.normalized_intensity[index], 1)
+                        peaks[index][1] = round(peaks[index][1] * 100 / self.normalized_intensity[index], 1)
                         peak_mzs[index] = peaks[index][0]
 
             peak = []

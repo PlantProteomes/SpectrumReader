@@ -144,7 +144,7 @@ class MSRunPeakFinder:
             last_time = timeit.default_timer()
         self.write_json()
         # print out data, including run time, number of peaks found, etc
-        self.show_stats()
+        return self.show_stats()
 
     def aggregate_spectra(self):
         print("starting to aggregate spectra")
@@ -1375,7 +1375,7 @@ class MSRunPeakFinder:
 
         print(f"INFO: Elapsed time: {t1-self.t0}")
         print(f"INFO: Processed {self.stats['counter']/(t1-self.t0)} spectra per second")
-        self.stats['ms2spectra']
+        return self.stats['ms2spectra']
 
     # Gaussian function used for curve fitting
 
@@ -1399,7 +1399,7 @@ def get_strength(intensity, smallest_peak_intensity):
 def process_job(job_parameters):
     peak_finder = MSRunPeakFinder(job_parameters["file"], job_parameters["tolerance"], job_parameters["rows"], job_parameters["columns"], job_parameters["make_pdf"], job_parameters["find_snippets"])
     print(f"working on {job_parameters['file']}")
-    peak_finder.process_file()
+    return peak_finder.process_file()
 
 # put main at the end of the program, define identify peaks method first
 def main():
@@ -1434,13 +1434,14 @@ def main():
         jobs.append({"file": file, "tolerance": params.tolerance, "rows": params.rows, "columns": params.columns, "make_pdf": params.make_pdf, "find_snippets": params.find_snippets})
 
     if len(jobs) == 1:
-        total_ms2_spectra += process_job(jobs[0])
+        process_job(jobs[0])
     else:
         #### Process the jobs in parallel
         n_threads = params.n_threads or multiprocessing.cpu_count()
         print(f"Processing files with n_threads={n_threads} (one mzML per thread)", end='', flush=True)
         pool = multiprocessing.Pool(processes=n_threads)
-        results = pool.map_async(process_job, jobs)
+        # results = pool.map_async(process_job, jobs)
+        results = pool.map(process_job, jobs)
         print(results)
         #results = pool.map(process_job, jobs)
         pool.close()
