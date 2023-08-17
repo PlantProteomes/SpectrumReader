@@ -19,8 +19,6 @@ import argparse
 import os.path
 import timeit
 import matplotlib.pyplot as plt
-import spectrum_utils.spectrum as sus
-import spectrum_utils.plot as sup
 import numpy as np
 import sys
 import csv
