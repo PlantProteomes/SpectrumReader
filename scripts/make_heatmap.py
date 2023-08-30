@@ -13,8 +13,8 @@ class HeatMapCreator:
 
     def __init__(self):
         # Takes in all the tsv file names in a string format separated by commas
-        argparser = argparse.ArgumentParser(description='An example program that reads an mzML file sequentially')
-        argparser.add_argument('--tsv_file', action='store', help='Name of the mzML file to read')
+        argparser = argparse.ArgumentParser(description='An example program that creates heatmaps using tsv files')
+        argparser.add_argument('--tsv_file', action='store', help='Name of the tsv file to read')
         
         params = argparser.parse_args()
         self.tsv_file = params.tsv_file
@@ -72,9 +72,9 @@ class HeatMapCreator:
     def to_strength(self, intensity):
         if intensity == 0:
             return 0
-        elif intensity <= 250:
+        elif intensity <= 2.5:
             return 0.2
-        elif intensity <= 2000:
+        elif intensity <= 20:
             return 0.5
         else:
             return 0.8

@@ -254,7 +254,7 @@ class CombineList:
             is_common = False
             is_immonium = False
             fraction = self.all_peaks[index][2].split("/")
-            if float(fraction[0])/float(fraction[1]) == 1.0 and self.all_peaks[index][1] >= 5000:
+            if float(fraction[0])/float(fraction[1]) == 1.0 and self.all_peaks[index][1] >= 50:
                 is_common = True
             if self.all_peaks[index][6][0] == "I":
                 is_immonium = True
