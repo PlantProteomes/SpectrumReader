@@ -288,8 +288,8 @@ class MSRunPeakFinder:
                         self.known_ions[f"I{acid}{modification}+i"] = [acid_mz + self.isotope_mass, False]
                 # add b and y ions
                 else:
-                    self.known_ions[f"{ion}({acid})"] = [base_acid_mz, False]
-                    self.known_ions[f"{ion}({acid})+i"] = [base_acid_mz + self.isotope_mass, False]
+                    self.known_ions[f"{ion}{{{acid}}}"] = [base_acid_mz, False]
+                    self.known_ions[f"{ion}{{{acid}}}+i"] = [base_acid_mz + self.isotope_mass, False]
 
         # Double nested for loops to identify pairs of amino acids (i.e. A and A)
         # First amino acid
@@ -323,9 +323,9 @@ class MSRunPeakFinder:
                     
                     # Add two amino acids together
                     pair_mz = pair_mz_1 + pair_mz_2
-                    self.known_ions [f"{ion}({pair_acid_1}{pair_acid_2})"]  = [pair_mz, False]
+                    self.known_ions [f"{ion}{{{pair_acid_1}{pair_acid_2}}}"]  = [pair_mz, False]
                     # Considers isotope
-                    self.known_ions [f"{ion}({pair_acid_1}{pair_acid_2})+i"] = [pair_mz + self.isotope_mass, False]
+                    self.known_ions [f"{ion}{{{pair_acid_1}{pair_acid_2}}}+i"] = [pair_mz + self.isotope_mass, False]
 
                     # considers doubly charged ions
                     # pair_mz = (pair_mz + self.proton_mass) / 2
@@ -380,9 +380,9 @@ class MSRunPeakFinder:
                         # Adds all 3 together
                         trio_mz = trio_mz_1 + trio_mz_2 + trio_mz_3
                         if trio_mz <= 400:
-                            self.known_ions[f"{ion}({trio_acid_1}{trio_acid_2}{trio_acid_3})"] = [trio_mz, False]
+                            self.known_ions[f"{ion}{{{trio_acid_1}{trio_acid_2}{trio_acid_3}}}"] = [trio_mz, False]
                             # considers isotope
-                            self.known_ions[f"{ion}({trio_acid_1}{trio_acid_2}{trio_acid_3})+i"] = [trio_mz + self.isotope_mass, False]
+                            self.known_ions[f"{ion}{{{trio_acid_1}{trio_acid_2}{trio_acid_3}}}+i"] = [trio_mz + self.isotope_mass, False]
 
                         # considers doubly charged ions
                         # trio_mz = (trio_mz + self.proton_mass) / 2
@@ -496,7 +496,8 @@ class MSRunPeakFinder:
             'C6H4N5O3',
             'C6H4N5O4',
             'C6H6N5O4',
-            'C4N11O2'
+            'C4N11O2',
+            "H4PO4"
         ]
 
         for formula in additional_explanations:
@@ -586,42 +587,42 @@ class MSRunPeakFinder:
             'IM': 104.05285,
             'IH': 110.07127,
             'IR-NH3': 112.08692,
-            'a(AA)': 115.08659,
+            'a{{AA}}': 115.08659,
             'IR+H2O+H2O-N3H7': 116.0706,
             'IF': 120.08078,
-            'b(AA)-NH3': 126.05495,
+            'b{{AA}}-NH3': 126.05495,
             'IQ+CO': 129.06585,
             'IK+CO+H2O-NH3': 130.08625,
             'IC[Carbamidomethyl]': 133.04301,
             'IY': 136.07569,
-            'a(AP)': 141.10224,
-            'b(AA)': 143.0815,
-            'a(AV)': 143.11789,
-            'b(GP)': 155.0815,
+            'a{{AP}}': 141.10224,
+            'b{{AA}}': 143.0815,
+            'a{{AV}}': 143.11789,
+            'b{{GP}}': 155.0815,
             'IK+CO+H2ON2-NH3': 158.0924,
             'IW': 159.09167,
-            'a(DP)-H2O': 167.0815,
-            'b(AP)': 169.09715,
-            'a(PV)': 169.13354,
-            'a(PT)': 171.1128,
-            'a(TV)': 173.12845,
-            'y(R)': 175.11895,
-            'a(LP)': 183.14919,
-            'b(PS)': 185.09207,
-            'b(PV)': 197.12845,
-            'a(DL)': 201.12337,
-            'a(AY)': 207.11281,
-            'y(AH)-H2O': 209.10331,
-            'a(EL)': 215.13902,
-            'b(EL)-H2O': 225.12337,
-            'a(APS)': 228.13427,
-            'b(DL)': 229.11828,
-            'y(HV)-H2O': 237.1346,
-            'a(APT)': 242.14992,
-            'b(DQ)': 244.0928,
-            'y(KP)': 244.16557,
-            'y(HV)': 255.14517,
-            'y(PR)': 272.17172
+            'a{{DP}}-H2O': 167.0815,
+            'b{{AP}}': 169.09715,
+            'a{{PV}}': 169.13354,
+            'a{{PT}}': 171.1128,
+            'a{{TV}}': 173.12845,
+            'y{{R}}': 175.11895,
+            'a{{LP}}': 183.14919,
+            'b{{PS}}': 185.09207,
+            'b{{PV}}': 197.12845,
+            'a{{DL}}': 201.12337,
+            'a{{AY}}': 207.11281,
+            'y{{AH}}-H2O': 209.10331,
+            'a{{EL}}': 215.13902,
+            'b{{EL}}-H2O': 225.12337,
+            'a{{APS}}': 228.13427,
+            'b{{DL}}': 229.11828,
+            'y{{HV}}-H2O': 237.1346,
+            'a{{APT}}': 242.14992,
+            'b{{DQ}}': 244.0928,
+            'y{{KP}}': 244.16557,
+            'y{{HV}}': 255.14517,
+            'y{{PR}}': 272.17172
         }
 
         self.crude_xy_scatterplot = []
@@ -896,7 +897,7 @@ class MSRunPeakFinder:
             self.ax[0][1].axhline(y = 0, color = 'k', linewidth = 1, linestyle = '-')
             self.ax[0][1].set(xlabel='m/z', ylabel='PPM')
 
-            self.ax[2][1].scatter(self.refined_mz_values, self.refined_delta_ppm_values, 0.5)
+            self.ax[2][1].scatter(mz_values, delta_values_ppm, 0.5)
             self.ax[2][1].axhline(y = 0, color = 'k', linewidth = 1, linestyle = '-')
             self.ax[2][1].set(xlabel='m/z', ylabel='PPM')
             plt.tight_layout()
