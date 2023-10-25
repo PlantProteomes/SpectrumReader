@@ -781,7 +781,7 @@ class MSRunPeakFinder:
             else:
                 peak_tolerance = self.tolerance * peak[0] / 1e6
 
-            if int(peak[0] * 10) <= 4000
+            if int(peak[0] * 10) <= 4000:
                 for known_ion_index in range(len(binned_known_ions[int(peak[0] * 10)])):
                     possible_explanation = binned_known_ions[int(peak[0] * 10)][known_ion_index]
                     amino_acid_mz = possible_explanation[1]
