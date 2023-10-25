@@ -158,7 +158,7 @@ class MSRunPeakFinder:
                 # of the intensities, from a scale of 1-4)
                 if spectrum['ms level'] == 1:
                     self.stats['ms1spectra'] += 1
-                elif spectrum['ms level'] == 2:
+                elif spectrum['ms level'] == 2 and 'm/z array' in spectrum:
                     self.stats['ms2spectra'] += 1
                     self.smallest_peak_intensity = sys.maxsize
                     if self.find_snippets:
