@@ -235,7 +235,7 @@ class CombineList:
             if index == 0:
                 continue
             fraction = self.all_peaks[index - removed][2].split("/")
-            if float(fraction[0])/float(fraction[1]) != 1.0 or self.all_peaks[index - removed][1] < 5000:
+            if float(fraction[0])/float(fraction[1]) != 1.0 or self.all_peaks[index - removed][1] < 50:
                 self.all_peaks.pop(index - removed)
                 removed += 1
             other_identifications = self.all_peaks[index - removed][7]
