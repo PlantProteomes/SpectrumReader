@@ -710,7 +710,7 @@ class MSRunPeakFinder:
         intensity_values = []
         ppm_values = []
         mz_delta = int((self.ppm_delta / 1e6) * peak[0] * 10000)
-        if int(peak[0] * 10000 + index + mz_delta) <= 4000000:
+        if int(peak[0] * 10000 + mz_delta) <= 4000000:
             for index in range(mz_delta * 2 + 1):
                 # change it to be 0
                 add_index = int(peak[0] * 10000 + index - mz_delta - 1)
