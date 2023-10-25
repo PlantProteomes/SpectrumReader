@@ -781,20 +781,21 @@ class MSRunPeakFinder:
             else:
                 peak_tolerance = self.tolerance * peak[0] / 1e6
 
-            for known_ion_index in range(len(binned_known_ions[int(peak[0] * 10)])):
-                possible_explanation = binned_known_ions[int(peak[0] * 10)][known_ion_index]
-                amino_acid_mz = possible_explanation[1]
-                amino_acid = possible_explanation[0]
-                if not possible_explanation[2] and peak[0] > amino_acid_mz - peak_tolerance and peak[0] < amino_acid_mz + peak_tolerance:
-                    identified_peak = [round(amino_acid_mz, 5), round(peak[0] - amino_acid_mz, 8), amino_acid]
-                    identifications.append(identified_peak)
-                    binned_known_ions[int(peak[0] * 10)][known_ion_index][2] = True
-
-            # Sorts the identifications for each peak so the closest identifications are at the front
-            identifications.sort(key = lambda x: len(x[2]))
-            identifications.sort(key = lambda x: abs(x[1]))
-            for identification in identifications:
-                self.observed_peaks[index].append(identification)
+            if int(peak[0] * 10) <= 4000
+                for known_ion_index in range(len(binned_known_ions[int(peak[0] * 10)])):
+                    possible_explanation = binned_known_ions[int(peak[0] * 10)][known_ion_index]
+                    amino_acid_mz = possible_explanation[1]
+                    amino_acid = possible_explanation[0]
+                    if not possible_explanation[2] and peak[0] > amino_acid_mz - peak_tolerance and peak[0] < amino_acid_mz + peak_tolerance:
+                        identified_peak = [round(amino_acid_mz, 5), round(peak[0] - amino_acid_mz, 8), amino_acid]
+                        identifications.append(identified_peak)
+                        binned_known_ions[int(peak[0] * 10)][known_ion_index][2] = True
+    
+                # Sorts the identifications for each peak so the closest identifications are at the front
+                identifications.sort(key = lambda x: len(x[2]))
+                identifications.sort(key = lambda x: abs(x[1]))
+                for identification in identifications:
+                    self.observed_peaks[index].append(identification)
 
     def update_refined(self, crude_correction, t, c, k):
         mz_values = []
