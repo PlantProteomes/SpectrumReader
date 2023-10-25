@@ -713,6 +713,8 @@ class MSRunPeakFinder:
         for index in range(mz_delta * 2 + 1):
             # change it to be 0
             add_index = int(peak[0] * 10000 + index - mz_delta - 1)
+            if add_index > 4000000:
+                break
             mz_values.append(add_index / 10000 - peak[0])
             ppm_values.append((add_index / 10000 - peak[0]) * 1e6 / peak[0])
             intensity_values.append(self.by_strength[add_index])
