@@ -48,11 +48,10 @@ class HeatMapCreator:
                             self.residues[residue] = {}
                             self.scanned_residues.append(residue)
                         self.residues[residue][amino_acid] = float(line_split[1]) # adds the intensity
-                if line_split[7] != '?':
-                    identifications = line_split[7]
-                    identifications = literal_eval(identifications)
+                if len(line_split) >= 8 and line_split[7] != '?':
+                    identifications = line_split[7].split(", ")
                     for identification in identifications:
-                        if identification[0] == 'I' and "+i" not in identification:
+                        if len(identification) > 0 and identification[0] == 'I' and "+i" not in identification:
                             if "[Acetyl]" in identification:
                                 continue
                             elif "[Oxidation]" in identification:
@@ -96,13 +95,32 @@ class HeatMapCreator:
             residue_index += 1
 
         # plot heatmap
-        plt.imshow(self.heat_map_matrix, cmap = 'BuPu')
-        im_ratio = self.heat_map_matrix.shape[0]/self.heat_map_matrix.shape[1]
-        plt.colorbar(fraction=0.047*im_ratio)
-
-        # Set tick labels
+        fig, ax = plt.subplots(nrows=1, ncols=2, gridspec_kw={'width_ratios': [1, 10]})
         plt.xticks(range(len(self.residues)), self.residues, rotation = 90, fontsize = 5)
         plt.yticks(range(len(self.amino_acids)), self.amino_acids, fontsize = 5)
+        ax[1].imshow(self.heat_map_matrix, cmap = 'BuPu')
+        # im_ratio = self.heat_map_matrix.shape[0]/self.heat_map_matrix.shape[1]
+        # plt.colorbar(fraction=0.047*im_ratio)
+
+        colorBar = numpy.array([[0, 2], [15, 25]])
+        ax[0].imshow(colorBar, cmap = 'BuPu')
+        ax[0].set_title("Color Scale", fontsize = 7)
+        ax[0].text(0, 0, "0",
+                    ha="center", va="center", color="r", fontsize = 5)
+        ax[0].text(0, 1, "<2.5",
+                    ha="center", va="center", color="r", fontsize = 5)
+        ax[0].text(1, 0, "<=20",
+                    ha="center", va="center", color="r", fontsize = 5)
+        ax[0].text(1, 1, ">20",
+                    ha="center", va="center", color="r", fontsize = 5)
+        plt.setp(ax[0].get_xticklabels(), visible=False)
+        plt.setp(ax[0].get_yticklabels(), visible=False)
+        plt.xticks()
+        ax[0].tick_params(
+            axis='both',
+            length=0,
+            width=0,
+            labelbottom=False)
         
         # save the figure
         plt.tight_layout()

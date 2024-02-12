@@ -158,7 +158,7 @@ class MSRunPeakFinder:
                 # of the intensities, from a scale of 1-4)
                 if spectrum['ms level'] == 1:
                     self.stats['ms1spectra'] += 1
-                elif spectrum['ms level'] == 2:
+                elif spectrum['ms level'] == 2 and 'm/z array' in spectrum:
                     self.stats['ms2spectra'] += 1
                     self.smallest_peak_intensity = sys.maxsize
                     if self.find_snippets:
@@ -713,6 +713,8 @@ class MSRunPeakFinder:
         for index in range(mz_delta * 2 + 1):
             # change it to be 0
             add_index = int(peak[0] * 10000 + index - mz_delta - 1)
+            if add_index > 4000000:
+                break
             mz_values.append(add_index / 10000 - peak[0])
             ppm_values.append((add_index / 10000 - peak[0]) * 1e6 / peak[0])
             intensity_values.append(self.by_strength[add_index])
