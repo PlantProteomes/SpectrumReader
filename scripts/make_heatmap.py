@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
 # must first change to scripts folder through "cd .\scripts\"
-# to run the program (use terminal): python make_heatmap.py --tsv_file ..\data\combined_list.tsv
+# to run the program (use terminal): python make_heatmap.py --tsv_file combined_list.tsv
 
 import matplotlib.pyplot as plt
 import argparse
@@ -107,9 +107,9 @@ class HeatMapCreator:
         ax[0].set_title("Color Scale", fontsize = 5)
         ax[0].text(1.7, 0, "Not detected",
                     ha="center", va="center", color="k", fontsize = 4)
-        ax[0].text(1.7, 1, "0 < I <= 2.5",
+        ax[0].text(1.7, 1, "0 < I ≤ 2.5",
                     ha="center", va="center", color="k", fontsize = 4)
-        ax[0].text(1.7, 2, "2.5 < I <=20",
+        ax[0].text(1.7, 2, "2.5 < I ≤ 20",
                     ha="center", va="center", color="k", fontsize = 4)
         ax[0].text(1.7, 3, "I > 20",
                     ha="center", va="center", color="k", fontsize = 4)
