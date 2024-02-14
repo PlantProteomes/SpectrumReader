@@ -95,24 +95,24 @@ class HeatMapCreator:
             residue_index += 1
 
         # plot heatmap
-        fig, ax = plt.subplots(nrows=1, ncols=2, gridspec_kw={'width_ratios': [1, 10]})
+        fig, ax = plt.subplots(nrows=1, ncols=2, gridspec_kw={'width_ratios': [1, 28]})
         plt.xticks(range(len(self.residues)), self.residues, rotation = 90, fontsize = 5)
         plt.yticks(range(len(self.amino_acids)), self.amino_acids, fontsize = 5)
         ax[1].imshow(self.heat_map_matrix, cmap = 'BuPu')
         # im_ratio = self.heat_map_matrix.shape[0]/self.heat_map_matrix.shape[1]
         # plt.colorbar(fraction=0.047*im_ratio)
 
-        colorBar = numpy.array([[0, 2], [15, 25]])
+        colorBar = numpy.array([[0], [2], [15], [25]])
         ax[0].imshow(colorBar, cmap = 'BuPu')
-        ax[0].set_title("Color Scale", fontsize = 7)
-        ax[0].text(0, 0, "0",
-                    ha="center", va="center", color="r", fontsize = 5)
-        ax[0].text(0, 1, "<2.5",
-                    ha="center", va="center", color="r", fontsize = 5)
-        ax[0].text(1, 0, "<=20",
-                    ha="center", va="center", color="r", fontsize = 5)
-        ax[0].text(1, 1, ">20",
-                    ha="center", va="center", color="r", fontsize = 5)
+        ax[0].set_title("Color Scale", fontsize = 5)
+        ax[0].text(1.7, 0, "Not detected",
+                    ha="center", va="center", color="k", fontsize = 4)
+        ax[0].text(1.7, 1, "0 < I <= 2.5",
+                    ha="center", va="center", color="k", fontsize = 4)
+        ax[0].text(1.7, 2, "2.5 < I <=20",
+                    ha="center", va="center", color="k", fontsize = 4)
+        ax[0].text(1.7, 3, "I > 20",
+                    ha="center", va="center", color="k", fontsize = 4)
         plt.setp(ax[0].get_xticklabels(), visible=False)
         plt.setp(ax[0].get_yticklabels(), visible=False)
         plt.xticks()
