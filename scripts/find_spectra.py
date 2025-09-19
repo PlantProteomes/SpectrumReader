@@ -186,7 +186,7 @@ class MSRunSpectraFinder:
                                     matching_peaks.append(peak)
                             
                     # find a way to use metadata of the scan, pull out the true scan number and not by adding 10000
-                    scan_number = 10000 + spectrum['index']
+                    scan_number = 1 + spectrum['index']
                     if satisfy_requirements and self.has_pxd:
                         spectra_data = [f'mzspec:{self.pxd}:{self.root_mzml}:scan:{scan_number}', spectrum['precursorList']['precursor'][0]['selectedIonList']['selectedIon'][0]['selected ion m/z']]
                         if self.need_to_check_windows:
